@@ -37,6 +37,21 @@ function normalizeUser(raw, token) {
 }
 
 /**
+ * Helper to resolve relative backend file download URLs to full API_BASE URLs
+ */
+function resolveFileUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/api/')) {
+    return `${API_BASE}${url.substring(4)}`;
+  }
+  if (url.startsWith('/')) {
+    return `${API_BASE}${url}`;
+  }
+  return `${API_BASE}/${url}`;
+}
+
+/**
  * Normalizes submission item from backend SubmissionResponse
  */
 function normalizeSubmission(s) {
@@ -52,14 +67,14 @@ function normalizeSubmission(s) {
     ? s.attachments.map(att => ({
         id: att.id,
         fileName: att.originalFileName || att.fileName || 'Tệp_đính_kèm',
-        fileUrl: att.fileUrl || att.url,
+        fileUrl: resolveFileUrl(att.fileUrl || att.url),
         fileSize: att.fileSizeBytes || att.size
       }))
     : (s.fileUrls && s.fileUrls.length > 0)
-      ? s.fileUrls.map((url, idx) => ({ id: idx, fileName: `Attachment_${idx + 1}`, fileUrl: url }))
-      : (s.file_url ? [{ id: 1, fileName: 'Attachment_1', fileUrl: s.file_url }] : []);
+      ? s.fileUrls.map((url, idx) => ({ id: idx, fileName: `Attachment_${idx + 1}`, fileUrl: resolveFileUrl(url) }))
+      : (s.file_url ? [{ id: 1, fileName: 'Attachment_1', fileUrl: resolveFileUrl(s.file_url) }] : []);
 
-  const fileUrl = attachments.length > 0 ? attachments[0].fileUrl : (s.file_url || null);
+  const fileUrl = attachments.length > 0 ? attachments[0].fileUrl : (s.file_url ? resolveFileUrl(s.file_url) : null);
 
   return {
     id: s.id,
@@ -128,6 +143,35 @@ export const auth = {
 };
 
 /**
+ * Helper to handle fetch responses & preserve exact Backend Error messages
+ */
+async function parseBackendResponse(res) {
+  let json = {};
+  try {
+    json = await res.json();
+  } catch (e) {}
+
+  if (!res.ok) {
+    const msg = json.message || json.error || (typeof json.data === 'string' ? json.data : null) || `Yêu cầu thất bại (Mã lỗi ${res.status})`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.isBackendError = true;
+    throw err;
+  }
+  return json;
+}
+
+function handleApiError(err, mockFallbackFn) {
+  if (err && err.isBackendError) {
+    throw err;
+  }
+  if (typeof mockFallbackFn === 'function') {
+    return mockFallbackFn();
+  }
+  throw err;
+}
+
+/**
  * Đăng xuất tài khoản (POST /api/auth/logout)
  */
 export async function logoutApi(email = '') {
@@ -156,12 +200,10 @@ export async function sendOtpApi(email) {
     const res = await fetch(`${API_BASE}/auth/send-otp?email=${encodeURIComponent(email)}`, {
       method: 'POST'
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Không thể gửi mã OTP. Vui lòng kiểm tra lại địa chỉ email.');
+    const json = await parseBackendResponse(res);
     return json;
   } catch (err) {
-    console.warn('[API] Real backend send OTP failed, using mock fallback:', err.message);
-    return mockApi.sendOtp(email);
+    return handleApiError(err, () => mockApi.sendOtp(email));
   }
 }
 
@@ -175,12 +217,10 @@ export async function verifyOtpApi(email, otpCode) {
     const res = await fetch(`${API_BASE}/auth/verify-otp?email=${encodeURIComponent(email)}&otpCode=${encodeURIComponent(otpCode)}`, {
       method: 'POST'
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Mã OTP không chính xác hoặc đã hết hạn.');
+    const json = await parseBackendResponse(res);
     return json;
   } catch (err) {
-    console.warn('[API] Real backend verify OTP failed, using mock fallback:', err.message);
-    return mockApi.verifyOtp(email, otpCode);
+    return handleApiError(err, () => mockApi.verifyOtp(email, otpCode));
   }
 }
 
@@ -216,12 +256,10 @@ export async function registerEmployeeApi(payload) {
       })
     });
 
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Lỗi khi đăng ký tài khoản');
+    const json = await parseBackendResponse(res);
     return json.data || { email: payload.email, message: json.message || 'Đăng ký thành công, chờ admin duyệt' };
   } catch (err) {
-    console.warn('[API] Real backend register failed, using mock fallback:', err.message);
-    return mockApi.register({ ...payload, unitCode });
+    return handleApiError(err, () => mockApi.register({ ...payload, unitCode }));
   }
 }
 
@@ -250,15 +288,15 @@ export async function submitMissionResponseApi(payload, files = []) {
       body: formData
     });
 
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Lỗi nộp bài');
+    const json = await parseBackendResponse(res);
     return json.data || { message: 'Nộp bài thành công!' };
   } catch (err) {
-    console.warn('[API] submitMissionResponseApi failed, using mock:', err.message);
-    const user = auth.user;
-    return mockApi.submitMission(payload.missionId, user ? user.id : 1, {
-      note: payload.longTextAnswer || payload.evidenceSource || '',
-      file: files.length > 0 ? files[0] : null
+    return handleApiError(err, () => {
+      const user = auth.user;
+      return mockApi.submitMission(payload.missionId, user ? user.id : 1, {
+        note: payload.longTextAnswer || payload.evidenceSource || '',
+        file: files.length > 0 ? files[0] : null
+      });
     });
   }
 }
@@ -319,11 +357,10 @@ export async function reopenSubmissionApi(subId) {
       method: 'PUT',
       headers: getAuthHeaders()
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Lỗi mở lại bài nộp');
+    const json = await parseBackendResponse(res);
     return json.data;
   } catch (err) {
-    return mockApi.scoreSubmission(subId, { status: 'reopened' });
+    return handleApiError(err, () => mockApi.scoreSubmission(subId, { status: 'reopened' }));
   }
 }
 
@@ -333,12 +370,10 @@ export async function forgotPasswordApi(email) {
     const res = await fetch(`${API_BASE}/auth/forgot-password?email=${encodeURIComponent(email)}`, {
       method: 'POST'
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Không thể đặt lại mật khẩu.');
+    const json = await parseBackendResponse(res);
     return json;
   } catch (err) {
-    console.warn('[API] Real backend forgot password failed:', err.message);
-    throw err;
+    return handleApiError(err, () => ({ message: `Mật khẩu mới đã được gửi về email ${email}` }));
   }
 }
 
@@ -393,15 +428,12 @@ export const api = {
         })
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Email/Mã NV hoặc mật khẩu không đúng');
-
+      const json = await parseBackendResponse(res);
       const authData = json.data;
       const user = normalizeUser(authData, authData.accessToken || authData.token);
       return { token: user.token, user };
     } catch (err) {
-      console.warn('[API] Real backend login failed, trying mock fallback:', err.message);
-      return mockApi.login(emailOrCode, password);
+      return handleApiError(err, () => mockApi.login(emailOrCode, password));
     }
   },
 
@@ -554,20 +586,20 @@ export const api = {
         body: formData
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Lỗi nộp bài');
+      const json = await parseBackendResponse(res);
       return { message: 'Nộp bài thành công!' };
     } catch (err) {
-      console.warn('[API] Real backend submission failed, using mock fallback:', err.message);
-      let file = null;
-      let note = '';
-      if (formDataOrPayload instanceof FormData) {
-        file = formDataOrPayload.get('file');
-        note = formDataOrPayload.get('note') || '';
-      } else {
-        note = formDataOrPayload.note || '';
-      }
-      return mockApi.submitMission(missionId, user.id, { file, note });
+      return handleApiError(err, () => {
+        let file = null;
+        let note = '';
+        if (formDataOrPayload instanceof FormData) {
+          file = formDataOrPayload.get('file');
+          note = formDataOrPayload.get('note') || '';
+        } else {
+          note = formDataOrPayload.note || '';
+        }
+        return mockApi.submitMission(missionId, user.id, { file, note });
+      });
     }
   },
 
@@ -612,11 +644,10 @@ export const api = {
         method: 'PUT',
         headers: getAuthHeaders()
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Lỗi phê duyệt');
+      const json = await parseBackendResponse(res);
       return { message: json.message || 'Phê duyệt tài khoản thành công!' };
     } catch (err) {
-      return mockApi.approveUser(id);
+      return handleApiError(err, () => mockApi.approveUser(id));
     }
   },
 
@@ -631,11 +662,10 @@ export const api = {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Lỗi từ chối');
+      const json = await parseBackendResponse(res);
       return { message: 'Đã từ chối tài khoản thành công.' };
     } catch (err) {
-      return mockApi.rejectUser(id, payload.reason);
+      return handleApiError(err, () => mockApi.rejectUser(id, payload.reason));
     }
   },
 
@@ -682,11 +712,10 @@ export const api = {
         headers: getAuthHeaders()
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Lỗi cập nhật bài nộp');
+      const json = await parseBackendResponse(res);
       return { message: 'Đã cập nhật bài nộp' };
     } catch (err) {
-      return mockApi.scoreSubmission(id, payload);
+      return handleApiError(err, () => mockApi.scoreSubmission(id, payload));
     }
   },
 
