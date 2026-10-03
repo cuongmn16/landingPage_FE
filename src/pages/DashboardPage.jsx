@@ -1,0 +1,215 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { api, auth } from '../services/api';
+import { getMissionState, getSubmissionStatus, fmtDateTime } from '../data/appData';
+
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [missions, setMissions] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Review Modal state
+  const [selectedReviewSub, setSelectedReviewSub] = useState(null);
+  const [selectedReviewMission, setSelectedReviewMission] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function init() {
+      const u = await auth.load();
+      if (!u) {
+        navigate('/login');
+        return;
+      }
+      if (u.role === 'admin') {
+        navigate('/admin');
+        return;
+      }
+      setUser(u);
+
+      try {
+        const [mList, sList] = await Promise.all([
+          api.getMissions(),
+          api.getUserSubmissions()
+        ]);
+        setMissions(mList);
+        setSubmissions(sList);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    init();
+  }, [navigate]);
+
+  const handleOpenReview = (mId) => {
+    const sub = submissions.find(s => Number(s.mission_id) === Number(mId));
+    if (!sub) return;
+    const mission = missions.find(m => Number(m.id) === Number(mId));
+    setSelectedReviewSub(sub);
+    setSelectedReviewMission(mission);
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const handleCloseReview = () => {
+    setIsModalOpen(false);
+    setSelectedReviewSub(null);
+    setSelectedReviewMission(null);
+    document.body.style.overflow = '';
+  };
+
+  if (loading) {
+    return (
+      <main class="dashboard">
+        <div class="container">
+          <p style={{ textAlign: 'center', padding: '40px', color: 'var(--clr-ink-3)' }}>Đang tải Dashboard…</p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main>
+      <section class="dashboard">
+        <div class="container">
+          <h1 class="dashboard__title">Xin chào, <span>{user?.full_name || 'bạn'}</span></h1>
+          <p class="dashboard__sub">
+            {user?.employee_id || ''} · {user?.unit || ''} · {user?.email || ''}
+          </p>
+
+          {error && <p style={{ color: '#C25B5B', marginBottom: '20px' }}>Lỗi: {error}</p>}
+
+          <div class="mission-grid">
+            {missions.map(m => {
+              const sub = submissions.find(s => Number(s.mission_id) === Number(m.id));
+              const mState = getMissionState(m);
+              const sState = getSubmissionStatus(sub);
+
+              let btnText = 'Bắt đầu Mission';
+              let btnDisabled = false;
+              let isReview = false;
+
+              if (sub) {
+                isReview = true;
+                if (sState.code === 'needs_supplement') btnText = 'Bổ sung bài →';
+                else if (sState.code === 'invalid')     btnText = 'Xem lại bài';
+                else if (sState.code === 'valid')       btnText = 'Xem bài đã duyệt';
+                else                                    btnText = 'Xem bài đã nộp';
+              } else if (mState.code === 'not_open') {
+                btnText = 'Chưa mở';
+                btnDisabled = true;
+              } else if (mState.code === 'closed') {
+                btnText = 'Đã đóng';
+                btnDisabled = true;
+              }
+
+              let cardMod = '';
+              if (sState.code === 'needs_supplement') cardMod = 'mission-card--warning';
+              else if (sState.code === 'invalid')     cardMod = 'mission-card--invalid';
+              else if (sState.code === 'valid')       cardMod = 'mission-card--valid';
+
+              return (
+                <article key={m.id} class={`mission-card ${cardMod}`}>
+                  <div class="mission-card__badges">
+                    <span class={`status-badge ${mState.cls} status-badge--sm`} title="Trạng thái Mission">
+                      {mState.label}
+                    </span>
+                    <span class={`status-badge ${sState.cls} status-badge--sm`} title="Trạng thái bài nộp">
+                      {sState.label}
+                    </span>
+                  </div>
+                  <h3>{m.title}</h3>
+                  <p>{m.description || ''}</p>
+                  {isReview ? (
+                    <button className="btn btn--outline" onClick={() => handleOpenReview(m.id)}>
+                      {btnText}
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn--outline"
+                      onClick={() => handleOpenReview(m.id)}
+                      disabled={btnDisabled}
+                      style={btnDisabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
+                      {btnText}
+                    </button>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* MODAL XEM LẠI BÀI NỘP */}
+      {isModalOpen && selectedReviewSub && (
+        <div class="modal is-open" aria-hidden="false" role="dialog">
+          <div class="modal__backdrop" onClick={handleCloseReview}></div>
+          <div class="modal__panel modal__panel--large">
+            <button class="modal__close" onClick={handleCloseReview} aria-label="Đóng">&times;</button>
+            <div class="submission-detail">
+              <div class="submission-detail__header">
+                <p class="submission-detail__team">{user?.full_name} · {user?.unit}</p>
+                <h2 class="submission-detail__title">Bài nộp Mission {selectedReviewSub.mission_id}</h2>
+                <p class="submission-detail__mission">Nộp lúc: {fmtDateTime(selectedReviewSub.submitted_at)}</p>
+                <div class="submission-detail__badges" style={{ marginTop: '12px', justifyContent: 'center' }}>
+                  <span class={`status-badge ${getMissionState(selectedReviewMission).cls} status-badge--sm`}>
+                    {getMissionState(selectedReviewMission).label}
+                  </span>
+                  <span class={`status-badge ${getSubmissionStatus(selectedReviewSub).cls}`}>
+                    {getSubmissionStatus(selectedReviewSub).label}
+                  </span>
+                </div>
+              </div>
+
+              {selectedReviewSub.file_url ? (
+                /\.(jpg|jpeg|png|gif|webp)$/i.test(selectedReviewSub.file_url) ? (
+                  <div class="submission-detail__image">
+                    <img src={selectedReviewSub.file_url} alt="Bài nộp" />
+                  </div>
+                ) : (
+                  <div class="submission-detail__file">
+                    <div class="submission-detail__file-icon">📄</div>
+                    <a href={selectedReviewSub.file_url} target="_blank" rel="noopener noreferrer" class="btn btn--gold">
+                      Mở file →
+                    </a>
+                  </div>
+                )
+              ) : (
+                <div class="submission-detail__file"><p>Không có file đính kèm.</p></div>
+              )}
+
+              {selectedReviewSub.note && (
+                <p style={{ color: 'var(--clr-ink-2)', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                  <strong>Ghi chú:</strong> {selectedReviewSub.note}
+                </p>
+              )}
+
+              {selectedReviewSub.review_note && (
+                <div class="submission-detail__review-note">
+                  <strong>Ghi chú từ BTC:</strong> {selectedReviewSub.review_note}
+                </div>
+              )}
+
+              {selectedReviewSub.score != null ? (
+                <div class="submission-detail__points">
+                  <span class="label">Điểm</span>
+                  <span class="value">{selectedReviewSub.score}</span>
+                </div>
+              ) : (
+                <div class="submission-detail__points is-pending">
+                  <span class="label">Điểm</span>
+                  <span class="value" style={{ fontSize: '1rem' }}>Chưa chấm</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
