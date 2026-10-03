@@ -5,7 +5,8 @@
 import { mockApi } from './mockApi';
 import { CONFIG } from '../data/appData';
 
-const API_BASE = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '');
+const rawApiBase = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '');
+const API_BASE = rawApiBase.endsWith('/api') ? rawApiBase : `${rawApiBase}/api`;
 
 /**
  * Helper to get Auth Header
