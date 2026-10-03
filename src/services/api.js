@@ -117,10 +117,34 @@ export const auth = {
   isLoggedIn() { return !!this.user; },
   isAdmin() { return this.user && this.user.role === 'admin'; },
 
-  logout() {
+  async logout() {
+    if (this.user && this.user.email) {
+      try {
+        await logoutApi(this.user.email);
+      } catch (e) {}
+    }
     this.clear();
   }
 };
+
+/**
+ * Đăng xuất tài khoản (POST /api/auth/logout)
+ */
+export async function logoutApi(email = '') {
+  if (CONFIG.USE_MOCK) return { message: 'Đăng xuất thành công' };
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/logout?email=${encodeURIComponent(email)}`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    console.warn('[API] Logout call warning:', err.message);
+    return { message: 'Đăng xuất thành công' };
+  }
+}
 
 /**
  * Gửi mã OTP xác thực email (POST /api/auth/send-otp?email=...)

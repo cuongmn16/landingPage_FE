@@ -30,9 +30,9 @@ export default function Navbar() {
   const isLeaderboardRoute = location.pathname === '/leaderboard';
   const isDashboardRoute = location.pathname === '/dashboard';
 
-  const handleLogout = (e) => {
-    e.preventDefault();
-    auth.logout();
+  const handleLogout = async (e) => {
+    if (e) e.preventDefault();
+    await auth.logout();
     setCurrentUser(null);
     navigate('/');
   };
@@ -87,17 +87,41 @@ export default function Navbar() {
           )}
         </nav>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {currentUser ? (
-            currentUser.role === 'admin' ? (
-              <Link to="/admin" class="btn btn--gold navbar__cta">
-                ← Admin Dashboard
-              </Link>
-            ) : (
-              <Link to="/dashboard" class="btn btn--gold navbar__cta">
-                Tiếp tục hành trình
-              </Link>
-            )
+            <>
+              {currentUser.role === 'admin' ? (
+                <Link to="/admin" class="btn btn--gold navbar__cta">
+                  ← Admin Dashboard
+                </Link>
+              ) : (
+                <Link to="/dashboard" class="btn btn--gold navbar__cta">
+                  Tiếp tục hành trình
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="btn navbar__logout-btn"
+                title="Đăng xuất khỏi hệ thống"
+                style={{
+                  padding: '8px 14px',
+                  fontSize: '13px',
+                  borderColor: 'rgba(239, 68, 68, 0.4)',
+                  color: '#fca5a5',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span>🚪</span> Đăng xuất
+              </button>
+            </>
           ) : (
             <Link to="/login" class="btn btn--gold navbar__cta">
               Đăng nhập
