@@ -117,8 +117,11 @@ export const mockApi = {
 
   async getUserSubmissions(userId) {
     await delay(150);
+    const users = read(LS.users);
+    const targetUser = users.find(u => u.id === Number(userId));
+    if (targetUser && targetUser.role === 'admin') return [];
     const submissions = read(LS.submissions);
-    return submissions.filter(s => s.user_id === userId);
+    return submissions.filter(s => s.user_id === Number(userId));
   },
 
   async submitMission(missionId, userId, { file, note }) {
@@ -218,37 +221,25 @@ export const mockApi = {
     return { message: 'Đã cập nhật bài nộp' };
   },
 
+  // Same shape as api.getLeaderboard(): units ranked by valid-participant rate
   async getLeaderboard() {
     await delay(200);
-    const users = read(LS.users);
+    const users = read(LS.users).filter(u => u.role !== 'admin');
     const submissions = read(LS.submissions);
-    const byUser = {};
+    const byUnit = {};
 
-    submissions.forEach(s => {
-      if (s.score == null) return;
-      const uid = s.user_id;
-      if (!byUser[uid]) {
-        const u = users.find(x => x.id === Number(uid));
-        byUser[uid] = {
-          user_id: uid,
-          full_name: u?.full_name || '—',
-          unit: u?.unit || '—',
-          email: u?.email || '',
-          count: 0,
-          total_score: 0,
-        };
+    users.forEach(u => {
+      const key = u.unit || '—';
+      if (!byUnit[key]) {
+        byUnit[key] = { unit_id: key, unit_code: key, unit_name: key, valid_count: 0, total_personnel: 0, rate: 0, last_updated_at: null };
       }
-      byUser[uid].count += 1;
-      byUser[uid].total_score += Number(s.score) || 0;
+      byUnit[key].total_personnel += 1;
+      const hasValid = submissions.some(s => s.user_id === u.id && ['valid', 'pending'].includes(s.status || 'pending'));
+      if (hasValid) byUnit[key].valid_count += 1;
     });
 
-    const lb = Object.values(byUser)
-      .map(r => ({
-        ...r,
-        avg_score: r.count > 0 ? Number((r.total_score / r.count).toFixed(1)) : 0
-      }))
-      .sort((a, b) => b.total_score - a.total_score || b.count - a.count);
-
-    return lb;
+    return Object.values(byUnit)
+      .map(r => ({ ...r, rate: r.total_personnel ? Math.round((r.valid_count / r.total_personnel) * 10000) / 100 : 0 }))
+      .sort((a, b) => b.rate - a.rate || b.valid_count - a.valid_count);
   }
 };

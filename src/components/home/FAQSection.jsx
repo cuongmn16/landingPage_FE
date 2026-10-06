@@ -9,25 +9,25 @@ export default function FAQSection() {
   };
 
   return (
-    <section class="section" id="faq">
-      <div class="container">
-        <p class="section__label mono reveal is-visible">FAQ — HỖ TRỢ</p>
-        <h2 class="section__title reveal is-visible">Câu hỏi thường gặp</h2>
-        <div class="faq">
+    <section className="section" id="faq">
+      <div className="container">
+        <p className="section__label mono reveal is-visible">FAQ — HỖ TRỢ</p>
+        <h2 className="section__title reveal is-visible">Câu hỏi thường gặp</h2>
+        <div className="faq">
           {FAQ.map((f, i) => {
             const isOpen = !!openIndices[i];
             return (
-              <div key={i} class={`faq__item reveal is-visible ${isOpen ? 'is-open' : ''}`}>
+              <div key={i} className={`faq__item reveal is-visible ${isOpen ? 'is-open' : ''}`}>
                 <button
-                  class="faq__question"
+                  className="faq__question"
                   aria-expanded={isOpen}
                   aria-controls={`faq-${i}`}
                   onClick={() => toggleFAQ(i)}
                 >
                   <span>{f.q}</span>
-                  <span class="faq__icon"></span>
+                  <span className="faq__icon"></span>
                 </button>
-                <div class="faq__answer" id={`faq-${i}`}>
+                <div className="faq__answer" id={`faq-${i}`}>
                   <p>{f.a}</p>
                 </div>
               </div>

@@ -33,10 +33,10 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section class="hero" id="hero">
-      <div class="hero__bg">
-        <div class="hero__grid"></div>
-        <div class="hero__compass">
+    <section className="hero" id="hero">
+      <div className="hero__bg">
+        <div className="hero__grid"></div>
+        <div className="hero__compass">
           <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="0.5">
             <circle cx="100" cy="100" r="90" /><circle cx="100" cy="100" r="70" strokeDasharray="2 4" />
             <line x1="100" y1="10" x2="100" y2="190" /><line x1="10" y1="100" x2="190" y2="100" />
@@ -45,29 +45,29 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <div class="container hero__content">
-        <p class="hero__tag mono" id="heroTag">{HERO.tag}</p>
-        <h1 class="hero__title" id="heroTitle">{HERO.title}</h1>
-        <p class="hero__subtitle" id="heroSubtitle">{HERO.subtitle}</p>
-        <p class="hero__desc" id="heroDesc">{HERO.desc}</p>
+      <div className="container hero__content">
+        <p className="hero__tag mono" id="heroTag">{HERO.tag}</p>
+        <h1 className="hero__title" id="heroTitle">{HERO.title}</h1>
+        <p className="hero__subtitle" id="heroSubtitle">{HERO.subtitle}</p>
+        <p className="hero__desc" id="heroDesc">{HERO.desc}</p>
 
-        <div class="hero__actions">
+        <div className="hero__actions">
           {isLoggedIn ? (
-            <Link to="/dashboard" class="btn btn--gold">Tiếp tục hành trình</Link>
+            <Link to="/dashboard" className="btn btn--gold">Tiếp tục hành trình</Link>
           ) : (
-            <Link to="/login" class="btn btn--gold">Đăng nhập để tham gia</Link>
+            <Link to="/login" className="btn btn--gold">Đăng nhập để tham gia</Link>
           )}
-          <a href="#how-to-play" class="btn btn--outline">Xem cách chơi</a>
+          <a href="#how-to-play" className="btn btn--outline">Xem cách chơi</a>
         </div>
 
-        <div class="hero__stats">
-          <div class="hero__stat"><span class="hero__stat-value">04</span><span class="hero__stat-label">Mission</span></div>
-          <div class="hero__stat"><span class="hero__stat-value">Toàn thể</span><span class="hero__stat-label">CBNV</span></div>
-          <div class="hero__stat"><span class="hero__stat-value">Tỷ lệ</span><span class="hero__stat-label">Đơn vị</span></div>
-          <div class="hero__stat"><span class="hero__stat-value">{fmtDate(CONFIG.registerDeadline)}</span><span class="hero__stat-label">Hạn</span></div>
+        <div className="hero__stats">
+          <div className="hero__stat"><span className="hero__stat-value">04</span><span className="hero__stat-label">Mission</span></div>
+          <div className="hero__stat"><span className="hero__stat-value">Toàn thể</span><span className="hero__stat-label">CBNV</span></div>
+          <div className="hero__stat"><span className="hero__stat-value">Tỷ lệ</span><span className="hero__stat-label">Đơn vị</span></div>
+          <div className="hero__stat"><span className="hero__stat-value">{fmtDate(CONFIG.registerDeadline)}</span><span className="hero__stat-label">Hạn</span></div>
         </div>
 
-        <div class={`hero__countdown ${isClosed ? 'is-closed' : ''}`} id="heroCountdown" aria-live="polite">
+        <div className={`hero__countdown ${isClosed ? 'is-closed' : ''}`} id="heroCountdown" aria-live="polite">
           {isClosed ? (
             '⏱ Đã đóng đăng ký'
           ) : (

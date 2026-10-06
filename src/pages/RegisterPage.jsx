@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [employeeId, setEmployeeId] = useState('');
   const [unit, setUnit] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
 
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
@@ -50,6 +51,7 @@ export default function RegisterPage() {
     try {
       const res = await sendOtpApi(email.trim());
       setStatusMsg(res?.message || `Mã OTP 6 số đã được gửi tới email ${email.trim()}. Vui lòng kiểm tra hộp thư!`);
+      setOtpVerified(false);
       setStep(2);
       setCooldown(60); // Activate 60s cooldown limit
     } catch (err) {
@@ -73,16 +75,19 @@ export default function RegisterPage() {
     setVerifyingOtp(true);
 
     try {
-      // 1. Verify OTP via backend API (/api/auth/verify-otp)
-      await verifyOtpApi(email.trim(), otpCode.trim());
+      // 1. Verify OTP via backend API (/api/auth/verify-otp) — only once; the code is single-use
+      if (!otpVerified) {
+        await verifyOtpApi(email.trim(), otpCode.trim());
+        setOtpVerified(true);
+      }
 
-      // 2. Call backend register API (/api/employees/register)
+      // 2. Call backend register API (/api/employees/register).
+      //    The backend checks server-side that this email has just passed OTP verification.
       await registerEmployeeApi({
         fullName: fullName.trim(),
         email: email.trim(),
-        employeeCode: employeeId.trim() || 'NV_' + Date.now().toString().slice(-4),
-        unitCode: unit || 'PB_IT',
-        emailVerified: true
+        employeeCode: employeeId.trim(),
+        unitCode: unit || 'PB_IT'
       });
 
       // 3. Move to Step 3: Success Screen (Matches screenshot!)

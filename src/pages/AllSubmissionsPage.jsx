@@ -57,13 +57,13 @@ export default function AllSubmissionsPage() {
 
   return (
     <main>
-      <section class="m1-section">
-        <div class="container">
-          <p class="m1-section__label mono">ADMIN — TOÀN BỘ BÀI DỰ THI</p>
-          <h1 class="m1-section__title">Tất cả bài dự thi Mission 01</h1>
-          <p class="m1-section__desc">Tìm kiếm theo tên, đơn vị hoặc email. Nhấn vào từng bài để mở file.</p>
+      <section className="m1-section">
+        <div className="container">
+          <p className="m1-section__label mono">ADMIN — TOÀN BỘ BÀI DỰ THI</p>
+          <h1 className="m1-section__title">Tất cả bài dự thi Mission 01</h1>
+          <p className="m1-section__desc">Tìm kiếm theo tên, đơn vị hoặc email. Nhấn vào từng bài để mở file.</p>
 
-          <div class="as-controls" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+          <div className="as-controls" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
             <input
               type="text"
               id="asSearch"
@@ -83,7 +83,7 @@ export default function AllSubmissionsPage() {
               <option value="score-desc">Điểm cao → thấp</option>
               <option value="score-asc">Điểm thấp → cao</option>
             </select>
-            <button class="btn btn--outline" onClick={loadSubmissions}>↻ Tải lại</button>
+            <button className="btn btn--outline" onClick={loadSubmissions}>↻ Tải lại</button>
           </div>
 
           {loading ? (
@@ -103,7 +103,7 @@ export default function AllSubmissionsPage() {
                         <h3 style={{ fontSize: '1.1rem', margin: 0 }}>{s.user_name}</h3>
                         <p style={{ fontSize: '0.85rem', color: 'var(--clr-ink-3)' }}>{s.user_unit} · {s.user_email}</p>
                       </div>
-                      <span class={`status-badge ${st.cls} status-badge--sm`}>{st.label}</span>
+                      <span className={`status-badge ${st.cls} status-badge--sm`}>{st.label}</span>
                     </div>
 
                     <p style={{ fontSize: '0.85rem', color: 'var(--clr-ink-2)', marginBottom: '12px' }}>
@@ -125,7 +125,7 @@ export default function AllSubmissionsPage() {
                         )}
                       </div>
                       {s.file_url && (
-                        <a href={s.file_url} target="_blank" rel="noopener noreferrer" class="btn btn--gold" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                        <a href={s.file_url} target="_blank" rel="noopener noreferrer" className="btn btn--gold" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
                           Mở file →
                         </a>
                       )}

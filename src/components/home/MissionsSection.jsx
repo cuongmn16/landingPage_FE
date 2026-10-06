@@ -11,11 +11,13 @@ export default function MissionsSection() {
   const [userSubmissions, setUserSubmissions] = useState([]);
 
   const fetchUserSubmissions = async () => {
-    if (auth.isLoggedIn()) {
+    if (auth.isLoggedIn() && !auth.isAdmin()) {
       try {
         const subs = await api.getUserSubmissions();
         setUserSubmissions(subs || []);
       } catch (e) {}
+    } else {
+      setUserSubmissions([]);
     }
   };
 
@@ -26,6 +28,10 @@ export default function MissionsSection() {
   const handleMissionClick = (mId) => {
     if (!auth.isLoggedIn()) {
       navigate('/login');
+      return;
+    }
+    if (auth.isAdmin()) {
+      navigate('/admin?tab=submissions');
       return;
     }
     const num = String(mId).replace(/[^0-9]/g, '') || '1';

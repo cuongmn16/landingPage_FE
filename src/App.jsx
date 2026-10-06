@@ -20,7 +20,7 @@ function AppContent() {
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <div class="app-container">
+    <div className="app-container">
       {!isAuthRoute && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />

@@ -145,54 +145,54 @@ export default function Mission1Page() {
   return (
     <main>
       {/* HERO */}
-      <section class="m1-hero">
-        <div class="m1-hero__bg"><div class="m1-hero__grid"></div></div>
-        <div class="container m1-hero__inner">
-          <Link to="/dashboard" class="m1-hero__back">← Quay lại Dashboard</Link>
-          <span class="m1-hero__label mono">CLASSIFIED — MISSION 01</span>
-          <h1 class="m1-hero__title">{M1_CONFIG.title}</h1>
-          <p class="m1-hero__subtitle">{M1_CONFIG.subtitle}</p>
+      <section className="m1-hero">
+        <div className="m1-hero__bg"><div className="m1-hero__grid"></div></div>
+        <div className="container m1-hero__inner">
+          <Link to="/dashboard" className="m1-hero__back">← Quay lại Dashboard</Link>
+          <span className="m1-hero__label mono">CLASSIFIED — MISSION 01</span>
+          <h1 className="m1-hero__title">{M1_CONFIG.title}</h1>
+          <p className="m1-hero__subtitle">{M1_CONFIG.subtitle}</p>
 
-          <div class="m1-hero__meta">
-            <div class="m1-hero__meta-item">
-              <span class="m1-hero__meta-label">Trạng thái</span>
-              <span class="m1-hero__meta-value" style={{ color: '#137333' }}>Đang mở</span>
+          <div className="m1-hero__meta">
+            <div className="m1-hero__meta-item">
+              <span className="m1-hero__meta-label">Trạng thái</span>
+              <span className="m1-hero__meta-value" style={{ color: '#137333' }}>Đang mở</span>
             </div>
-            <div class="m1-hero__meta-item">
-              <span class="m1-hero__meta-label">Trọng số</span>
-              <span class="m1-hero__meta-value">{M1_CONFIG.weight}%</span>
+            <div className="m1-hero__meta-item">
+              <span className="m1-hero__meta-label">Trọng số</span>
+              <span className="m1-hero__meta-value">{M1_CONFIG.weight}%</span>
             </div>
-            <div class="m1-hero__meta-item">
-              <span class="m1-hero__meta-label">Mở từ</span>
-              <span class="m1-hero__meta-value">05/10/2026</span>
+            <div className="m1-hero__meta-item">
+              <span className="m1-hero__meta-label">Mở từ</span>
+              <span className="m1-hero__meta-value">05/10/2026</span>
             </div>
-            <div class="m1-hero__meta-item">
-              <span class="m1-hero__meta-label">Hạn nộp</span>
-              <span class="m1-hero__meta-value">11/10/2026</span>
+            <div className="m1-hero__meta-item">
+              <span className="m1-hero__meta-label">Hạn nộp</span>
+              <span className="m1-hero__meta-value">11/10/2026</span>
             </div>
           </div>
 
-          <div class="m1-hero__countdown" id="m1Countdown" aria-live="polite">
+          <div className="m1-hero__countdown" id="m1Countdown" aria-live="polite">
             ⏱ Còn lại: <strong>{timeLeft}</strong>
           </div>
         </div>
       </section>
 
       {/* MỤC TIÊU */}
-      <section class="m1-section">
-        <div class="container">
-          <span class="m1-section__label mono">BRIEF — MỤC TIÊU</span>
-          <h2 class="m1-section__title">Mục tiêu Mission</h2>
-          <p class="m1-section__text">{M1_CONFIG.goal}</p>
+      <section className="m1-section">
+        <div className="container">
+          <span className="m1-section__label mono">BRIEF — MỤC TIÊU</span>
+          <h2 className="m1-section__title">Mục tiêu Mission</h2>
+          <p className="m1-section__text">{M1_CONFIG.goal}</p>
         </div>
       </section>
 
       {/* NHIỆM VỤ */}
-      <section class="m1-section m1-section--light">
-        <div class="container">
-          <span class="m1-section__label mono">TASKS — NHIỆM VỤ</span>
-          <h2 class="m1-section__title">Các bước thực hiện</h2>
-          <ul class="m1-tasks">
+      <section className="m1-section m1-section--light">
+        <div className="container">
+          <span className="m1-section__label mono">TASKS — NHIỆM VỤ</span>
+          <h2 className="m1-section__title">Các bước thực hiện</h2>
+          <ul className="m1-tasks">
             {M1_CONFIG.tasks.map((task, i) => (
               <li key={i}>{task}</li>
             ))}
@@ -201,20 +201,20 @@ export default function Mission1Page() {
       </section>
 
       {/* BỘ THẺ */}
-      <section class="m1-section" id="m1-cards">
-        <div class="container">
-          <span class="m1-section__label mono">EVIDENCE — BỘ THẺ MANH MỐI</span>
-          <h2 class="m1-section__title">Khám phá &amp; ghép cụm</h2>
-          <p class="m1-section__desc">
+      <section className="m1-section" id="m1-cards">
+        <div className="container">
+          <span className="m1-section__label mono">EVIDENCE — BỘ THẺ MANH MỐI</span>
+          <h2 className="m1-section__title">Khám phá &amp; ghép cụm</h2>
+          <p className="m1-section__desc">
             Mở từng thẻ để xem chi tiết. Chọn các thẻ liên quan để tạo thành một cụm lịch sử.
             Mỗi cụm phải có ít nhất <strong>1 thẻ B (Time Fragments)</strong> làm mốc neo.
           </p>
 
-          <div class="m1-tabs" role="tablist">
+          <div className="m1-tabs" role="tablist">
             {M1_GROUPS.map(g => (
               <button
                 key={g.id}
-                class={`m1-tab ${activeTabGroup === g.id ? 'is-active' : ''}`}
+                className={`m1-tab ${activeTabGroup === g.id ? 'is-active' : ''}`}
                 onClick={() => setActiveTabGroup(g.id)}
               >
                 <span>{g.icon}</span> <span>{g.short} ({g.count})</span>
@@ -222,24 +222,24 @@ export default function Mission1Page() {
             ))}
           </div>
 
-          <div class="m1-cards">
+          <div className="m1-cards">
             {currentGroupCards.map(c => {
               const isSelectedInSlot = currentSlots.some(s => s.id === c.id);
               return (
                 <div
                   key={c.id}
-                  class={`m1-card ${isSelectedInSlot ? 'is-selected' : ''}`}
+                  className={`m1-card ${isSelectedInSlot ? 'is-selected' : ''}`}
                   onClick={() => handleOpenCard(c)}
                 >
-                  <div class="m1-card__inner">
-                    <div class="m1-card__badge" style={{ background: M1_GROUPS.find(g => g.id === c.group)?.color }}>
+                  <div className="m1-card__inner">
+                    <div className="m1-card__badge" style={{ background: M1_GROUPS.find(g => g.id === c.group)?.color }}>
                       {c.id}
                     </div>
-                    <img src={c.coverImage} alt={c.alt} class="m1-card__cover" />
-                    <div class="m1-card__footer">
-                      <span class="m1-card__teaser">{c.teaser}</span>
+                    <img src={c.coverImage} alt={c.alt} className="m1-card__cover" />
+                    <div className="m1-card__footer">
+                      <span className="m1-card__teaser">{c.teaser}</span>
                       <button
-                        class="btn-sm btn--outline"
+                        className="btn-sm btn--outline"
                         style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                         onClick={(e) => { e.stopPropagation(); handleSelectCardForCluster(c); }}
                       >
@@ -255,30 +255,30 @@ export default function Mission1Page() {
       </section>
 
       {/* WORKSPACE CỤM MANH MỐI */}
-      <section class="m1-section m1-section--light" id="m1-clusters">
-        <div class="container">
-          <span class="m1-section__label mono">CLUSTERS — CỤM MANH MỐI</span>
-          <h2 class="m1-section__title">Cụm của bạn</h2>
+      <section className="m1-section m1-section--light" id="m1-clusters">
+        <div className="container">
+          <span className="m1-section__label mono">CLUSTERS — CỤM MANH MỐI</span>
+          <h2 className="m1-section__title">Cụm của bạn</h2>
 
-          <div class="m1-cluster-current">
-            <div class="m1-cluster-current__head">
-              <span class="m1-cluster-current__title">Cụm đang chọn</span>
-              <button class="m1-cluster-current__clear" type="button" onClick={handleClearCurrentCluster}>
+          <div className="m1-cluster-current">
+            <div className="m1-cluster-current__head">
+              <span className="m1-cluster-current__title">Cụm đang chọn</span>
+              <button className="m1-cluster-current__clear" type="button" onClick={handleClearCurrentCluster}>
                 Xoá hết
               </button>
             </div>
-            <div class="m1-cluster-current__slots">
+            <div className="m1-cluster-current__slots">
               {currentSlots.length === 0 ? (
                 <p style={{ color: 'var(--clr-ink-3)', fontSize: '0.9rem', width: '100%', textAlign: 'center', padding: '16px' }}>
                   Nhấn vào nút "+ Ghép cụm" trên các thẻ để thêm vào cụm này.
                 </p>
               ) : (
                 currentSlots.map(c => (
-                  <div key={c.id} class="m1-slot-card">
-                    <span class="m1-slot-card__id">{c.id}</span>
-                    <span class="m1-slot-card__name">{c.teaser}</span>
+                  <div key={c.id} className="m1-slot-card">
+                    <span className="m1-slot-card__id">{c.id}</span>
+                    <span className="m1-slot-card__name">{c.teaser}</span>
                     <button
-                      class="m1-slot-card__remove"
+                      className="m1-slot-card__remove"
                       onClick={() => handleSelectCardForCluster(c)}
                     >&times;</button>
                   </div>
@@ -286,7 +286,7 @@ export default function Mission1Page() {
               )}
             </div>
             <button
-              class="btn btn--gold m1-cluster-current__confirm"
+              className="btn btn--gold m1-cluster-current__confirm"
               type="button"
               disabled={!hasGroupB || currentSlots.length === 0}
               onClick={handleConfirmCluster}
@@ -295,20 +295,20 @@ export default function Mission1Page() {
             </button>
           </div>
 
-          <h3 class="m1-clusters-list__title" style={{ marginTop: '32px' }}>
+          <h3 className="m1-clusters-list__title" style={{ marginTop: '32px' }}>
             Các cụm đã lưu ({savedClusters.length})
           </h3>
-          <div class="m1-clusters-list">
+          <div className="m1-clusters-list">
             {savedClusters.length === 0 ? (
               <p style={{ color: 'var(--clr-ink-3)', padding: '16px 0' }}>Chưa có cụm nào được lưu.</p>
             ) : (
               savedClusters.map((cluster, idx) => (
-                <div key={idx} class="m1-cluster-item" style={{ background: '#FFFFFF', padding: '16px', borderRadius: '8px', border: '1px solid var(--clr-line)', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <div key={idx} className="m1-cluster-item" style={{ background: '#FFFFFF', padding: '16px', borderRadius: '8px', border: '1px solid var(--clr-line)', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <strong>Cụm #{idx + 1}:</strong>{' '}
                     {cluster.map(c => `${c.id} (${c.teaser})`).join(', ')}
                   </div>
-                  <button class="btn-sm btn-reject" onClick={() => handleRemoveCluster(idx)}>Xoá cụm</button>
+                  <button className="btn-sm btn-reject" onClick={() => handleRemoveCluster(idx)}>Xoá cụm</button>
                 </div>
               ))
             )}
@@ -317,14 +317,14 @@ export default function Mission1Page() {
       </section>
 
       {/* SẢN PHẨM CẦN NỘP */}
-      <section class="m1-section">
-        <div class="container">
-          <span class="m1-section__label mono">OUTPUTS — SẢN PHẨM</span>
-          <h2 class="m1-section__title">Sản phẩm cần nộp</h2>
-          <div class="m1-outputs">
+      <section className="m1-section">
+        <div className="container">
+          <span className="m1-section__label mono">OUTPUTS — SẢN PHẨM</span>
+          <h2 className="m1-section__title">Sản phẩm cần nộp</h2>
+          <div className="m1-outputs">
             {M1_CONFIG.outputs.map((out, i) => (
-              <div key={i} class="m1-output-card" style={{ background: '#FFFFFF', padding: '24px', borderRadius: '8px', border: '1px solid var(--clr-line)', marginBottom: '16px' }}>
-                <span class="mono" style={{ color: 'var(--clr-blue)', fontWeight: 600 }}>SẢN PHẨM {out.code}</span>
+              <div key={i} className="m1-output-card" style={{ background: '#FFFFFF', padding: '24px', borderRadius: '8px', border: '1px solid var(--clr-line)', marginBottom: '16px' }}>
+                <span className="mono" style={{ color: 'var(--clr-blue)', fontWeight: 600 }}>SẢN PHẨM {out.code}</span>
                 <h3 style={{ fontSize: '1.2rem', margin: '8px 0' }}>{out.name}</h3>
                 <p style={{ color: 'var(--clr-ink-2)', fontSize: '0.95rem', marginBottom: '8px' }}><strong>Yêu cầu:</strong> {out.requirement}</p>
                 <p style={{ color: 'var(--clr-ink-3)', fontSize: '0.85rem' }}><strong>Định dạng:</strong> {out.format}</p>
@@ -336,13 +336,13 @@ export default function Mission1Page() {
 
       {/* BÀI CỦA TÔI */}
       {userSubmission && (
-        <section class="m1-section m1-section--light" id="m1-my-submission">
-          <div class="container">
-            <span class="m1-section__label mono">MY SUBMISSION</span>
-            <h2 class="m1-section__title">Bài của tôi</h2>
+        <section className="m1-section m1-section--light" id="m1-my-submission">
+          <div className="container">
+            <span className="m1-section__label mono">MY SUBMISSION</span>
+            <h2 className="m1-section__title">Bài của tôi</h2>
             <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '8px', border: '1px solid var(--clr-line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span class={`status-badge ${getSubmissionStatus(userSubmission).cls}`}>
+                <span className={`status-badge ${getSubmissionStatus(userSubmission).cls}`}>
                   {getSubmissionStatus(userSubmission).label}
                 </span>
                 <span style={{ fontSize: '0.85rem', color: 'var(--clr-ink-3)' }}>
@@ -351,7 +351,7 @@ export default function Mission1Page() {
               </div>
               {userSubmission.file_url && (
                 <div style={{ marginBottom: '12px' }}>
-                  <a href={userSubmission.file_url} target="_blank" rel="noopener noreferrer" class="btn btn--gold">
+                  <a href={userSubmission.file_url} target="_blank" rel="noopener noreferrer" className="btn btn--gold">
                     📄 Xem file đã nộp →
                   </a>
                 </div>
@@ -373,11 +373,11 @@ export default function Mission1Page() {
 
       {/* ADMIN SUBMISSIONS LINK */}
       {currentUser && currentUser.role === 'admin' && (
-        <section class="m1-section m1-section--light">
-          <div class="container">
-            <span class="m1-section__label mono">ADMIN — MISSION 01 SUBMISSIONS</span>
-            <h2 class="m1-section__title">Xem tất cả bài dự thi</h2>
-            <Link to="/mission-1/all-submissions" class="btn btn--gold">
+        <section className="m1-section m1-section--light">
+          <div className="container">
+            <span className="m1-section__label mono">ADMIN — MISSION 01 SUBMISSIONS</span>
+            <h2 className="m1-section__title">Xem tất cả bài dự thi</h2>
+            <Link to="/mission-1/all-submissions" className="btn btn--gold">
               Xem toàn bộ bài dự thi Mission 01 →
             </Link>
           </div>
@@ -385,19 +385,19 @@ export default function Mission1Page() {
       )}
 
       {/* FORM NỘP BÀI */}
-      <section class="m1-section m1-section--cta" id="m1-submit">
-        <div class="container">
-          <div class="m1-submit__inner">
-            <span class="m1-section__label mono">SUBMIT — NỘP BÀI</span>
-            <h2 class="m1-submit__title">Nộp bài Mission 01</h2>
+      <section className="m1-section m1-section--cta" id="m1-submit">
+        <div className="container">
+          <div className="m1-submit__inner">
+            <span className="m1-section__label mono">SUBMIT — NỘP BÀI</span>
+            <h2 className="m1-submit__title">Nộp bài Mission 01</h2>
 
             {!currentUser ? (
-              <div class="m1-submit__status m1-submit__status--info">
+              <div className="m1-submit__status m1-submit__status--info">
                 Bạn cần <Link to="/login" style={{ textDecoration: 'underline', fontWeight: 600 }}>Đăng nhập</Link> để nộp bài Mission 01.
               </div>
             ) : (
-              <form class="m1-submit__form" onSubmit={handleSubmitForm}>
-                <div class="form-group">
+              <form className="m1-submit__form" onSubmit={handleSubmitForm}>
+                <div className="form-group">
                   <label htmlFor="m1File">File đính kèm (PDF / DOCX / ảnh, tối đa 10 MB)</label>
                   <input
                     type="file"
@@ -406,7 +406,7 @@ export default function Mission1Page() {
                     onChange={(e) => setFile(e.target.files[0])}
                   />
                 </div>
-                <div class="form-group">
+                <div className="form-group">
                   <label htmlFor="m1Note">Ghi chú (tuỳ chọn)</label>
                   <textarea
                     id="m1Note"
@@ -415,8 +415,8 @@ export default function Mission1Page() {
                     onChange={(e) => setNote(e.target.value)}
                   ></textarea>
                 </div>
-                {formError && <div class="form-error" style={{ color: '#C25B5B', marginBottom: '16px' }}>{formError}</div>}
-                <button type="submit" class="btn btn--gold btn--large" style={{ width: '100%' }} disabled={submitting}>
+                {formError && <div className="form-error" style={{ color: '#C25B5B', marginBottom: '16px' }}>{formError}</div>}
+                <button type="submit" className="btn btn--gold btn--large" style={{ width: '100%' }} disabled={submitting}>
                   {submitting ? 'Đang gửi...' : userSubmission ? 'Nộp lại / Cập nhật bài nộp →' : 'Nộp bài Mission 01 →'}
                 </button>
               </form>
@@ -427,13 +427,13 @@ export default function Mission1Page() {
 
       {/* CARD MODAL */}
       {isCardModalOpen && selectedCard && (
-        <div class="m1-modal is-open" role="dialog" aria-modal="true">
-          <div class="m1-modal__backdrop" onClick={handleCloseCardModal}></div>
-          <div class="m1-modal__panel">
-            <button class="m1-modal__close" onClick={handleCloseCardModal} aria-label="Đóng">&times;</button>
-            <div class="m1-modal__content">
+        <div className="m1-modal is-open" role="dialog" aria-modal="true">
+          <div className="m1-modal__backdrop" onClick={handleCloseCardModal}></div>
+          <div className="m1-modal__panel">
+            <button className="m1-modal__close" onClick={handleCloseCardModal} aria-label="Đóng">&times;</button>
+            <div className="m1-modal__content">
               <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <span class="mono" style={{ color: 'var(--clr-blue)', fontSize: '0.8rem', fontWeight: 600 }}>
+                <span className="mono" style={{ color: 'var(--clr-blue)', fontSize: '0.8rem', fontWeight: 600 }}>
                   {selectedCard.id} · GROUP {selectedCard.group}
                 </span>
                 <h3 style={{ fontSize: '1.4rem', marginTop: '4px' }}>{selectedCard.teaser}</h3>
@@ -444,7 +444,7 @@ export default function Mission1Page() {
               </p>
               <div style={{ marginTop: '20px', textAlign: 'right' }}>
                 <button
-                  class="btn btn--gold"
+                  className="btn btn--gold"
                   onClick={() => {
                     handleSelectCardForCluster(selectedCard);
                     handleCloseCardModal();
@@ -460,7 +460,7 @@ export default function Mission1Page() {
 
       {/* TOAST */}
       {toastMsg.text && (
-        <div id="m1Toast" class={`m1-toast is-visible ${toastMsg.type ? 'm1-toast--' + toastMsg.type : ''}`} role="status">
+        <div id="m1Toast" className={`m1-toast is-visible ${toastMsg.type ? 'm1-toast--' + toastMsg.type : ''}`} role="status">
           {toastMsg.text}
         </div>
       )}

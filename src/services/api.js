@@ -1,5 +1,5 @@
 /* ============================================================
-   API SERVICE FOR SPRING BOOT BACKEND & MOCK FALLBACK
+   API SERVICE FOR SPRING BOOT BACKEND (+ optional mock mode)
    ============================================================ */
 
 import { mockApi } from './mockApi';
@@ -8,16 +8,12 @@ import { CONFIG } from '../data/appData';
 const rawApiBase = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '');
 const API_BASE = rawApiBase.endsWith('/api') ? rawApiBase : `${rawApiBase}/api`;
 
-/**
- * Helper to get Auth Header
- */
-function getAuthHeaders() {
-  const token = localStorage.getItem('token');
-  if (token) {
-    return { 'Authorization': `Bearer ${token}` };
-  }
-  return {};
-}
+const LS_TOKEN = 'token';
+const LS_REFRESH = 'refreshToken';
+const LS_USER = 'user';
+
+const NETWORK_ERROR_MSG = 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng và thử lại.';
+const SESSION_EXPIRED_MSG = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
 
 /**
  * Normalizes user data from backend AuthResponse or Employee entity
@@ -37,17 +33,13 @@ function normalizeUser(raw, token) {
 }
 
 /**
- * Helper to resolve relative backend file download URLs to full API_BASE URLs
+ * Resolve relative backend file download URLs to full API_BASE URLs
  */
 function resolveFileUrl(url) {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/api/')) {
-    return `${API_BASE}${url.substring(4)}`;
-  }
-  if (url.startsWith('/')) {
-    return `${API_BASE}${url}`;
-  }
+  if (url.startsWith('/api/')) return `${API_BASE}${url.substring(4)}`;
+  if (url.startsWith('/')) return `${API_BASE}${url}`;
   return `${API_BASE}/${url}`;
 }
 
@@ -57,11 +49,7 @@ function resolveFileUrl(url) {
 function normalizeSubmission(s) {
   if (!s) return null;
   const rawStatus = (s.status || 'PENDING').toLowerCase();
-  let mappedStatus = rawStatus;
-  if (rawStatus === 'valid') mappedStatus = 'valid';
-  else if (rawStatus === 'invalid') mappedStatus = 'invalid';
-  else if (rawStatus === 'needs_supplement') mappedStatus = 'needs_supplement';
-  else mappedStatus = 'pending';
+  const mappedStatus = ['valid', 'invalid', 'needs_supplement'].includes(rawStatus) ? rawStatus : 'pending';
 
   const attachments = Array.isArray(s.attachments) && s.attachments.length > 0
     ? s.attachments.map(att => ({
@@ -70,25 +58,36 @@ function normalizeSubmission(s) {
         fileUrl: resolveFileUrl(att.fileUrl || att.url),
         fileSize: att.fileSizeBytes || att.size
       }))
-    : (s.fileUrls && s.fileUrls.length > 0)
-      ? s.fileUrls.map((url, idx) => ({ id: idx, fileName: `Attachment_${idx + 1}`, fileUrl: resolveFileUrl(url) }))
-      : (s.file_url ? [{ id: 1, fileName: 'Attachment_1', fileUrl: resolveFileUrl(s.file_url) }] : []);
-
-  const fileUrl = attachments.length > 0 ? attachments[0].fileUrl : (s.file_url ? resolveFileUrl(s.file_url) : null);
+    : (s.file_url ? [{ id: 1, fileName: 'Attachment_1', fileUrl: resolveFileUrl(s.file_url) }] : []);
 
   return {
     id: s.id,
     user_id: s.employeeId || s.user_id,
     mission_id: Number(s.missionId || s.mission_id),
-    user_name: s.employeeFullName || s.user_name || s.fullName || '—',
+    user_name: s.fullName || s.user_name || '—',
     user_unit: s.unitName || s.user_unit || s.unitCode || '—',
-    user_email: s.employeeEmail || s.user_email || s.email || '—',
-    file_url: fileUrl,
-    attachments: attachments,
+    user_email: s.email || s.user_email || '—',
+    file_url: attachments.length > 0 ? attachments[0].fileUrl : null,
+    attachments,
     note: s.longTextAnswer || s.evidenceSource || s.note || '',
-    submitted_at: s.createdAt || s.submissionTime || s.submitted_at || new Date().toISOString(),
+    evidenceSource: s.evidenceSource || '',
+    witnessName: s.witnessName || '',
+    submitted_at: s.lastUpdatedAt || s.submissionTime || s.submitted_at || null,
     score: s.score != null ? s.score : null,
-    status: mappedStatus
+    status: mappedStatus,
+    reopened: rawStatus === 'reopened'
+  };
+}
+
+function normalizeMission(m) {
+  return {
+    id: m.id,
+    code: m.code,
+    title: m.title || `Mission ${m.id}`,
+    description: m.description || '',
+    status: m.isOpen ? 'available' : 'locked',
+    open_at: m.startTime || null,
+    close_at: m.endTime || null
   };
 }
 
@@ -96,15 +95,17 @@ export const auth = {
   user: null,
 
   async load() {
-    const savedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(LS_TOKEN);
     if (!token) return null;
 
+    const savedUser = localStorage.getItem(LS_USER);
     if (savedUser) {
       try {
         this.user = JSON.parse(savedUser);
         return this.user;
-      } catch (e) {}
+      } catch {
+        // fall through
+      }
     }
 
     try {
@@ -116,43 +117,112 @@ export const auth = {
     }
   },
 
-  setSession(token, user) {
+  setSession(token, user, refreshToken) {
     const normalized = normalizeUser(user, token);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(normalized));
+    localStorage.setItem(LS_TOKEN, token);
+    if (refreshToken) localStorage.setItem(LS_REFRESH, refreshToken);
+    localStorage.setItem(LS_USER, JSON.stringify(normalized));
     this.user = normalized;
   },
 
   clear() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_REFRESH);
+    localStorage.removeItem(LS_USER);
     this.user = null;
   },
 
   isLoggedIn() { return !!this.user; },
-  isAdmin() { return this.user && this.user.role === 'admin'; },
+  isAdmin() { return !!this.user && this.user.role === 'admin'; },
 
   async logout() {
-    if (this.user && this.user.email) {
-      try {
-        await logoutApi(this.user.email);
-      } catch (e) {}
+    try {
+      await logoutApi();
+    } catch {
+      // ignore: session is cleared locally anyway
     }
     this.clear();
   }
 };
 
+/* ------------------------------------------------------------
+   HTTP helpers
+   ------------------------------------------------------------ */
+
+let refreshPromise = null;
+
 /**
- * Helper to handle fetch responses & preserve exact Backend Error messages
+ * Exchange the stored refresh token for a new access token (single-flight).
+ */
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem(LS_REFRESH);
+  if (!refreshToken) return false;
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken })
+        });
+        if (!res.ok) return false;
+        const json = await res.json();
+        const data = json.data;
+        auth.setSession(data.accessToken || data.token, data, data.refreshToken);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        setTimeout(() => { refreshPromise = null; }, 0);
+      }
+    })();
+  }
+  return refreshPromise;
+}
+
+/**
+ * fetch() with Authorization header and one automatic token refresh on 401.
+ */
+async function authFetch(path, options = {}, { retry = true } = {}) {
+  const token = localStorage.getItem(LS_TOKEN);
+  const headers = { ...(options.headers || {}) };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  } catch {
+    const err = new Error(NETWORK_ERROR_MSG);
+    err.isNetworkError = true;
+    throw err;
+  }
+
+  if (res.status === 401 && token && retry) {
+    if (await refreshAccessToken()) {
+      return authFetch(path, options, { retry: false });
+    }
+    auth.clear();
+    const err = new Error(SESSION_EXPIRED_MSG);
+    err.status = 401;
+    throw err;
+  }
+  return res;
+}
+
+/**
+ * Parse JSON body and throw an Error carrying the backend message on non-2xx.
  */
 async function parseBackendResponse(res) {
   let json = {};
   try {
     json = await res.json();
-  } catch (e) {}
+  } catch {
+    // empty / non-JSON body
+  }
 
   if (!res.ok) {
-    const msg = json.message || json.error || (typeof json.data === 'string' ? json.data : null) || `Yêu cầu thất bại (Mã lỗi ${res.status})`;
+    const msg = json.message || json.error || `Yêu cầu thất bại (Mã lỗi ${res.status})`;
     const err = new Error(msg);
     err.status = res.status;
     err.isBackendError = true;
@@ -161,33 +231,23 @@ async function parseBackendResponse(res) {
   return json;
 }
 
-function handleApiError(err, mockFallbackFn) {
-  if (err && err.isBackendError) {
-    throw err;
-  }
-  if (typeof mockFallbackFn === 'function') {
-    return mockFallbackFn();
-  }
-  throw err;
+async function request(path, options = {}) {
+  const res = await authFetch(path, options);
+  return parseBackendResponse(res);
 }
+
+/* ------------------------------------------------------------
+   Auth & registration
+   ------------------------------------------------------------ */
 
 /**
  * Đăng xuất tài khoản (POST /api/auth/logout)
  */
-export async function logoutApi(email = '') {
+export async function logoutApi() {
   if (CONFIG.USE_MOCK) return { message: 'Đăng xuất thành công' };
-
-  try {
-    const res = await fetch(`${API_BASE}/auth/logout?email=${encodeURIComponent(email)}`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    });
-    const json = await res.json();
-    return json;
-  } catch (err) {
-    console.warn('[API] Logout call warning:', err.message);
-    return { message: 'Đăng xuất thành công' };
-  }
+  if (!localStorage.getItem(LS_TOKEN)) return { message: 'Đăng xuất thành công' };
+  const res = await authFetch('/auth/logout', { method: 'POST' }, { retry: false });
+  return parseBackendResponse(res);
 }
 
 /**
@@ -195,16 +255,7 @@ export async function logoutApi(email = '') {
  */
 export async function sendOtpApi(email) {
   if (CONFIG.USE_MOCK) return mockApi.sendOtp(email);
-
-  try {
-    const res = await fetch(`${API_BASE}/auth/send-otp?email=${encodeURIComponent(email)}`, {
-      method: 'POST'
-    });
-    const json = await parseBackendResponse(res);
-    return json;
-  } catch (err) {
-    return handleApiError(err, () => mockApi.sendOtp(email));
-  }
+  return request(`/auth/send-otp?email=${encodeURIComponent(email)}`, { method: 'POST' });
 }
 
 /**
@@ -212,20 +263,12 @@ export async function sendOtpApi(email) {
  */
 export async function verifyOtpApi(email, otpCode) {
   if (CONFIG.USE_MOCK) return mockApi.verifyOtp(email, otpCode);
-
-  try {
-    const res = await fetch(`${API_BASE}/auth/verify-otp?email=${encodeURIComponent(email)}&otpCode=${encodeURIComponent(otpCode)}`, {
-      method: 'POST'
-    });
-    const json = await parseBackendResponse(res);
-    return json;
-  } catch (err) {
-    return handleApiError(err, () => mockApi.verifyOtp(email, otpCode));
-  }
+  return request(`/auth/verify-otp?email=${encodeURIComponent(email)}&otpCode=${encodeURIComponent(otpCode)}`, { method: 'POST' });
 }
 
 /**
- * Đăng ký tài khoản nhân viên (POST /api/employees/register)
+ * Đăng ký tài khoản nhân viên (POST /api/employees/register).
+ * Email phải được xác thực OTP (verifyOtpApi) ngay trước đó.
  */
 export async function registerEmployeeApi(payload) {
   const unitMap = {
@@ -243,28 +286,33 @@ export async function registerEmployeeApi(payload) {
 
   if (CONFIG.USE_MOCK) return mockApi.register({ ...payload, unitCode });
 
-  try {
-    const res = await fetch(`${API_BASE}/employees/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fullName: payload.fullName || payload.full_name,
-        email: payload.email,
-        employeeCode: payload.employeeCode || payload.employee_id,
-        unitCode: unitCode,
-        emailVerified: payload.emailVerified !== undefined ? payload.emailVerified : true
-      })
-    });
-
-    const json = await parseBackendResponse(res);
-    return json.data || { email: payload.email, message: json.message || 'Đăng ký thành công, chờ admin duyệt' };
-  } catch (err) {
-    return handleApiError(err, () => mockApi.register({ ...payload, unitCode }));
-  }
+  const json = await request('/employees/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fullName: payload.fullName || payload.full_name,
+      email: payload.email,
+      employeeCode: payload.employeeCode || payload.employee_id,
+      unitCode
+    })
+  });
+  return json.data || { email: payload.email, message: json.message };
 }
 
 /**
- * Nộp bài Mission chi tiết với đa tệp
+ * Quên mật khẩu: cần mã OTP đã gửi tới email (POST /api/auth/forgot-password)
+ */
+export async function forgotPasswordApi(email, otpCode) {
+  if (CONFIG.USE_MOCK) return { message: `Mật khẩu mới đã được gửi về email ${email}` };
+  return request(`/auth/forgot-password?email=${encodeURIComponent(email)}&otpCode=${encodeURIComponent(otpCode)}`, { method: 'POST' });
+}
+
+/* ------------------------------------------------------------
+   Submissions
+   ------------------------------------------------------------ */
+
+/**
+ * Nộp bài Mission chi tiết với đa tệp. Người nộp được xác định từ JWT phía backend.
  */
 export async function submitMissionResponseApi(payload, files = []) {
   if (CONFIG.USE_MOCK) {
@@ -275,75 +323,16 @@ export async function submitMissionResponseApi(payload, files = []) {
     });
   }
 
-  try {
-    const formData = new FormData();
-    formData.append('submission', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
-    if (files && files.length > 0) {
-      files.forEach(f => formData.append('files', f));
-    }
+  const formData = new FormData();
+  formData.append('submission', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  (files || []).forEach(f => formData.append('files', f));
 
-    const res = await fetch(`${API_BASE}/submissions`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData
-    });
-
-    const json = await parseBackendResponse(res);
-    return json.data || { message: 'Nộp bài thành công!' };
-  } catch (err) {
-    return handleApiError(err, () => {
-      const user = auth.user;
-      return mockApi.submitMission(payload.missionId, user ? user.id : 1, {
-        note: payload.longTextAnswer || payload.evidenceSource || '',
-        file: files.length > 0 ? files[0] : null
-      });
-    });
-  }
+  const json = await request('/submissions', { method: 'POST', body: formData });
+  return json.data || { message: 'Nộp bài thành công!' };
 }
 
 export async function fetchAllSubmissionsApi() {
   return api.getAllSubmissions();
-}
-
-export async function fetchAllEmployeesApi() {
-  if (CONFIG.USE_MOCK) return mockApi.getPendingUsers();
-  try {
-    const res = await fetch(`${API_BASE}/employees`, { headers: getAuthHeaders() });
-    const json = await res.json();
-    if (res.ok && Array.isArray(json.data)) return json.data;
-    return mockApi.getPendingUsers();
-  } catch (err) {
-    return mockApi.getPendingUsers();
-  }
-}
-
-export async function fetchRuleConfigApi() {
-  if (CONFIG.USE_MOCK) return { ruleType: 'MIN_COMPLETED_MISSIONS', configValue: '1' };
-  try {
-    const res = await fetch(`${API_BASE}/rule-config/valid-participant`, { headers: getAuthHeaders() });
-    const json = await res.json();
-    if (res.ok && json.data) return json.data;
-    return { ruleType: 'MIN_COMPLETED_MISSIONS', configValue: '1' };
-  } catch (err) {
-    return { ruleType: 'MIN_COMPLETED_MISSIONS', configValue: '1' };
-  }
-}
-
-export async function updateRuleConfigApi(data) {
-  if (CONFIG.USE_MOCK) return data;
-  try {
-    const res = await fetch(`${API_BASE}/rule-config/valid-participant`, {
-      method: 'PUT',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Lỗi khi cập nhật quy tắc');
-    return json.data;
-  } catch (err) {
-    console.warn('[API] Real backend update rule failed:', err.message);
-    return data;
-  }
 }
 
 export async function updateSubmissionStatusApi(subId, newStatus) {
@@ -352,396 +341,226 @@ export async function updateSubmissionStatusApi(subId, newStatus) {
 
 export async function reopenSubmissionApi(subId) {
   if (CONFIG.USE_MOCK) return mockApi.scoreSubmission(subId, { status: 'reopened' });
-  try {
-    const res = await fetch(`${API_BASE}/submissions/${subId}/reopen`, {
-      method: 'PUT',
-      headers: getAuthHeaders()
-    });
-    const json = await parseBackendResponse(res);
-    return json.data;
-  } catch (err) {
-    return handleApiError(err, () => mockApi.scoreSubmission(subId, { status: 'reopened' }));
-  }
+  const json = await request(`/submissions/${subId}/reopen`, { method: 'PUT' });
+  return json.data;
 }
 
-export async function forgotPasswordApi(email) {
-  if (CONFIG.USE_MOCK) return { message: `Mật khẩu mới đã được gửi về email ${email}` };
-  try {
-    const res = await fetch(`${API_BASE}/auth/forgot-password?email=${encodeURIComponent(email)}`, {
-      method: 'POST'
-    });
-    const json = await parseBackendResponse(res);
-    return json;
-  } catch (err) {
-    return handleApiError(err, () => ({ message: `Mật khẩu mới đã được gửi về email ${email}` }));
-  }
+/* ------------------------------------------------------------
+   Admin helpers
+   ------------------------------------------------------------ */
+
+export async function fetchAllEmployeesApi() {
+  return api.getPendingUsers();
+}
+
+export async function fetchRuleConfigApi() {
+  if (CONFIG.USE_MOCK) return { ruleType: 'MIN_COMPLETED_MISSIONS', configValue: '1' };
+  const json = await request('/rule-config/valid-participant');
+  return json.data;
+}
+
+export async function updateRuleConfigApi(data) {
+  if (CONFIG.USE_MOCK) return data;
+  const json = await request('/rule-config/valid-participant', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return json.data;
 }
 
 export async function getUnitsApi() {
   if (CONFIG.USE_MOCK) return CONFIG.UNITS;
-  try {
-    const res = await fetch(`${API_BASE}/employees/units`);
-    const json = await res.json();
-    if (res.ok && Array.isArray(json.data)) return json.data;
-    return CONFIG.UNITS;
-  } catch (err) {
-    return CONFIG.UNITS;
-  }
+  const json = await request('/employees/units');
+  return Array.isArray(json.data) ? json.data : [];
 }
 
 export async function toggleMissionStatusApi(id, isOpen) {
   if (CONFIG.USE_MOCK) return { id, isOpen };
-  try {
-    const res = await fetch(`${API_BASE}/missions/${id}/toggle?isOpen=${isOpen}`, {
-      method: 'PUT',
-      headers: getAuthHeaders()
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Lỗi cập nhật trạng thái Mission');
-    return json.data;
-  } catch (err) {
-    return { id, isOpen };
-  }
+  const json = await request(`/missions/${id}/toggle?isOpen=${isOpen}`, { method: 'PUT' });
+  return json.data;
 }
 
+/* ------------------------------------------------------------
+   Main API object used by pages
+   ------------------------------------------------------------ */
+
 export const api = {
-  /**
-   * Đăng ký nhân sự mới
-   */
   async register(payload) {
     return registerEmployeeApi(payload);
   },
 
   /**
-   * Đăng nhập (Spring Boot POST /api/auth/login)
+   * Đăng nhập (POST /api/auth/login)
    */
   async login(emailOrCode, password) {
     if (CONFIG.USE_MOCK) return mockApi.login(emailOrCode, password);
 
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          usernameOrEmail: emailOrCode,
-          password: password
-        })
-      });
-
-      const json = await parseBackendResponse(res);
-      const authData = json.data;
-      const user = normalizeUser(authData, authData.accessToken || authData.token);
-      return { token: user.token, user };
-    } catch (err) {
-      return handleApiError(err, () => mockApi.login(emailOrCode, password));
-    }
+    const json = await request('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameOrEmail: emailOrCode, password })
+    });
+    const authData = json.data;
+    const user = normalizeUser(authData, authData.accessToken || authData.token);
+    return { token: user.token, refreshToken: authData.refreshToken, user };
   },
 
   /**
-   * Lấy thông tin user hiện tại
+   * Thông tin user hiện tại (lưu trong localStorage sau khi đăng nhập)
    */
   async me() {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const token = localStorage.getItem(LS_TOKEN);
     if (!token) throw new Error('Chưa đăng nhập');
-
     if (CONFIG.USE_MOCK) return mockApi.me(token);
 
-    if (savedUser) {
-      try {
-        return JSON.parse(savedUser);
-      } catch (e) {}
-    }
-    return mockApi.me(token);
+    const savedUser = localStorage.getItem(LS_USER);
+    if (savedUser) return JSON.parse(savedUser);
+    throw new Error('Chưa đăng nhập');
   },
 
   /**
-   * Lấy danh sách Mission (Spring Boot GET /api/missions)
+   * Danh sách Mission (GET /api/missions)
    */
   async getMissions() {
     if (CONFIG.USE_MOCK) return mockApi.getMissions();
-
-    try {
-      const res = await fetch(`${API_BASE}/missions`, {
-        headers: getAuthHeaders()
-      });
-      const json = await res.json();
-      if (res.ok && Array.isArray(json.data) && json.data.length > 0) {
-        return json.data.map(m => ({
-          id: m.id,
-          title: m.title || `Mission ${m.id}`,
-          description: m.description || '',
-          status: m.isOpen ? 'available' : 'locked',
-          open_at: m.openAt,
-          close_at: m.dueAt
-        }));
-      }
-      return mockApi.getMissions();
-    } catch (err) {
-      console.warn('[API] Real backend fetch missions failed, using mock:', err.message);
-      return mockApi.getMissions();
-    }
+    const json = await request('/missions');
+    return Array.isArray(json.data) ? json.data.map(normalizeMission) : [];
   },
 
   /**
-   * Lấy chi tiết Mission theo ID
+   * Chi tiết Mission theo ID
    */
   async getMission(id) {
     if (CONFIG.USE_MOCK) return mockApi.getMission(id);
-
-    try {
-      const res = await fetch(`${API_BASE}/missions/${id}`, {
-        headers: getAuthHeaders()
-      });
-      const json = await res.json();
-      if (res.ok && json.data) {
-        const m = json.data;
-        return {
-          id: m.id,
-          title: m.title,
-          description: m.description,
-          status: m.isOpen ? 'available' : 'locked',
-          open_at: m.openAt,
-          close_at: m.dueAt
-        };
-      }
-      return mockApi.getMission(id);
-    } catch (err) {
-      return mockApi.getMission(id);
-    }
+    const json = await request(`/missions/${id}`);
+    return normalizeMission(json.data);
   },
 
   /**
-   * Lấy danh sách bài nộp của user hiện tại (GET /api/submissions?employeeId=X)
+   * Bài nộp của user hiện tại (GET /api/submissions/me)
    */
   async getUserSubmissions() {
     const user = auth.user;
-    if (!user) return [];
-
+    if (!user || user.role === 'admin') return [];
     if (CONFIG.USE_MOCK) return mockApi.getUserSubmissions(user.id);
 
-    try {
-      const res = await fetch(`${API_BASE}/submissions?employeeId=${user.id}`, {
-        headers: getAuthHeaders()
-      });
-      const json = await res.json();
-      if (res.ok && Array.isArray(json.data)) {
-        return json.data.map(normalizeSubmission);
-      }
-      return mockApi.getUserSubmissions(user.id);
-    } catch (err) {
-      console.warn('[API] Real backend fetch user submissions failed, using mock:', err.message);
-      return mockApi.getUserSubmissions(user.id);
-    }
+    const json = await request('/submissions/me');
+    return Array.isArray(json.data) ? json.data.map(normalizeSubmission) : [];
   },
 
   /**
-   * Nộp bài Mission (Spring Boot POST /api/submissions Multipart)
+   * Nộp bài Mission (POST /api/submissions, multipart)
    */
   async submitMission(missionId, formDataOrPayload) {
     const user = auth.user;
     if (!user) throw new Error('Chưa đăng nhập');
 
+    let note = '';
+    const fileList = [];
+    if (formDataOrPayload instanceof FormData) {
+      note = formDataOrPayload.get('note') || '';
+      const f = formDataOrPayload.get('file');
+      if (f) fileList.push(f);
+    } else {
+      note = formDataOrPayload.note || '';
+    }
+
     if (CONFIG.USE_MOCK) {
-      let file = null;
-      let note = '';
-      if (formDataOrPayload instanceof FormData) {
-        file = formDataOrPayload.get('file');
-        note = formDataOrPayload.get('note') || '';
-      } else {
-        note = formDataOrPayload.note || '';
-      }
-      return mockApi.submitMission(missionId, user.id, { file, note });
+      return mockApi.submitMission(missionId, user.id, { file: fileList[0] || null, note });
     }
 
-    try {
-      let note = '';
-      let fileList = [];
-
-      if (formDataOrPayload instanceof FormData) {
-        note = formDataOrPayload.get('note') || '';
-        const f = formDataOrPayload.get('file');
-        if (f) fileList.push(f);
-      } else {
-        note = formDataOrPayload.note || '';
-      }
-
-      const submissionPayload = {
-        employeeId: user.id,
-        missionId: Number(missionId),
-        longTextAnswer: note,
-        evidenceSource: note,
-        witnessName: ''
-      };
-
-      const formData = new FormData();
-      formData.append('submission', new Blob([JSON.stringify(submissionPayload)], { type: 'application/json' }));
-      if (fileList.length > 0) {
-        fileList.forEach(file => formData.append('files', file));
-      }
-
-      const res = await fetch(`${API_BASE}/submissions`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: formData
-      });
-
-      const json = await parseBackendResponse(res);
-      return { message: 'Nộp bài thành công!' };
-    } catch (err) {
-      return handleApiError(err, () => {
-        let file = null;
-        let note = '';
-        if (formDataOrPayload instanceof FormData) {
-          file = formDataOrPayload.get('file');
-          note = formDataOrPayload.get('note') || '';
-        } else {
-          note = formDataOrPayload.note || '';
-        }
-        return mockApi.submitMission(missionId, user.id, { file, note });
-      });
-    }
+    await submitMissionResponseApi({
+      missionId: Number(missionId),
+      longTextAnswer: note,
+      evidenceSource: note,
+      witnessName: ''
+    }, fileList);
+    return { message: 'Nộp bài thành công!' };
   },
 
   /**
-   * Admin: Lấy danh sách nhân sự chờ duyệt (GET /api/employees status=PENDING)
+   * Admin: danh sách nhân sự (GET /api/employees)
    */
   async getPendingUsers() {
     if (CONFIG.USE_MOCK) return mockApi.getPendingUsers();
 
-    try {
-      const res = await fetch(`${API_BASE}/employees`, {
-        headers: getAuthHeaders()
-      });
-      const json = await res.json();
-      if (res.ok && Array.isArray(json.data)) {
-        return json.data.map(e => ({
-          id: e.id,
-          full_name: e.fullName || e.full_name,
-          email: e.email,
-          employee_id: e.employeeCode || e.employee_id,
-          unit: e.unit ? (e.unit.name || e.unit.code) : (e.unitName || e.unitCode || '—'),
-          approvalStatus: String(e.approvalStatus || e.status || 'PENDING').toUpperCase(),
-          status: (e.approvalStatus || e.status || 'PENDING').toLowerCase(),
-          created_at: e.createdAt || new Date().toISOString()
-        }));
-      }
-      return mockApi.getPendingUsers();
-    } catch (err) {
-      console.warn('[API] Real backend get pending users failed, using mock:', err.message);
-      return mockApi.getPendingUsers();
-    }
+    const json = await request('/employees');
+    return (Array.isArray(json.data) ? json.data : []).map(e => ({
+      id: e.id,
+      full_name: e.fullName || e.full_name,
+      email: e.email,
+      employee_id: e.employeeCode || e.employee_id,
+      unit: e.unit ? (e.unit.name || e.unit.code) : (e.unitName || e.unitCode || '—'),
+      approvalStatus: String(e.approvalStatus || e.status || 'PENDING').toUpperCase(),
+      status: String(e.approvalStatus || e.status || 'PENDING').toLowerCase(),
+      created_at: e.createdAt || null
+    }));
   },
 
   /**
-   * Admin: Duyệt nhân sự (PUT /api/employees/{id}/approve)
+   * Admin: duyệt nhân sự (PUT /api/employees/{id}/approve)
    */
   async approveUser(id) {
     if (CONFIG.USE_MOCK) return mockApi.approveUser(id);
-
-    try {
-      const res = await fetch(`${API_BASE}/employees/${id}/approve`, {
-        method: 'PUT',
-        headers: getAuthHeaders()
-      });
-      const json = await parseBackendResponse(res);
-      return { message: json.message || 'Phê duyệt tài khoản thành công!' };
-    } catch (err) {
-      return handleApiError(err, () => mockApi.approveUser(id));
-    }
+    const json = await request(`/employees/${id}/approve`, { method: 'PUT' });
+    return { message: json.message || 'Phê duyệt tài khoản thành công!' };
   },
 
   /**
-   * Admin: Từ chối nhân sự (DELETE /api/employees/{id}/reject)
+   * Admin: từ chối nhân sự (DELETE /api/employees/{id}/reject?reason=...)
    */
   async rejectUser(id, payload = {}) {
     if (CONFIG.USE_MOCK) return mockApi.rejectUser(id, payload.reason);
-
-    try {
-      const res = await fetch(`${API_BASE}/employees/${id}/reject`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-      const json = await parseBackendResponse(res);
-      return { message: 'Đã từ chối tài khoản thành công.' };
-    } catch (err) {
-      return handleApiError(err, () => mockApi.rejectUser(id, payload.reason));
-    }
+    const reason = payload.reason ? `?reason=${encodeURIComponent(payload.reason)}` : '';
+    await request(`/employees/${id}/reject${reason}`, { method: 'DELETE' });
+    return { message: 'Đã từ chối tài khoản thành công.' };
   },
 
   /**
-   * Admin: Lấy tất cả bài nộp (GET /api/submissions/all)
+   * Admin: tất cả bài nộp (GET /api/submissions/all)
    */
   async getAllSubmissions() {
     if (CONFIG.USE_MOCK) return mockApi.getAllSubmissions();
-
-    try {
-      const res = await fetch(`${API_BASE}/submissions/all`, {
-        headers: getAuthHeaders()
-      });
-      const json = await res.json();
-      if (res.ok && Array.isArray(json.data)) {
-        return json.data.map(normalizeSubmission);
-      }
-      return mockApi.getAllSubmissions();
-    } catch (err) {
-      console.warn('[API] Real backend get all submissions failed, using mock:', err.message);
-      return mockApi.getAllSubmissions();
-    }
+    const json = await request('/submissions/all');
+    return Array.isArray(json.data) ? json.data.map(normalizeSubmission) : [];
   },
 
   /**
-   * Admin: Chấm điểm & Đổi trạng thái bài nộp (PUT /api/submissions/{id}/status?status=VALID)
+   * Admin: chấm điểm & đổi trạng thái bài nộp (PUT /api/submissions/{id}/status)
    */
   async scoreSubmission(id, payload) {
     if (CONFIG.USE_MOCK) return mockApi.scoreSubmission(id, payload);
 
-    try {
-      let statusParam = 'VALID';
-      if (payload.status === 'invalid') statusParam = 'INVALID';
-      else if (payload.status === 'needs_supplement') statusParam = 'NEEDS_SUPPLEMENT';
-      else if (payload.status === 'pending') statusParam = 'PENDING';
+    const statusMap = {
+      valid: 'VALID',
+      invalid: 'INVALID',
+      needs_supplement: 'NEEDS_SUPPLEMENT',
+      pending: 'PENDING',
+      reopened: 'REOPENED'
+    };
+    const params = new URLSearchParams();
+    if (payload.status && statusMap[payload.status]) params.set('status', statusMap[payload.status]);
+    if (payload.score != null && payload.score !== '') params.set('score', String(payload.score));
 
-      let queryStr = `status=${statusParam}`;
-      if (payload.score != null && payload.score !== '') {
-        queryStr += `&score=${encodeURIComponent(payload.score)}`;
-      }
-
-      const res = await fetch(`${API_BASE}/submissions/${id}/status?${queryStr}`, {
-        method: 'PUT',
-        headers: getAuthHeaders()
-      });
-
-      const json = await parseBackendResponse(res);
-      return { message: 'Đã cập nhật bài nộp' };
-    } catch (err) {
-      return handleApiError(err, () => mockApi.scoreSubmission(id, payload));
-    }
+    await request(`/submissions/${id}/status?${params.toString()}`, { method: 'PUT' });
+    return { message: 'Đã cập nhật bài nộp' };
   },
 
   /**
-   * Lấy Bảng xếp hạng (GET /api/leaderboard/units & GET /api/leaderboard)
+   * Bảng xếp hạng đơn vị theo tỷ lệ CBNV tham gia hợp lệ (GET /api/leaderboard/units)
    */
   async getLeaderboard() {
     if (CONFIG.USE_MOCK) return mockApi.getLeaderboard();
-
-    try {
-      const res = await fetch(`${API_BASE}/leaderboard/units`);
-      const json = await res.json();
-      if (res.ok && Array.isArray(json.data) && json.data.length > 0) {
-        return json.data.map((item, idx) => ({
-          user_id: idx + 1,
-          full_name: item.unitName || item.unitCode || '—',
-          unit: item.unitName || '—',
-          count: item.validParticipants || 0,
-          total_score: Math.round((item.participationRate || 0) * 10),
-          avg_score: item.participationRate != null ? Number(item.participationRate.toFixed(1)) : 0
-        }));
-      }
-      return mockApi.getLeaderboard();
-    } catch (err) {
-      console.warn('[API] Real backend get leaderboard failed, using mock:', err.message);
-      return mockApi.getLeaderboard();
-    }
+    const json = await request('/leaderboard/units');
+    return (Array.isArray(json.data) ? json.data : []).map(item => ({
+      unit_id: item.unitId,
+      unit_code: item.unitCode,
+      unit_name: item.unitName || item.unitCode || '—',
+      valid_count: item.validParticipantsCount || 0,
+      total_personnel: item.totalPersonnel || 0,
+      rate: item.participationRatePercent != null ? Number(item.participationRatePercent) : 0,
+      last_updated_at: item.lastUpdatedAt || null
+    }));
   }
 };

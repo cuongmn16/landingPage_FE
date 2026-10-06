@@ -17,7 +17,7 @@ export default function BackToTop() {
 
   return (
     <button
-      class={`back-to-top ${isVisible ? 'is-visible' : ''}`}
+      className={`back-to-top ${isVisible ? 'is-visible' : ''}`}
       id="backToTop"
       aria-label="Lên đầu trang"
       onClick={scrollToTop}

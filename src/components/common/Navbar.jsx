@@ -38,22 +38,22 @@ export default function Navbar() {
   };
 
   return (
-    <header class={`navbar ${isScrolled ? 'is-scrolled' : ''}`} id="navbar">
-      <div class="container navbar__inner">
-        <Link to="/" class="navbar__logo">
-          <img src="/assets/ctin-logo.png" alt="CTIN" class="navbar__logo-img" />
-          <span class="navbar__logo-divider"></span>
-          <span class="navbar__logo-event">
-            <span class="navbar__logo-event-main">
+    <header className={`navbar ${isScrolled ? 'is-scrolled' : ''}`} id="navbar">
+      <div className="container navbar__inner">
+        <Link to="/" className="navbar__logo">
+          <img src="/assets/ctin-logo.png" alt="CTIN" className="navbar__logo-img" />
+          <span className="navbar__logo-divider"></span>
+          <span className="navbar__logo-event">
+            <span className="navbar__logo-event-main">
               {isAdminRoute ? 'ADMIN' : 'TREASURE HUNT'}
             </span>
-            <span class="navbar__logo-event-sub">
+            <span className="navbar__logo-event-sub">
               {isMission1Route ? 'Mission 01' : isAdminRoute ? 'Treasure Hunt' : isLeaderboardRoute ? 'Leaderboard' : '25 Years'}
             </span>
           </span>
         </Link>
 
-        <nav class={`navbar__nav ${isOpen ? 'is-open' : ''}`} id="navMenu">
+        <nav className={`navbar__nav ${isOpen ? 'is-open' : ''}`} id="navMenu">
           {isAdminRoute ? (
             <>
               <Link to="/">Trang chủ</Link>
@@ -91,11 +91,11 @@ export default function Navbar() {
           {currentUser ? (
             <>
               {currentUser.role === 'admin' ? (
-                <Link to="/admin" class="btn btn--gold navbar__cta">
+                <Link to="/admin" className="btn btn--gold navbar__cta">
                   ← Admin Dashboard
                 </Link>
               ) : (
-                <Link to="/dashboard" class="btn btn--gold navbar__cta">
+                <Link to="/dashboard" className="btn btn--gold navbar__cta">
                   Tiếp tục hành trình
                 </Link>
               )}
@@ -123,13 +123,13 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link to="/login" class="btn btn--gold navbar__cta">
+            <Link to="/login" className="btn btn--gold navbar__cta">
               Đăng nhập
             </Link>
           )}
 
           <button
-            class="navbar__hamburger"
+            className="navbar__hamburger"
             id="hamburger"
             aria-label="Menu"
             aria-expanded={isOpen}

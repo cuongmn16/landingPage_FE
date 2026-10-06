@@ -3,7 +3,8 @@
    ============================================================ */
 
 export const CONFIG = {
-  USE_MOCK: false,
+  // Mock backend (localStorage) only when explicitly enabled: VITE_USE_MOCK=true
+  USE_MOCK: import.meta.env.VITE_USE_MOCK === 'true',
   API_BASE: '/api',
   leaderboardTop: 10,
   UNITS: [

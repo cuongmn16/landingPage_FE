@@ -6,7 +6,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('total');
+  const [sortBy, setSortBy] = useState('rate');
 
   const loadData = async () => {
     setLoading(true);
@@ -25,24 +25,29 @@ export default function LeaderboardPage() {
     loadData();
   }, []);
 
-  const total = allRows.length;
-  const totalScore = allRows.reduce((s, r) => s + (r.total_score || 0), 0);
-  const topScore = total ? allRows[0].total_score : 0;
-  const avgScore = total ? (totalScore / total).toFixed(1) : '—';
+  const totalUnits = allRows.length;
+  const totalValid = allRows.reduce((s, r) => s + (r.valid_count || 0), 0);
+  const totalPersonnel = allRows.reduce((s, r) => s + (r.total_personnel || 0), 0);
+  const topRate = totalUnits ? Math.max(...allRows.map(r => r.rate || 0)) : 0;
+  const overallRate = totalPersonnel ? ((totalValid / totalPersonnel) * 100).toFixed(1) : '0';
+
+  // Rank is always by participation rate (backend order), independent of display sorting
+  const rankById = new Map(
+    [...allRows]
+      .sort((a, b) => (b.rate - a.rate) || (b.valid_count - a.valid_count))
+      .map((r, i) => [r.unit_id, i + 1])
+  );
 
   const filteredSortedRows = allRows
     .filter(r => {
       if (!search.trim()) return true;
       const q = search.trim().toLowerCase();
-      return (
-        (r.full_name || '').toLowerCase().includes(q) ||
-        (r.unit || '').toLowerCase().includes(q)
-      );
+      return (r.unit_name || '').toLowerCase().includes(q) || (r.unit_code || '').toLowerCase().includes(q);
     })
     .sort((a, b) => {
-      if (sortBy === 'total') return (b.total_score || 0) - (a.total_score || 0) || (b.count || 0) - (a.count || 0);
-      if (sortBy === 'avg')   return (b.avg_score || 0) - (a.avg_score || 0);
-      if (sortBy === 'count') return (b.count || 0) - (a.count || 0) || (b.total_score || 0) - (a.total_score || 0);
+      if (sortBy === 'rate') return (b.rate - a.rate) || (b.valid_count - a.valid_count);
+      if (sortBy === 'count') return (b.valid_count - a.valid_count) || (b.rate - a.rate);
+      if (sortBy === 'name') return (a.unit_name || '').localeCompare(b.unit_name || '', 'vi');
       return 0;
     });
 
@@ -50,19 +55,19 @@ export default function LeaderboardPage() {
 
   return (
     <main>
-      <section class="section">
-        <div class="container">
-          <p class="section__label mono reveal is-visible">RANKING — BẢNG XẾP HẠNG</p>
-          <h1 class="section__title reveal is-visible">Bảng xếp hạng cá nhân</h1>
-          <p class="section__desc reveal is-visible">
-            Xếp hạng theo tổng điểm đã được BTC chấm. Chỉ tính các bài đã chấm điểm.
+      <section className="section">
+        <div className="container">
+          <p className="section__label mono reveal is-visible">RANKING — BẢNG XẾP HẠNG</p>
+          <h1 className="section__title reveal is-visible">Bảng xếp hạng đơn vị</h1>
+          <p className="section__desc reveal is-visible">
+            Xếp hạng theo tỷ lệ CBNV tham gia hợp lệ trên tổng số nhân sự của đơn vị.
           </p>
 
-          <div class="lb-filters reveal is-visible">
+          <div className="lb-filters reveal is-visible">
             <input
               type="text"
               id="lbSearch"
-              placeholder="🔍 Tìm theo tên hoặc đơn vị..."
+              placeholder="🔍 Tìm theo tên đơn vị..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -71,55 +76,52 @@ export default function LeaderboardPage() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
-              <option value="total">Sắp xếp: Tổng điểm (cao → thấp)</option>
-              <option value="avg">Sắp xếp: Điểm TB (cao → thấp)</option>
-              <option value="count">Sắp xếp: Số bài đã chấm</option>
+              <option value="rate">Sắp xếp: Tỷ lệ tham gia (cao → thấp)</option>
+              <option value="count">Sắp xếp: Số CBNV hợp lệ</option>
+              <option value="name">Sắp xếp: Tên đơn vị</option>
             </select>
-            <button class="btn btn--outline" id="lbReload" type="button" onClick={loadData}>
+            <button className="btn btn--outline" id="lbReload" type="button" onClick={loadData}>
               ↻ Tải lại
             </button>
           </div>
 
-          <div class="lb-stats" id="lbStats">
-            <div class="lb-stat"><span class="lb-stat__value">{total}</span><span class="lb-stat__label">Người có điểm</span></div>
-            <div class="lb-stat"><span class="lb-stat__value">{topScore}</span><span class="lb-stat__label">Điểm cao nhất</span></div>
-            <div class="lb-stat"><span class="lb-stat__value">{avgScore}</span><span class="lb-stat__label">Điểm TB / người</span></div>
-            <div class="lb-stat"><span class="lb-stat__value">{totalScore}</span><span class="lb-stat__label">Tổng điểm cộng đồng</span></div>
+          <div className="lb-stats" id="lbStats">
+            <div className="lb-stat"><span className="lb-stat__value">{totalUnits}</span><span className="lb-stat__label">Đơn vị</span></div>
+            <div className="lb-stat"><span className="lb-stat__value">{totalValid}</span><span className="lb-stat__label">CBNV tham gia hợp lệ</span></div>
+            <div className="lb-stat"><span className="lb-stat__value">{topRate}%</span><span className="lb-stat__label">Tỷ lệ cao nhất</span></div>
+            <div className="lb-stat"><span className="lb-stat__value">{overallRate}%</span><span className="lb-stat__label">Tỷ lệ toàn công ty</span></div>
           </div>
 
-          <div class="lb__table-wrap reveal is-visible">
-            <table class="lb__table">
+          <div className="lb__table-wrap reveal is-visible">
+            <table className="lb__table">
               <thead>
                 <tr>
                   <th>Hạng</th>
-                  <th>Họ tên</th>
                   <th>Đơn vị</th>
-                  <th>Số bài đã chấm</th>
-                  <th>Tổng điểm</th>
-                  <th>Điểm TB</th>
+                  <th>CBNV hợp lệ</th>
+                  <th>Tổng nhân sự</th>
+                  <th>Tỷ lệ tham gia</th>
                 </tr>
               </thead>
               <tbody id="lbBody">
                 {loading ? (
-                  <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--clr-ink-3)' }}>Đang tải…</td></tr>
+                  <tr><td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--clr-ink-3)' }}>Đang tải…</td></tr>
                 ) : error ? (
-                  <tr><td colSpan="6" style={{ color: '#C25B5B', textAlign: 'center', padding: '32px' }}>Lỗi: {error}</td></tr>
+                  <tr><td colSpan="5" style={{ color: '#C25B5B', textAlign: 'center', padding: '32px' }}>Lỗi: {error}</td></tr>
                 ) : filteredSortedRows.length === 0 ? (
-                  <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--clr-ink-3)' }}>Không có dữ liệu.</td></tr>
+                  <tr><td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--clr-ink-3)' }}>Không có dữ liệu.</td></tr>
                 ) : (
-                  filteredSortedRows.map((r, i) => {
-                    const rank = i + 1;
-                    const medal = medals[i] || '';
+                  filteredSortedRows.map((r) => {
+                    const rank = rankById.get(r.unit_id) || 0;
+                    const medal = medals[rank - 1] || '';
                     const cls = rank === 1 ? 'lb__row--top1' : rank === 2 ? 'lb__row--top2' : rank === 3 ? 'lb__row--top3' : '';
-                    const avg = r.avg_score != null ? r.avg_score : (r.count > 0 ? (r.total_score / r.count).toFixed(1) : '—');
                     return (
-                      <tr key={r.user_id || i} class={cls}>
-                        <td class="lb__rank">{medal} {rank}</td>
-                        <td class="lb__team-name">{r.full_name}</td>
-                        <td>{r.unit}</td>
-                        <td>{r.count}</td>
-                        <td class="lb__total">{r.total_score}</td>
-                        <td>{avg}</td>
+                      <tr key={r.unit_id ?? r.unit_name} className={cls}>
+                        <td className="lb__rank">{medal} {rank}</td>
+                        <td className="lb__team-name">{r.unit_name}</td>
+                        <td>{r.valid_count}</td>
+                        <td>{r.total_personnel}</td>
+                        <td className="lb__total">{r.rate}%</td>
                       </tr>
                     );
                   })

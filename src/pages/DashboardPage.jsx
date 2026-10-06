@@ -64,8 +64,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main class="dashboard">
-        <div class="container">
+      <main className="dashboard">
+        <div className="container">
           <p style={{ textAlign: 'center', padding: '40px', color: 'var(--clr-ink-3)' }}>Đang tải Dashboard…</p>
         </div>
       </main>
@@ -74,16 +74,16 @@ export default function DashboardPage() {
 
   return (
     <main>
-      <section class="dashboard">
-        <div class="container">
-          <h1 class="dashboard__title">Xin chào, <span>{user?.full_name || 'bạn'}</span></h1>
-          <p class="dashboard__sub">
+      <section className="dashboard">
+        <div className="container">
+          <h1 className="dashboard__title">Xin chào, <span>{user?.full_name || 'bạn'}</span></h1>
+          <p className="dashboard__sub">
             {user?.employee_id || ''} · {user?.unit || ''} · {user?.email || ''}
           </p>
 
           {error && <p style={{ color: '#C25B5B', marginBottom: '20px' }}>Lỗi: {error}</p>}
 
-          <div class="mission-grid">
+          <div className="mission-grid">
             {missions.map(m => {
               const sub = submissions.find(s => Number(s.mission_id) === Number(m.id));
               const mState = getMissionState(m);
@@ -113,12 +113,12 @@ export default function DashboardPage() {
               else if (sState.code === 'valid')       cardMod = 'mission-card--valid';
 
               return (
-                <article key={m.id} class={`mission-card ${cardMod}`}>
-                  <div class="mission-card__badges">
-                    <span class={`status-badge ${mState.cls} status-badge--sm`} title="Trạng thái Mission">
+                <article key={m.id} className={`mission-card ${cardMod}`}>
+                  <div className="mission-card__badges">
+                    <span className={`status-badge ${mState.cls} status-badge--sm`} title="Trạng thái Mission">
                       {mState.label}
                     </span>
-                    <span class={`status-badge ${sState.cls} status-badge--sm`} title="Trạng thái bài nộp">
+                    <span className={`status-badge ${sState.cls} status-badge--sm`} title="Trạng thái bài nộp">
                       {sState.label}
                     </span>
                   </div>
@@ -147,20 +147,20 @@ export default function DashboardPage() {
 
       {/* MODAL XEM LẠI BÀI NỘP */}
       {isModalOpen && selectedReviewSub && (
-        <div class="modal is-open" aria-hidden="false" role="dialog">
-          <div class="modal__backdrop" onClick={handleCloseReview}></div>
-          <div class="modal__panel modal__panel--large">
-            <button class="modal__close" onClick={handleCloseReview} aria-label="Đóng">&times;</button>
-            <div class="submission-detail">
-              <div class="submission-detail__header">
-                <p class="submission-detail__team">{user?.full_name} · {user?.unit}</p>
-                <h2 class="submission-detail__title">Bài nộp Mission {selectedReviewSub.mission_id}</h2>
-                <p class="submission-detail__mission">Nộp lúc: {fmtDateTime(selectedReviewSub.submitted_at)}</p>
-                <div class="submission-detail__badges" style={{ marginTop: '12px', justifyContent: 'center' }}>
-                  <span class={`status-badge ${getMissionState(selectedReviewMission).cls} status-badge--sm`}>
+        <div className="modal is-open" aria-hidden="false" role="dialog">
+          <div className="modal__backdrop" onClick={handleCloseReview}></div>
+          <div className="modal__panel modal__panel--large">
+            <button className="modal__close" onClick={handleCloseReview} aria-label="Đóng">&times;</button>
+            <div className="submission-detail">
+              <div className="submission-detail__header">
+                <p className="submission-detail__team">{user?.full_name} · {user?.unit}</p>
+                <h2 className="submission-detail__title">Bài nộp Mission {selectedReviewSub.mission_id}</h2>
+                <p className="submission-detail__mission">Nộp lúc: {fmtDateTime(selectedReviewSub.submitted_at)}</p>
+                <div className="submission-detail__badges" style={{ marginTop: '12px', justifyContent: 'center' }}>
+                  <span className={`status-badge ${getMissionState(selectedReviewMission).cls} status-badge--sm`}>
                     {getMissionState(selectedReviewMission).label}
                   </span>
-                  <span class={`status-badge ${getSubmissionStatus(selectedReviewSub).cls}`}>
+                  <span className={`status-badge ${getSubmissionStatus(selectedReviewSub).cls}`}>
                     {getSubmissionStatus(selectedReviewSub).label}
                   </span>
                 </div>
@@ -168,19 +168,19 @@ export default function DashboardPage() {
 
               {selectedReviewSub.file_url ? (
                 /\.(jpg|jpeg|png|gif|webp)$/i.test(selectedReviewSub.file_url) ? (
-                  <div class="submission-detail__image">
+                  <div className="submission-detail__image">
                     <img src={selectedReviewSub.file_url} alt="Bài nộp" />
                   </div>
                 ) : (
-                  <div class="submission-detail__file">
-                    <div class="submission-detail__file-icon">📄</div>
-                    <a href={selectedReviewSub.file_url} target="_blank" rel="noopener noreferrer" class="btn btn--gold">
+                  <div className="submission-detail__file">
+                    <div className="submission-detail__file-icon">📄</div>
+                    <a href={selectedReviewSub.file_url} target="_blank" rel="noopener noreferrer" className="btn btn--gold">
                       Mở file →
                     </a>
                   </div>
                 )
               ) : (
-                <div class="submission-detail__file"><p>Không có file đính kèm.</p></div>
+                <div className="submission-detail__file"><p>Không có file đính kèm.</p></div>
               )}
 
               {selectedReviewSub.note && (
@@ -190,20 +190,20 @@ export default function DashboardPage() {
               )}
 
               {selectedReviewSub.review_note && (
-                <div class="submission-detail__review-note">
+                <div className="submission-detail__review-note">
                   <strong>Ghi chú từ BTC:</strong> {selectedReviewSub.review_note}
                 </div>
               )}
 
               {selectedReviewSub.score != null ? (
-                <div class="submission-detail__points">
-                  <span class="label">Điểm</span>
-                  <span class="value">{selectedReviewSub.score}</span>
+                <div className="submission-detail__points">
+                  <span className="label">Điểm</span>
+                  <span className="value">{selectedReviewSub.score}</span>
                 </div>
               ) : (
-                <div class="submission-detail__points is-pending">
-                  <span class="label">Điểm</span>
-                  <span class="value" style={{ fontSize: '1rem' }}>Chưa chấm</span>
+                <div className="submission-detail__points is-pending">
+                  <span className="label">Điểm</span>
+                  <span className="value" style={{ fontSize: '1rem' }}>Chưa chấm</span>
                 </div>
               )}
             </div>

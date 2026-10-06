@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, auth, forgotPasswordApi } from '../services/api';
+import { api, auth, forgotPasswordApi, sendOtpApi } from '../services/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,6 +14,24 @@ export default function LoginPage() {
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSending, setForgotSending] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: nhập email, 2: nhập OTP
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setInterval(() => setCooldown(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const openForgotMode = () => {
+    setIsForgotMode(true);
+    setForgotEmail(email);
+    setForgotStep(1);
+    setForgotOtp('');
+    setError('');
+    setStatusMsg('');
+  };
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +41,7 @@ export default function LoginPage() {
 
     try {
       const data = await api.login(email.trim(), password.trim());
-      auth.setSession(data.token, data.user);
+      auth.setSession(data.token, data.user, data.refreshToken);
       if (data.user.role === 'admin') {
         navigate('/admin');
       } else {
@@ -36,8 +54,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotSubmit = async (e) => {
-    e.preventDefault();
+  // Bước 1: gửi OTP tới email để chứng minh quyền sở hữu hộp thư
+  const handleForgotSendOtp = async (e) => {
+    if (e) e.preventDefault();
     setError('');
     setStatusMsg('');
 
@@ -45,15 +64,39 @@ export default function LoginPage() {
       setError('Vui lòng nhập địa chỉ Email công ty hợp lệ.');
       return;
     }
+    if (cooldown > 0) return;
 
     setForgotSending(true);
-
     try {
-      const res = await forgotPasswordApi(forgotEmail.trim());
-      setStatusMsg(res?.message || `Mật khẩu mới đã được gửi tới email ${forgotEmail.trim()}. Vui lòng kiểm tra hộp thư!`);
-      setError('');
+      const res = await sendOtpApi(forgotEmail.trim());
+      setStatusMsg(res?.message || `Mã OTP đã được gửi tới email ${forgotEmail.trim()}.`);
+      setForgotStep(2);
+      setCooldown(60);
     } catch (err) {
-      setError(err.message || 'Không thể khôi phục mật khẩu. Vui lòng kiểm tra lại địa chỉ email.');
+      setError(err.message || 'Không thể gửi mã OTP. Vui lòng thử lại.');
+    } finally {
+      setForgotSending(false);
+    }
+  };
+
+  // Bước 2: xác nhận OTP -> backend tạo mật khẩu mới và gửi qua email
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setStatusMsg('');
+
+    if (!forgotOtp || forgotOtp.trim().length !== 6) {
+      setError('Vui lòng nhập đầy đủ 6 chữ số OTP.');
+      return;
+    }
+
+    setForgotSending(true);
+    try {
+      const res = await forgotPasswordApi(forgotEmail.trim(), forgotOtp.trim());
+      setStatusMsg(res?.message || `Mật khẩu mới đã được gửi tới email ${forgotEmail.trim()}. Vui lòng kiểm tra hộp thư!`);
+      setForgotStep(3);
+    } catch (err) {
+      setError(err.message || 'Không thể khôi phục mật khẩu. Vui lòng thử lại.');
     } finally {
       setForgotSending(false);
     }
@@ -73,7 +116,7 @@ export default function LoginPage() {
           <div>
             <h2>Khôi phục mật khẩu</h2>
             <p className="auth-sub">
-              Nhập email công ty của bạn. Hệ thống sẽ tự động khởi tạo mật khẩu mới và gửi trực tiếp về hộp thư Gmail của bạn.
+              Nhập email công ty của bạn. Sau khi xác thực mã OTP, hệ thống sẽ tạo mật khẩu mới và gửi về hộp thư của bạn.
             </p>
 
             {statusMsg && (
@@ -84,34 +127,90 @@ export default function LoginPage() {
 
             {error && <div className="form-error" role="alert" style={{ marginBottom: '16px' }}>⚠️ {error}</div>}
 
-            <form onSubmit={handleForgotSubmit}>
-              <div className="form-group">
-                <label htmlFor="forgotEmail">Email công ty của bạn</label>
-                <input
-                  type="email"
-                  id="forgotEmail"
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  required
-                  placeholder="VD: nhanvien@ctin.vn"
-                  autoFocus
-                />
-              </div>
+            {forgotStep === 1 && (
+              <form onSubmit={handleForgotSendOtp}>
+                <div className="form-group">
+                  <label htmlFor="forgotEmail">Email công ty của bạn</label>
+                  <input
+                    type="email"
+                    id="forgotEmail"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    placeholder="VD: nhanvien@ctin.vn"
+                    autoFocus
+                  />
+                </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => { setIsForgotMode(false); setError(''); setStatusMsg(''); }}
-                  style={{ background: '#eee', color: '#333', padding: '10px 16px' }}
-                >
-                  ← Quay lại
-                </button>
-                <button type="submit" className="auth-btn" disabled={forgotSending} style={{ flex: 1, margin: 0 }}>
-                  {forgotSending ? 'Đang gửi...' : '🔑 Gửi mật khẩu mới →'}
-                </button>
-              </div>
-            </form>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => { setIsForgotMode(false); setError(''); setStatusMsg(''); }}
+                    style={{ background: '#eee', color: '#333', padding: '10px 16px' }}
+                  >
+                    ← Quay lại
+                  </button>
+                  <button type="submit" className="auth-btn" disabled={forgotSending || cooldown > 0} style={{ flex: 1, margin: 0 }}>
+                    {forgotSending ? 'Đang gửi...' : cooldown > 0 ? `⏳ Đợi ${cooldown}s` : '📩 Gửi mã OTP →'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {forgotStep === 2 && (
+              <form onSubmit={handleForgotSubmit}>
+                <div className="form-group">
+                  <label htmlFor="forgotOtp">Mã OTP 6 số đã gửi tới <strong>{forgotEmail}</strong></label>
+                  <input
+                    type="text"
+                    id="forgotOtp"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={forgotOtp}
+                    onChange={(e) => setForgotOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                    required
+                    placeholder="------"
+                    autoFocus
+                    style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '1.3rem', fontWeight: 'bold' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', fontSize: '0.8rem' }}>
+                    <button
+                      type="button"
+                      onClick={handleForgotSendOtp}
+                      disabled={forgotSending || cooldown > 0}
+                      style={{ background: 'none', border: 'none', padding: 0, color: cooldown > 0 ? '#aaa' : '#0056b3', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', textDecoration: cooldown > 0 ? 'none' : 'underline' }}
+                    >
+                      {cooldown > 0 ? `⏳ Gửi lại mã sau ${cooldown}s` : '🔄 Gửi lại mã OTP'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => { setForgotStep(1); setError(''); setStatusMsg(''); }}
+                    style={{ background: '#eee', color: '#333', padding: '10px 16px' }}
+                  >
+                    ← Đổi email
+                  </button>
+                  <button type="submit" className="auth-btn" disabled={forgotSending} style={{ flex: 1, margin: 0 }}>
+                    {forgotSending ? 'Đang xử lý...' : '🔑 Xác nhận & nhận mật khẩu mới'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {forgotStep === 3 && (
+              <button
+                type="button"
+                className="auth-btn"
+                onClick={() => { setIsForgotMode(false); setEmail(forgotEmail); setStatusMsg(''); }}
+              >
+                ← Quay lại Đăng nhập
+              </button>
+            )}
           </div>
         ) : (
           /* ============================================================ */
@@ -145,7 +244,7 @@ export default function LoginPage() {
                   <label htmlFor="password">Mật khẩu</label>
                   <button
                     type="button"
-                    onClick={() => { setIsForgotMode(true); setForgotEmail(email); setError(''); setStatusMsg(''); }}
+                    onClick={openForgotMode}
                     style={{ background: 'none', border: 'none', color: 'var(--clr-gold-dark, #0056b3)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'bold', textDecoration: 'underline' }}
                   >
                     Quên mật khẩu?

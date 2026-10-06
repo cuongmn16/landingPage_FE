@@ -418,7 +418,7 @@ export default function AdminPage() {
                     <span style={{ fontSize: '1.2rem' }}>📁</span>
                     <span>Tệp đính kèm trên hệ thống ({modalFiles.length} tệp)</span>
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: '#5f6368', background: '#e8f0fe', color: '#1a73e8', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  <span style={{ fontSize: '0.8rem', background: '#e8f0fe', color: '#1a73e8', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
                     Google Drive View
                   </span>
                 </div>
