@@ -553,7 +553,8 @@ export const api = {
   async getLeaderboard() {
     if (CONFIG.USE_MOCK) return mockApi.getLeaderboard();
     const json = await request('/leaderboard/units');
-    return (Array.isArray(json.data) ? json.data : []).map(item => ({
+    return (Array.isArray(json.data) ? json.data : []).map((item, idx) => ({
+      rank: item.rank || idx + 1, // tied units share the same rank
       unit_id: item.unitId,
       unit_code: item.unitCode,
       unit_name: item.unitName || item.unitCode || '—',

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
-import { CONFIG } from '../../data/appData';
+import { CONFIG, leaderboardMedal } from '../../data/appData';
 
 export default function LeaderboardPreviewSection() {
   const [topUnits, setTopUnits] = useState([]);
@@ -21,8 +21,6 @@ export default function LeaderboardPreviewSection() {
     }
     loadData();
   }, []);
-
-  const medals = ['🥇', '🥈', '🥉'];
 
   return (
     <section className="section section--light" id="leaderboard-preview">
@@ -54,12 +52,11 @@ export default function LeaderboardPreviewSection() {
                 <span>Hạng</span><span>Đơn vị</span><span>CBNV hợp lệ</span><span>Tỷ lệ</span>
               </div>
               {topUnits.map((u, i) => {
-                const rank = i + 1;
-                const medal = medals[i] || '';
-                const cls = rank === 1 ? 'is-top1' : rank === 2 ? 'is-top2' : rank === 3 ? 'is-top3' : '';
+                const medal = leaderboardMedal(u);
+                const cls = medal ? `is-top${u.rank}` : '';
                 return (
                   <div key={u.unit_id ?? i} className={`lb-preview__row ${cls}`}>
-                    <span className="lb-preview__rank">{medal} {rank}</span>
+                    <span className="lb-preview__rank">{medal} {u.rank}</span>
                     <span className="lb-preview__name">{u.unit_name}</span>
                     <span className="lb-preview__unit">{u.valid_count}/{u.total_personnel}</span>
                     <span className="lb-preview__score">{u.rate}%</span>

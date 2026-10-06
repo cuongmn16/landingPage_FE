@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { leaderboardMedal } from '../data/appData';
 
 export default function LeaderboardPage() {
   const [allRows, setAllRows] = useState([]);
@@ -31,13 +32,6 @@ export default function LeaderboardPage() {
   const topRate = totalUnits ? Math.max(...allRows.map(r => r.rate || 0)) : 0;
   const overallRate = totalPersonnel ? ((totalValid / totalPersonnel) * 100).toFixed(1) : '0';
 
-  // Rank is always by participation rate (backend order), independent of display sorting
-  const rankById = new Map(
-    [...allRows]
-      .sort((a, b) => (b.rate - a.rate) || (b.valid_count - a.valid_count))
-      .map((r, i) => [r.unit_id, i + 1])
-  );
-
   const filteredSortedRows = allRows
     .filter(r => {
       if (!search.trim()) return true;
@@ -50,8 +44,6 @@ export default function LeaderboardPage() {
       if (sortBy === 'name') return (a.unit_name || '').localeCompare(b.unit_name || '', 'vi');
       return 0;
     });
-
-  const medals = ['🥇', '🥈', '🥉'];
 
   return (
     <main>
@@ -112,12 +104,12 @@ export default function LeaderboardPage() {
                   <tr><td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--clr-ink-3)' }}>Không có dữ liệu.</td></tr>
                 ) : (
                   filteredSortedRows.map((r) => {
-                    const rank = rankById.get(r.unit_id) || 0;
-                    const medal = medals[rank - 1] || '';
-                    const cls = rank === 1 ? 'lb__row--top1' : rank === 2 ? 'lb__row--top2' : rank === 3 ? 'lb__row--top3' : '';
+                    // Rank comes from the backend (by participation rate, ties share a rank)
+                    const medal = leaderboardMedal(r);
+                    const cls = medal ? `lb__row--top${r.rank}` : '';
                     return (
                       <tr key={r.unit_id ?? r.unit_name} className={cls}>
-                        <td className="lb__rank">{medal} {rank}</td>
+                        <td className="lb__rank">{medal} {r.rank}</td>
                         <td className="lb__team-name">{r.unit_name}</td>
                         <td>{r.valid_count}</td>
                         <td>{r.total_personnel}</td>

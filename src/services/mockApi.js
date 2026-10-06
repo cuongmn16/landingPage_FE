@@ -224,7 +224,8 @@ export const mockApi = {
   // Same shape as api.getLeaderboard(): units ranked by valid-participant rate
   async getLeaderboard() {
     await delay(200);
-    const users = read(LS.users).filter(u => u.role !== 'admin');
+    // The organizing committee does not compete (same as backend PB_BTC exclusion)
+    const users = read(LS.users).filter(u => u.role !== 'admin' && u.unit !== 'Ban Tổ chức');
     const submissions = read(LS.submissions);
     const byUnit = {};
 
@@ -238,8 +239,13 @@ export const mockApi = {
       if (hasValid) byUnit[key].valid_count += 1;
     });
 
-    return Object.values(byUnit)
+    const rows = Object.values(byUnit)
       .map(r => ({ ...r, rate: r.total_personnel ? Math.round((r.valid_count / r.total_personnel) * 10000) / 100 : 0 }))
       .sort((a, b) => b.rate - a.rate || b.valid_count - a.valid_count);
+    rows.forEach((r, i) => {
+      const prev = rows[i - 1];
+      r.rank = prev && prev.rate === r.rate && prev.valid_count === r.valid_count ? prev.rank : i + 1;
+    });
+    return rows;
   }
 };

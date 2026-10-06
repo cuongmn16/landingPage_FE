@@ -140,6 +140,14 @@ export function fmtDate(d) {
   return `${dd}/${mm}/${dt.getFullYear()}`;
 }
 
+/**
+ * Medal for a leaderboard row: only top-3 ranks that actually have participation.
+ */
+export function leaderboardMedal(row) {
+  if (!row || !(row.rate > 0)) return '';
+  return ['🥇', '🥈', '🥉'][row.rank - 1] || '';
+}
+
 export function fmtDateTime(d) {
   if (!d) return '';
   const dt = new Date(d);
