@@ -40,7 +40,7 @@ export default function Navbar() {
   return (
     <header className={`navbar ${isScrolled ? 'is-scrolled' : ''}`} id="navbar">
       <div className="container navbar__inner">
-        <Link to="/" className="navbar__logo">
+        <Link to={currentUser?.role === 'admin' ? '/admin' : '/'} className="navbar__logo">
           <img src="/assets/ctin-logo.png" alt="CTIN" className="navbar__logo-img" />
           <span className="navbar__logo-divider"></span>
           <span className="navbar__logo-event">
@@ -54,11 +54,11 @@ export default function Navbar() {
         </Link>
 
         <nav className={`navbar__nav ${isOpen ? 'is-open' : ''}`} id="navMenu">
-          {isAdminRoute ? (
+          {isAdminRoute || currentUser?.role === 'admin' ? (
             <>
-              <Link to="/">Trang chủ</Link>
               <a href="#pending" onClick={(e) => { e.preventDefault(); navigate('/admin?tab=pending'); }}>Chờ duyệt</a>
               <a href="#submissions" onClick={(e) => { e.preventDefault(); navigate('/admin?tab=submissions'); }}>Bài nộp</a>
+              <Link to="/leaderboard">Bảng xếp hạng</Link>
               <a href="#logout" onClick={handleLogout}>Đăng xuất</a>
             </>
           ) : isDashboardRoute ? (

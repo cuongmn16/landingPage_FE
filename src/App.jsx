@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { auth } from './services/api';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import BackToTop from './components/common/BackToTop';
@@ -15,9 +16,26 @@ import AllSubmissionsPage from './pages/AllSubmissionsPage';
 
 import './styles/index.css';
 
+// Admin chỉ được dùng các trang /admin, /leaderboard (và trang đăng nhập/đăng ký)
+function isAdminSession() {
+  if (auth.user) return auth.user.role === 'admin';
+  try {
+    if (!localStorage.getItem('token')) return false;
+    const u = JSON.parse(localStorage.getItem('user'));
+    return !!u && u.role === 'admin';
+  } catch {
+    return false;
+  }
+}
+
 function AppContent() {
   const location = useLocation();
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
+
+  const isAdminAllowed = location.pathname.startsWith('/admin') || location.pathname === '/leaderboard';
+  if (isAdminSession() && !isAuthRoute && !isAdminAllowed) {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <div className="app-container">
