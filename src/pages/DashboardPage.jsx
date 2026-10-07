@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api, auth } from '../services/api';
 import { getMissionState, getSubmissionStatus, fmtDateTime } from '../data/appData';
+import MissionSubmitModal from '../components/common/MissionSubmitModal';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -15,6 +16,21 @@ export default function DashboardPage() {
   const [selectedReviewSub, setSelectedReviewSub] = useState(null);
   const [selectedReviewMission, setSelectedReviewMission] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Submit Modal state
+  const [submitMissionId, setSubmitMissionId] = useState('1');
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+
+  const refreshSubmissions = async () => {
+    try {
+      setSubmissions(await api.getUserSubmissions());
+    } catch (err) {}
+  };
+
+  const handleStartMission = (mId) => {
+    setSubmitMissionId(String(mId));
+    setIsSubmitModalOpen(true);
+  };
 
   useEffect(() => {
     async function init() {
@@ -131,7 +147,7 @@ export default function DashboardPage() {
                   ) : (
                     <button
                       className="btn btn--outline"
-                      onClick={() => handleOpenReview(m.id)}
+                      onClick={() => handleStartMission(m.id)}
                       disabled={btnDisabled}
                       style={btnDisabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
@@ -210,6 +226,16 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <MissionSubmitModal
+        isOpen={isSubmitModalOpen}
+        onClose={() => {
+          setIsSubmitModalOpen(false);
+          refreshSubmissions();
+        }}
+        initialMissionId={submitMissionId}
+        onSuccess={refreshSubmissions}
+      />
     </main>
   );
 }
