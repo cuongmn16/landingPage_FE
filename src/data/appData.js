@@ -3,8 +3,6 @@
    ============================================================ */
 
 export const CONFIG = {
-  // Mock backend (localStorage) only when explicitly enabled: VITE_USE_MOCK=true
-  USE_MOCK: import.meta.env.VITE_USE_MOCK === 'true',
   API_BASE: '/api',
   leaderboardTop: 10,
   UNITS: [
@@ -74,13 +72,6 @@ export const MISSIONS = [
   { id: 'M4', num: '04', name: 'CTIN DNA',             focus: 'Xác định điều cần gìn giữ, điều cần phát triển và Future Promise.', duration: '8–10 phút' }
 ];
 
-export const UNITS_SAMPLE = [
-  { name: 'Phòng Kỹ thuật',   eligible: 40, valid: 32, m1: 30, m2: 28, m3: 25, m4: 20 },
-  { name: 'Phòng Kinh doanh', eligible: 35, valid: 25, m1: 24, m2: 22, m3: 20, m4: 18 },
-  { name: 'Phòng Nhân sự',    eligible: 15, valid: 12, m1: 12, m2: 10, m3: 10, m4: 8 },
-  { name: 'Phòng CNTT',       eligible: 25, valid: 23, m1: 22, m2: 21, m3: 20, m4: 18 }
-];
-
 export const PRIZES = {
   personal: [
     { rank: 'Legacy Explorer',     desc: 'Người hoàn thành sớm nhất với đầy đủ 4 Mission.' },
@@ -138,14 +129,6 @@ export function fmtDate(d) {
   const dd = String(dt.getDate()).padStart(2, '0');
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
   return `${dd}/${mm}/${dt.getFullYear()}`;
-}
-
-/**
- * Medal for a leaderboard row: only top-3 ranks that actually have participation.
- */
-export function leaderboardMedal(row) {
-  if (!row || !(row.rate > 0)) return '';
-  return ['🥇', '🥈', '🥉'][row.rank - 1] || '';
 }
 
 export function fmtDateTime(d) {

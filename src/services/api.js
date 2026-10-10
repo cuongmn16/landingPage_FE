@@ -1,9 +1,6 @@
 /* ============================================================
-   API SERVICE FOR SPRING BOOT BACKEND (+ optional mock mode)
+   API SERVICE FOR SPRING BOOT BACKEND
    ============================================================ */
-
-import { mockApi } from './mockApi';
-import { CONFIG } from '../data/appData';
 
 const rawApiBase = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '');
 const API_BASE = rawApiBase.endsWith('/api') ? rawApiBase : `${rawApiBase}/api`;
@@ -244,7 +241,6 @@ async function request(path, options = {}) {
  * Đăng xuất tài khoản (POST /api/auth/logout)
  */
 export async function logoutApi() {
-  if (CONFIG.USE_MOCK) return { message: 'Đăng xuất thành công' };
   if (!localStorage.getItem(LS_TOKEN)) return { message: 'Đăng xuất thành công' };
   const res = await authFetch('/auth/logout', { method: 'POST' }, { retry: false });
   return parseBackendResponse(res);
@@ -254,7 +250,6 @@ export async function logoutApi() {
  * Gửi mã OTP xác thực email (POST /api/auth/send-otp?email=...)
  */
 export async function sendOtpApi(email) {
-  if (CONFIG.USE_MOCK) return mockApi.sendOtp(email);
   return request(`/auth/send-otp?email=${encodeURIComponent(email)}`, { method: 'POST' });
 }
 
@@ -262,7 +257,6 @@ export async function sendOtpApi(email) {
  * Xác thực mã OTP (POST /api/auth/verify-otp?email=...&otpCode=...)
  */
 export async function verifyOtpApi(email, otpCode) {
-  if (CONFIG.USE_MOCK) return mockApi.verifyOtp(email, otpCode);
   return request(`/auth/verify-otp?email=${encodeURIComponent(email)}&otpCode=${encodeURIComponent(otpCode)}`, { method: 'POST' });
 }
 
@@ -284,8 +278,6 @@ export async function registerEmployeeApi(payload) {
   const rawUnit = payload.unitCode || payload.unit || 'PB_IT';
   const unitCode = unitMap[rawUnit] || rawUnit;
 
-  if (CONFIG.USE_MOCK) return mockApi.register({ ...payload, unitCode });
-
   const json = await request('/employees/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -303,7 +295,6 @@ export async function registerEmployeeApi(payload) {
  * Quên mật khẩu: cần mã OTP đã gửi tới email (POST /api/auth/forgot-password)
  */
 export async function forgotPasswordApi(email, otpCode) {
-  if (CONFIG.USE_MOCK) return { message: `Mật khẩu mới đã được gửi về email ${email}` };
   return request(`/auth/forgot-password?email=${encodeURIComponent(email)}&otpCode=${encodeURIComponent(otpCode)}`, { method: 'POST' });
 }
 
@@ -315,13 +306,6 @@ export async function forgotPasswordApi(email, otpCode) {
  * Nộp bài Mission chi tiết với đa tệp. Người nộp được xác định từ JWT phía backend.
  */
 export async function submitMissionResponseApi(payload, files = []) {
-  if (CONFIG.USE_MOCK) {
-    const user = auth.user;
-    return mockApi.submitMission(payload.missionId, user ? user.id : 1, {
-      note: payload.longTextAnswer || payload.evidenceSource || '',
-      file: files.length > 0 ? files[0] : null
-    });
-  }
 
   const formData = new FormData();
   formData.append('submission', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
@@ -340,7 +324,6 @@ export async function updateSubmissionStatusApi(subId, newStatus) {
 }
 
 export async function reopenSubmissionApi(subId) {
-  if (CONFIG.USE_MOCK) return mockApi.scoreSubmission(subId, { status: 'reopened' });
   const json = await request(`/submissions/${subId}/reopen`, { method: 'PUT' });
   return json.data;
 }
@@ -354,13 +337,11 @@ export async function fetchAllEmployeesApi() {
 }
 
 export async function fetchRuleConfigApi() {
-  if (CONFIG.USE_MOCK) return { ruleType: 'MIN_COMPLETED_MISSIONS', configValue: '1' };
   const json = await request('/rule-config/valid-participant');
   return json.data;
 }
 
 export async function updateRuleConfigApi(data) {
-  if (CONFIG.USE_MOCK) return data;
   const json = await request('/rule-config/valid-participant', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -370,13 +351,11 @@ export async function updateRuleConfigApi(data) {
 }
 
 export async function getUnitsApi() {
-  if (CONFIG.USE_MOCK) return CONFIG.UNITS;
   const json = await request('/employees/units');
   return Array.isArray(json.data) ? json.data : [];
 }
 
 export async function toggleMissionStatusApi(id, isOpen) {
-  if (CONFIG.USE_MOCK) return { id, isOpen };
   const json = await request(`/missions/${id}/toggle?isOpen=${isOpen}`, { method: 'PUT' });
   return json.data;
 }
@@ -394,8 +373,6 @@ export const api = {
    * Đăng nhập (POST /api/auth/login)
    */
   async login(emailOrCode, password) {
-    if (CONFIG.USE_MOCK) return mockApi.login(emailOrCode, password);
-
     const json = await request('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -412,8 +389,6 @@ export const api = {
   async me() {
     const token = localStorage.getItem(LS_TOKEN);
     if (!token) throw new Error('Chưa đăng nhập');
-    if (CONFIG.USE_MOCK) return mockApi.me(token);
-
     const savedUser = localStorage.getItem(LS_USER);
     if (savedUser) return JSON.parse(savedUser);
     throw new Error('Chưa đăng nhập');
@@ -423,7 +398,6 @@ export const api = {
    * Danh sách Mission (GET /api/missions)
    */
   async getMissions() {
-    if (CONFIG.USE_MOCK) return mockApi.getMissions();
     const json = await request('/missions');
     return Array.isArray(json.data) ? json.data.map(normalizeMission) : [];
   },
@@ -432,7 +406,6 @@ export const api = {
    * Chi tiết Mission theo ID
    */
   async getMission(id) {
-    if (CONFIG.USE_MOCK) return mockApi.getMission(id);
     const json = await request(`/missions/${id}`);
     return normalizeMission(json.data);
   },
@@ -443,8 +416,6 @@ export const api = {
   async getUserSubmissions() {
     const user = auth.user;
     if (!user || user.role === 'admin') return [];
-    if (CONFIG.USE_MOCK) return mockApi.getUserSubmissions(user.id);
-
     const json = await request('/submissions/me');
     return Array.isArray(json.data) ? json.data.map(normalizeSubmission) : [];
   },
@@ -466,9 +437,6 @@ export const api = {
       note = formDataOrPayload.note || '';
     }
 
-    if (CONFIG.USE_MOCK) {
-      return mockApi.submitMission(missionId, user.id, { file: fileList[0] || null, note });
-    }
 
     await submitMissionResponseApi({
       missionId: Number(missionId),
@@ -483,8 +451,6 @@ export const api = {
    * Admin: danh sách nhân sự (GET /api/employees)
    */
   async getPendingUsers() {
-    if (CONFIG.USE_MOCK) return mockApi.getPendingUsers();
-
     const json = await request('/employees');
     return (Array.isArray(json.data) ? json.data : []).map(e => ({
       id: e.id,
@@ -502,7 +468,6 @@ export const api = {
    * Admin: duyệt nhân sự (PUT /api/employees/{id}/approve)
    */
   async approveUser(id) {
-    if (CONFIG.USE_MOCK) return mockApi.approveUser(id);
     const json = await request(`/employees/${id}/approve`, { method: 'PUT' });
     return { message: json.message || 'Phê duyệt tài khoản thành công!' };
   },
@@ -511,7 +476,6 @@ export const api = {
    * Admin: từ chối nhân sự (DELETE /api/employees/{id}/reject?reason=...)
    */
   async rejectUser(id, payload = {}) {
-    if (CONFIG.USE_MOCK) return mockApi.rejectUser(id, payload.reason);
     const reason = payload.reason ? `?reason=${encodeURIComponent(payload.reason)}` : '';
     await request(`/employees/${id}/reject${reason}`, { method: 'DELETE' });
     return { message: 'Đã từ chối tài khoản thành công.' };
@@ -521,7 +485,6 @@ export const api = {
    * Admin: tất cả bài nộp (GET /api/submissions/all)
    */
   async getAllSubmissions() {
-    if (CONFIG.USE_MOCK) return mockApi.getAllSubmissions();
     const json = await request('/submissions/all');
     return Array.isArray(json.data) ? json.data.map(normalizeSubmission) : [];
   },
@@ -530,8 +493,6 @@ export const api = {
    * Admin: chấm điểm & đổi trạng thái bài nộp (PUT /api/submissions/{id}/status)
    */
   async scoreSubmission(id, payload) {
-    if (CONFIG.USE_MOCK) return mockApi.scoreSubmission(id, payload);
-
     const statusMap = {
       valid: 'VALID',
       invalid: 'INVALID',
@@ -548,20 +509,42 @@ export const api = {
   },
 
   /**
-   * Bảng xếp hạng đơn vị theo tỷ lệ CBNV tham gia hợp lệ (GET /api/leaderboard/units)
+   * Số CBNV tham gia hợp lệ theo từng đơn vị (GET /api/leaderboard/units)
    */
-  async getLeaderboard() {
-    if (CONFIG.USE_MOCK) return mockApi.getLeaderboard();
+  async getUnitProgress() {
     const json = await request('/leaderboard/units');
-    return (Array.isArray(json.data) ? json.data : []).map((item, idx) => ({
-      rank: item.rank || idx + 1, // tied units share the same rank
+    return (Array.isArray(json.data) ? json.data : []).map(item => ({
       unit_id: item.unitId,
-      unit_code: item.unitCode,
       unit_name: item.unitName || item.unitCode || '—',
-      valid_count: item.validParticipantsCount || 0,
-      total_personnel: item.totalPersonnel || 0,
-      rate: item.participationRatePercent != null ? Number(item.participationRatePercent) : 0,
-      last_updated_at: item.lastUpdatedAt || null
+      participant_count: item.validParticipantsCount || 0
+    }));
+  },
+
+  /**
+   * Danh sách CBNV tham gia hợp lệ của một đơn vị (GET /api/leaderboard/units/{id}/participants)
+   */
+  async getUnitParticipants(unitId) {
+    const json = await request(`/leaderboard/units/${unitId}/participants`);
+    return (Array.isArray(json.data) ? json.data : []).map(item => ({
+      employee_id: item.employeeId,
+      full_name: item.fullName || '—',
+      valid_submissions: item.validSubmissions || 0
+    }));
+  },
+
+  /**
+   * Xếp hạng cá nhân theo tổng điểm BTC đã chấm (GET /api/leaderboard/individuals?limit=).
+   * Không truyền limit → lấy tất cả người chơi.
+   */
+  async getIndividualLeaderboard(limit) {
+    const query = limit != null ? `?limit=${limit}` : '';
+    const json = await request(`/leaderboard/individuals${query}`);
+    return (Array.isArray(json.data) ? json.data : []).map((item, idx) => ({
+      rank: item.rank || idx + 1, // equal scores share the same rank
+      employee_id: item.employeeId,
+      full_name: item.fullName || '—',
+      unit_name: item.unitName || item.unitCode || '—',
+      total_score: item.totalScore != null ? Number(item.totalScore) : 0
     }));
   }
 };

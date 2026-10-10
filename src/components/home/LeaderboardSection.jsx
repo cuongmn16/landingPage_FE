@@ -16,15 +16,9 @@ export default function LeaderboardSection() {
       const data = await fetchUnitLeaderboardApi();
       setUnitLeaderboard(data || []);
     } catch (err) {
-      console.warn('[Leaderboard] Cannot fetch from backend API, using fallback data:', err);
+      console.warn('[Leaderboard] Cannot fetch from backend API:', err);
       setApiError('Không thể kết nối Backend API. Vui lòng kiểm tra Docker Postgres/MinIO & Spring Boot server.');
-      // Mock data for demo fallback if server is starting
-      setUnitLeaderboard([
-        { rank: 1, unitCode: 'PB_HR', unitName: 'Phòng Nhân sự', totalPersonnel: 10, validParticipantsCount: 10, participationRatePercent: 100.0, lastUpdatedAt: new Date().toISOString() },
-        { rank: 2, unitCode: 'PB_IT', unitName: 'Phòng Kỹ thuật & CNTT', totalPersonnel: 50, validParticipantsCount: 42, participationRatePercent: 84.0, lastUpdatedAt: new Date().toISOString() },
-        { rank: 3, unitCode: 'PB_KD', unitName: 'Phòng Kinh doanh', totalPersonnel: 30, validParticipantsCount: 21, participationRatePercent: 70.0, lastUpdatedAt: new Date().toISOString() },
-        { rank: 4, unitCode: 'PB_KT', unitName: 'Phòng Tài chính Kế toán', totalPersonnel: 15, validParticipantsCount: 9, participationRatePercent: 60.0, lastUpdatedAt: new Date().toISOString() }
-      ]);
+      setUnitLeaderboard([]);
     } finally {
       setLoading(false);
     }
