@@ -28,6 +28,11 @@ export default function DashboardPage() {
   };
 
   const handleStartMission = (mId) => {
+    // Mission 1 có trang riêng (bộ thẻ manh mối, ghép cụm, nộp bài)
+    if (Number(mId) === 1) {
+      navigate('/mission-1');
+      return;
+    }
     setSubmitMissionId(String(mId));
     setIsSubmitModalOpen(true);
   };
@@ -62,6 +67,10 @@ export default function DashboardPage() {
   }, [navigate]);
 
   const handleOpenReview = (mId) => {
+    if (Number(mId) === 1) {
+      navigate('/mission-1');
+      return;
+    }
     const sub = submissions.find(s => Number(s.mission_id) === Number(mId));
     if (!sub) return;
     const mission = missions.find(m => Number(m.id) === Number(mId));

@@ -168,3 +168,15 @@ export const M1_CARDS = [
     openImage:  '/assets/submissions/mission-1/cards/e/VC02-open.png',
     alt: 'Thẻ VC02 — giọng nói về cổ phần hóa' }
 ];
+
+/* Định dạng ngày giờ của Mission 1: "hh:mm · dd/mm/yyyy" */
+export function m1FmtDateTime(iso) {
+  const dt = new Date(iso);
+  if (isNaN(dt)) return '—';
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yy = dt.getFullYear();
+  const hh = String(dt.getHours()).padStart(2, '0');
+  const mi = String(dt.getMinutes()).padStart(2, '0');
+  return `${hh}:${mi} · ${dd}/${mm}/${yy}`;
+}

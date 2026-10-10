@@ -26,6 +26,12 @@ export default function MissionsSection() {
   }, []);
 
   const handleMissionClick = (mId) => {
+    const num = String(mId).replace(/[^0-9]/g, '') || '1';
+    // Mission 1 có trang riêng (bộ thẻ manh mối, ghép cụm, nộp bài)
+    if (num === '1') {
+      navigate('/mission-1');
+      return;
+    }
     if (!auth.isLoggedIn()) {
       navigate('/login');
       return;
@@ -34,7 +40,6 @@ export default function MissionsSection() {
       navigate('/admin?tab=submissions');
       return;
     }
-    const num = String(mId).replace(/[^0-9]/g, '') || '1';
     setSelectedMissionId(num);
     setIsSubmitModalOpen(true);
   };

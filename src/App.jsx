@@ -16,7 +16,7 @@ import AllSubmissionsPage from './pages/AllSubmissionsPage';
 
 import './styles/index.css';
 
-// Admin chỉ được dùng các trang /admin, /leaderboard (và trang đăng nhập/đăng ký)
+// Admin chỉ được dùng các trang /admin, /leaderboard, /mission-1 (và trang đăng nhập/đăng ký)
 function isAdminSession() {
   if (auth.user) return auth.user.role === 'admin';
   try {
@@ -32,7 +32,9 @@ function AppContent() {
   const location = useLocation();
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
 
-  const isAdminAllowed = location.pathname.startsWith('/admin') || location.pathname === '/leaderboard';
+  const isAdminAllowed = location.pathname.startsWith('/admin')
+    || location.pathname === '/leaderboard'
+    || location.pathname.startsWith('/mission-1');
   if (isAdminSession() && !isAuthRoute && !isAdminAllowed) {
     return <Navigate to="/admin" replace />;
   }
