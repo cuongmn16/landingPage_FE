@@ -279,10 +279,6 @@ export default function AdminPage() {
         {activeView === 'units' && (
           <section className="admin-view">
             <h1 className="admin-title">Quản lý Phòng ban &amp; Quân số</h1>
-            <p style={{ color: 'var(--clr-ink-3)', marginBottom: '16px' }}>
-              Người dùng chọn phòng ban khi đăng ký sẽ tự được xếp vào phòng ban đó. <strong>Tham gia</strong> = số CBNV đã đăng ký và được BTC duyệt,
-              tính trên <strong>quân số</strong> (tổng CBNV của phòng ban) — quân số cũng là mẫu số tính tỷ lệ tham gia trên bảng xếp hạng.
-            </p>
             {!loadingUnits && units.length > 0 && (() => {
               const list = units.filter(u => u.code !== 'PB_BTC');
               const joined = list.reduce((s, u) => s + (u.participantCount || 0), 0);
@@ -355,8 +351,8 @@ export default function AdminPage() {
                         </td>
                         <td style={{ textAlign: 'center' }}>{u.pendingCount ?? 0}</td>
                         <td style={{ textAlign: 'center' }}>
-                          <button className="btn-sm btn-approve" onClick={() => handleEditUnit(u)} style={{ marginRight: '6px' }}>✎ Sửa</button>
-                          <button className="btn-sm btn-reject" onClick={() => handleDeleteUnit(u)}>🗑 Xóa</button>
+                          <button className="btn-sm btn-approve" onClick={() => handleEditUnit(u)} style={{ marginRight: '6px' }} title="Sửa" aria-label={`Sửa ${u.name}`}>✎</button>
+                          <button className="btn-sm btn-reject" onClick={() => handleDeleteUnit(u)} title="Xóa" aria-label={`Xóa ${u.name}`}>🗑</button>
                         </td>
                       </tr>
                     ))
