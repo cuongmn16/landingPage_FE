@@ -265,18 +265,8 @@ export async function verifyOtpApi(email, otpCode) {
  * Email phải được xác thực OTP (verifyOtpApi) ngay trước đó.
  */
 export async function registerEmployeeApi(payload) {
-  const unitMap = {
-    'Phòng CNTT': 'PB_IT',
-    'Phòng Kỹ thuật': 'PB_IT',
-    'Phòng Nhân sự': 'PB_HR',
-    'Phòng Kinh doanh': 'PB_KD',
-    'Phòng Tài chính – Kế toán': 'PB_KT',
-    'Ban Giám đốc': 'PB_BTC',
-    'Ban Tổ chức': 'PB_BTC'
-  };
-
-  const rawUnit = payload.unitCode || payload.unit || 'PB_IT';
-  const unitCode = unitMap[rawUnit] || rawUnit;
+  // Mã phòng ban lấy từ GET /api/employees/units (backend chỉ nhận phòng ban có sẵn)
+  const unitCode = payload.unitCode || payload.unit;
 
   const json = await request('/employees/register', {
     method: 'POST',
@@ -353,6 +343,79 @@ export async function updateRuleConfigApi(data) {
 export async function getUnitsApi() {
   const json = await request('/employees/units');
   return Array.isArray(json.data) ? json.data : [];
+}
+
+/** Đơn vị của BTC (admin) — không cho người dùng chọn khi đăng ký */
+export const ADMIN_UNIT_CODE = 'PB_BTC';
+
+/** Danh sách phòng ban cho form đăng ký: [{ code, name }] theo thứ tự hiển thị */
+export async function getRegisterUnitsApi() {
+  const units = await getUnitsApi();
+  return units
+    .filter(u => u.code !== ADMIN_UNIT_CODE)
+    .map(u => ({ code: u.code, name: u.name }));
+}
+
+/* ------------------------------------------------------------
+   Mission progress (bản nháp tiến trình chơi, lưu trên server)
+   ------------------------------------------------------------ */
+
+/**
+ * Lấy tiến trình đã lưu của user hiện tại (GET /api/missions/{id}/progress).
+ * Trả về { state, updatedAt } hoặc null nếu chưa có.
+ */
+export async function getMissionProgressApi(missionId) {
+  const json = await request(`/missions/${missionId}/progress`);
+  const data = json.data;
+  if (!data || !data.progressJson) return null;
+  try {
+    return { state: JSON.parse(data.progressJson), updatedAt: data.updatedAt };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lưu tiến trình (PUT /api/missions/{id}/progress)
+ */
+export async function saveMissionProgressApi(missionId, state) {
+  const json = await request(`/missions/${missionId}/progress`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ progressJson: JSON.stringify(state) })
+  });
+  return json.data;
+}
+
+/* ------------------------------------------------------------
+   Admin: quản lý đơn vị / phòng ban và quân số
+   ------------------------------------------------------------ */
+
+export async function getAdminUnitsApi() {
+  const json = await request('/units');
+  return Array.isArray(json.data) ? json.data : [];
+}
+
+export async function createUnitApi(payload) {
+  const json = await request('/units', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return json.data;
+}
+
+export async function updateUnitApi(id, payload) {
+  const json = await request(`/units/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return json.data;
+}
+
+export async function deleteUnitApi(id) {
+  await request(`/units/${id}`, { method: 'DELETE' });
 }
 
 export async function toggleMissionStatusApi(id, isOpen) {

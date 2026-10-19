@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api, auth } from '../services/api';
+import { api, auth, getAdminUnitsApi, createUnitApi, updateUnitApi, deleteUnitApi } from '../services/api';
 import { getSubmissionStatus, fmtDate, fmtDateTime } from '../data/appData';
+import { M1_CONFIG } from '../data/mission1Data';
 
 function getFileIcon(fileName = '', fileUrl = '') {
   const str = (fileName + fileUrl).toLowerCase();
@@ -24,7 +25,8 @@ function formatFileSize(bytes) {
 export default function AdminPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialView = searchParams.get('tab') === 'submissions' ? 'submissions' : 'pending';
+  const tabParam = searchParams.get('tab');
+  const initialView = ['submissions', 'units'].includes(tabParam) ? tabParam : 'pending';
 
   const [activeView, setActiveView] = useState(initialView);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -39,6 +41,13 @@ export default function AdminPage() {
   const [scoreInput, setScoreInput] = useState('');
   const [statusInput, setStatusInput] = useState('pending');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Phòng ban / đơn vị
+  const emptyUnitForm = { id: null, code: '', name: '', totalPersonnel: '', sortOrder: '' };
+  const [units, setUnits] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(true);
+  const [unitForm, setUnitForm] = useState(emptyUnitForm);
+  const [savingUnit, setSavingUnit] = useState(false);
 
   const showToast = (text, type = 'success') => {
     setToastMsg({ text, type });
@@ -69,6 +78,17 @@ export default function AdminPage() {
     }
   };
 
+  const loadUnits = async () => {
+    setLoadingUnits(true);
+    try {
+      setUnits(await getAdminUnitsApi());
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
+
   useEffect(() => {
     async function checkAdmin() {
       const u = await auth.load();
@@ -78,9 +98,71 @@ export default function AdminPage() {
       }
       loadPending();
       loadSubmissions();
+      loadUnits();
     }
     checkAdmin();
   }, [navigate]);
+
+  const handleEditUnit = (u) => {
+    setUnitForm({
+      id: u.id,
+      code: u.code,
+      name: u.name,
+      totalPersonnel: String(u.totalPersonnel ?? ''),
+      sortOrder: u.sortOrder != null ? String(u.sortOrder) : ''
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSaveUnit = async (e) => {
+    e.preventDefault();
+    const total = Number(unitForm.totalPersonnel);
+    if (!unitForm.code.trim() || !unitForm.name.trim()) {
+      showToast('Vui lòng nhập mã và tên đơn vị.', 'error');
+      return;
+    }
+    if (!Number.isInteger(total) || total < 1) {
+      showToast('Số lượng nhân sự phải là số nguyên ≥ 1.', 'error');
+      return;
+    }
+    const payload = { code: unitForm.code.trim(), name: unitForm.name.trim(), totalPersonnel: total };
+    if (unitForm.sortOrder !== '') {
+      const order = Number(unitForm.sortOrder);
+      if (!Number.isInteger(order)) {
+        showToast('Thứ tự phải là số nguyên.', 'error');
+        return;
+      }
+      payload.sortOrder = order;
+    }
+    setSavingUnit(true);
+    try {
+      if (unitForm.id) {
+        await updateUnitApi(unitForm.id, payload);
+        showToast('Đã cập nhật đơn vị.', 'success');
+      } else {
+        await createUnitApi(payload);
+        showToast('Đã thêm đơn vị.', 'success');
+      }
+      setUnitForm(emptyUnitForm);
+      loadUnits();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSavingUnit(false);
+    }
+  };
+
+  const handleDeleteUnit = async (u) => {
+    if (!window.confirm(`Xóa đơn vị "${u.name}" (${u.code})?`)) return;
+    try {
+      await deleteUnitApi(u.id);
+      showToast('Đã xóa đơn vị.', 'success');
+      if (unitForm.id === u.id) setUnitForm(emptyUnitForm);
+      loadUnits();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
 
   const handleApprove = async (id) => {
     if (!window.confirm('Duyệt tài khoản này và tạo mật khẩu tạm?')) return;
@@ -160,6 +242,8 @@ export default function AdminPage() {
     { v: 'invalid',          l: 'Không hợp lệ' }
   ];
 
+  const isMission1Sub = !!selectedSub && Number(selectedSub.mission_id) === M1_CONFIG.id;
+
   const modalFiles = selectedSub
     ? (selectedSub.attachments && selectedSub.attachments.length > 0)
       ? selectedSub.attachments
@@ -183,7 +267,105 @@ export default function AdminPage() {
           >
             Bài nộp ({submissions.length})
           </button>
+          <button
+            className={`btn ${activeView === 'units' ? 'btn--gold' : 'btn--outline'}`}
+            onClick={() => setActiveView('units')}
+          >
+            Phòng ban ({units.length})
+          </button>
         </div>
+
+        {/* VIEW 3: QUẢN LÝ PHÒNG BAN / QUÂN SỐ */}
+        {activeView === 'units' && (
+          <section className="admin-view">
+            <h1 className="admin-title">Quản lý Phòng ban &amp; Quân số</h1>
+            <p style={{ color: 'var(--clr-ink-3)', marginBottom: '16px' }}>
+              Người dùng chọn phòng ban khi đăng ký sẽ tự được xếp vào phòng ban đó. <strong>Tham gia</strong> = số CBNV đã đăng ký và được BTC duyệt,
+              tính trên <strong>quân số</strong> (tổng CBNV của phòng ban) — quân số cũng là mẫu số tính tỷ lệ tham gia trên bảng xếp hạng.
+            </p>
+            {!loadingUnits && units.length > 0 && (() => {
+              const list = units.filter(u => u.code !== 'PB_BTC');
+              const joined = list.reduce((s, u) => s + (u.participantCount || 0), 0);
+              const total = list.reduce((s, u) => s + (u.totalPersonnel || 0), 0);
+              return (
+                <p style={{ marginBottom: '16px', fontWeight: 600 }}>
+                  Toàn công ty: {joined} / {total} CBNV tham gia ({total ? ((joined * 100) / total).toFixed(1) : 0}%)
+                </p>
+              );
+            })()}
+
+            <form onSubmit={handleSaveUnit} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '20px', padding: '16px', background: '#fff', border: '1px solid var(--clr-line)', borderRadius: '10px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label htmlFor="unitCode">Mã đơn vị</label>
+                <input id="unitCode" value={unitForm.code} placeholder="VD: PB_IT"
+                  onChange={(e) => setUnitForm(f => ({ ...f, code: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ margin: 0, flex: '1 1 220px' }}>
+                <label htmlFor="unitName">Tên đơn vị</label>
+                <input id="unitName" value={unitForm.name} placeholder="VD: Phòng Kỹ thuật & CNTT"
+                  onChange={(e) => setUnitForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label htmlFor="unitTotal">Quân số</label>
+                <input id="unitTotal" type="number" min="1" value={unitForm.totalPersonnel} placeholder="VD: 50"
+                  onChange={(e) => setUnitForm(f => ({ ...f, totalPersonnel: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ margin: 0, width: '90px' }}>
+                <label htmlFor="unitOrder">Thứ tự</label>
+                <input id="unitOrder" type="number" value={unitForm.sortOrder} placeholder="Tự động"
+                  onChange={(e) => setUnitForm(f => ({ ...f, sortOrder: e.target.value }))} />
+              </div>
+              <button type="submit" className="btn btn--gold" disabled={savingUnit}>
+                {savingUnit ? 'Đang lưu…' : unitForm.id ? 'Lưu thay đổi' : '+ Thêm đơn vị'}
+              </button>
+              {unitForm.id && (
+                <button type="button" className="btn btn--outline" onClick={() => setUnitForm(emptyUnitForm)}>Hủy sửa</button>
+              )}
+            </form>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'center' }}>#</th>
+                    <th>Mã</th>
+                    <th>Tên phòng ban</th>
+                    <th style={{ textAlign: 'center' }}>Tham gia / Quân số</th>
+                    <th style={{ textAlign: 'center' }}>Chờ duyệt</th>
+                    <th style={{ textAlign: 'center' }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingUnits ? (
+                    <tr><td colSpan="6" style={{ textAlign: 'center' }}>Đang tải…</td></tr>
+                  ) : units.length === 0 ? (
+                    <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--clr-ink-3)' }}>Chưa có phòng ban nào.</td></tr>
+                  ) : (
+                    units.map(u => (
+                      <tr key={u.id} style={unitForm.id === u.id ? { background: 'var(--clr-blue-pale)' } : undefined}>
+                        <td style={{ textAlign: 'center' }}>{u.sortOrder ?? '—'}</td>
+                        <td><code>{u.code}</code></td>
+                        <td><strong>{u.name}</strong></td>
+                        <td style={{ textAlign: 'center', minWidth: '150px' }}>
+                          <strong>{u.participantCount ?? 0}</strong> / {u.totalPersonnel}
+                          <span style={{ color: 'var(--clr-ink-3)' }}> ({u.participationRate ?? 0}%)</span>
+                          <div style={{ height: '6px', background: '#eee', borderRadius: '3px', marginTop: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.min(u.participationRate || 0, 100)}%`, height: '100%', background: 'var(--clr-blue)' }}></div>
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>{u.pendingCount ?? 0}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button className="btn-sm btn-approve" onClick={() => handleEditUnit(u)} style={{ marginRight: '6px' }}>✎ Sửa</button>
+                          <button className="btn-sm btn-reject" onClick={() => handleDeleteUnit(u)}>🗑 Xóa</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* VIEW 1: QUẢN LÝ NHÂN SỰ */}
         {activeView === 'pending' && (
@@ -536,6 +718,11 @@ export default function AdminPage() {
                   onChange={(e) => setScoreInput(e.target.value)}
                   placeholder="Nhập điểm"
                 />
+                {isMission1Sub && (
+                  <p style={{ color: 'var(--clr-ink-3)', fontSize: '0.85rem', marginTop: '6px' }}>
+                    Mission 01: hoàn thành hợp lệ = {M1_CONFIG.points} điểm (tự điền khi chọn "Hợp lệ").
+                  </p>
+                )}
               </div>
 
               <div className="status-form">
@@ -548,7 +735,11 @@ export default function AdminPage() {
                         name="subStatus"
                         value={o.v}
                         checked={statusInput === o.v}
-                        onChange={() => setStatusInput(o.v)}
+                        onChange={() => {
+                          setStatusInput(o.v);
+                          // Mission 01: hoàn thành hợp lệ = 1 điểm
+                          if (o.v === 'valid' && isMission1Sub && scoreInput === '') setScoreInput(String(M1_CONFIG.points));
+                        }}
                       />
                       <span>{o.l}</span>
                     </label>

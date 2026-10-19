@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { sendOtpApi, verifyOtpApi, registerEmployeeApi } from '../services/api';
-import { CONFIG } from '../data/appData';
+import { sendOtpApi, verifyOtpApi, registerEmployeeApi, getRegisterUnitsApi } from '../services/api';
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1); // 1: Form Info, 2: OTP Verification, 3: Success Screen (Matches attached screenshot)
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [employeeId, setEmployeeId] = useState('');
-  const [unit, setUnit] = useState('');
+  const [unit, setUnit] = useState(''); // mã phòng ban (unit code)
+  const [units, setUnits] = useState([]);
+  const [unitsError, setUnitsError] = useState('');
+
+  // Danh sách phòng ban do admin quản lý
+  useEffect(() => {
+    let cancelled = false;
+    getRegisterUnitsApi()
+      .then(list => { if (!cancelled) setUnits(list); })
+      .catch(err => { if (!cancelled) setUnitsError(err.message || 'Không tải được danh sách phòng ban.'); });
+    return () => { cancelled = true; };
+  }, []);
   const [otpCode, setOtpCode] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
 
@@ -87,7 +97,7 @@ export default function RegisterPage() {
         fullName: fullName.trim(),
         email: email.trim(),
         employeeCode: employeeId.trim(),
-        unitCode: unit || 'PB_IT'
+        unitCode: unit
       });
 
       // 3. Move to Step 3: Success Screen (Matches screenshot!)
@@ -177,18 +187,19 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="unit">Đơn vị</label>
+              <label htmlFor="unit">Phòng ban</label>
               <select
                 id="unit"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 required
               >
-                <option value="">— Chọn đơn vị —</option>
-                {CONFIG.UNITS.map((u, i) => (
-                  <option key={i} value={u}>{u}</option>
+                <option value="">{units.length ? '— Chọn phòng ban —' : 'Đang tải danh sách phòng ban…'}</option>
+                {units.map(u => (
+                  <option key={u.code} value={u.code}>{u.name}</option>
                 ))}
               </select>
+              {unitsError && <p className="form-error" style={{ marginTop: '6px' }}>{unitsError}</p>}
             </div>
 
             <button type="submit" className="auth-btn" disabled={sendingOtp || cooldown > 0} style={{ marginTop: '8px' }}>

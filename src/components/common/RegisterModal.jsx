@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { registerEmployeeApi, sendOtpApi, verifyOtpApi } from '../../services/api';
+import { registerEmployeeApi, sendOtpApi, verifyOtpApi, getRegisterUnitsApi } from '../../services/api';
 
 export default function RegisterModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1); // 1: Send OTP, 2: Enter OTP & Complete Register
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [unitCode, setUnitCode] = useState('PB_IT');
+  const [unitCode, setUnitCode] = useState('');
+  const [units, setUnits] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getRegisterUnitsApi().then(setUnits).catch(() => setUnits([]));
+  }, [isOpen]);
   const [otpCode, setOtpCode] = useState('');
 
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -199,10 +205,8 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
                   onChange={(e) => setUnitCode(e.target.value)}
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
                 >
-                  <option value="PB_IT">Phòng Kỹ thuật &amp; CNTT (PB_IT)</option>
-                  <option value="PB_HR">Phòng Nhân sự (PB_HR)</option>
-                  <option value="PB_KD">Phòng Kinh doanh (PB_KD)</option>
-                  <option value="PB_KT">Phòng Tài chính Kế toán (PB_KT)</option>
+                  <option value="">— Chọn phòng ban —</option>
+                  {units.map(u => <option key={u.code} value={u.code}>{u.name}</option>)}
                 </select>
               </div>
 

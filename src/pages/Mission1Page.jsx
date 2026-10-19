@@ -1,83 +1,606 @@
 /* ============================================================
-   MISSION 1 PAGE — port từ src_demo/mission-1 (index.html + mission-1.js)
-   - Admin: xem bài nộp + nút "Xem toàn bộ"
-   - User: nộp bài + xem bài của mình (kèm trạng thái)
+   MISSION 1 PAGE — JOURNEY MAP (6 tab, port từ src_demo/mission-1)
+   - User: chơi theo 6 tab; tiến trình tự lưu theo từng tài khoản,
+     thoát ra vào lại sẽ tiếp tục đúng chỗ cũ. Nộp bài → gửi về admin chấm.
+     Hoàn thành Mission 01 (được BTC duyệt hợp lệ) = 1 điểm.
+   - Admin: xem danh sách bài nộp Mission 01, chấm tại trang /admin.
    ============================================================ */
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { M1_CONFIG, M1_GROUPS, M1_CARDS, m1FmtDateTime as fmtDateTime } from '../data/mission1Data';
-import { api, auth } from '../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  M1_CONFIG, M1_TABS, M1_INTRO, M1_TIMELINE, M1_MEANINGS, M1_STAGES, M1_YEAR_OPTIONS,
+  M1_STAGE_NAMES, M1_STAGE_EVENTS, M1_TRANSFORMS, M1_LEGACIES, M1_SPIRIT_OPTIONS,
+  M1_RED_THREAD, M1_EVIDENCE, M1_FEEDBACK, M1_COMPLETE,
+  m1FmtDateTime as fmtDateTime
+} from '../data/mission1Data';
+import {
+  api, auth, submitMissionResponseApi, getMissionProgressApi, saveMissionProgressApi
+} from '../services/api';
 import { getSubmissionStatus } from '../data/appData';
+import '../styles/mission1.css';
 
-const LS_KEY = 'ctin_th_m1_v1';
+const LS_PREFIX = 'ctin_th_m1_v2_';
 const ADMIN_SHOW_LIMIT = 6;
+const SYNC_DELAY_MS = 1500;
 
 /* ---------- Helpers ---------- */
-function loadState() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
-      return { openedCards: data.openedCards || [], clusters: data.clusters || [] };
-    }
-  } catch { /* storage unavailable */ }
-  return { openedCards: [], clusters: [] };
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
-const getCard = (id) => M1_CARDS.find(c => c.id === id);
-const getGroup = (id) => M1_GROUPS.find(g => g.id === id);
-const hasCardB = (ids) => ids.some(id => getCard(id)?.group === 'B');
+function countWords(text) {
+  return (text || '').trim().split(/\s+/).filter(Boolean).length;
+}
 
-const isImageUrl = (url) => !!url && /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-const isPdfUrl = (url) => !!url && /\.pdf$/i.test(url);
+/* Thứ tự đáp án được xáo một lần rồi lưu cùng tiến trình, để vào lại vẫn giữ nguyên */
+function buildOrder() {
+  const transforms = {};
+  M1_TRANSFORMS.forEach(t => {
+    transforms[t.stageId] = {
+      contexts: shuffle([
+        { id: t.contextId, text: t.context },
+        ...t.distractors.contexts.map((txt, i) => ({ id: `${t.contextId}_d${i}`, text: txt }))
+      ]),
+      changes: shuffle([
+        { id: t.changeId, text: t.change },
+        ...t.distractors.changes.map((txt, i) => ({ id: `${t.changeId}_d${i}`, text: txt }))
+      ])
+    };
+  });
+  return {
+    meanings: shuffle(M1_MEANINGS),
+    names: shuffle(M1_STAGE_NAMES),
+    events: shuffle(M1_STAGE_EVENTS),
+    transforms,
+    spirits: shuffle(M1_SPIRIT_OPTIONS),
+    redThread: shuffle(M1_RED_THREAD.options)
+  };
+}
+
+const defaultState = () => ({
+  agreed: false,
+  timeline: {},
+  stages: {},
+  transforms: {},
+  legacies: {},
+  redThread: null,
+  reflection: '',
+  altStages: '',
+  currentTab: 1,
+  submittedAt: null,
+  savedAt: null,
+  order: buildOrder()
+});
+
+function normalizeState(data) {
+  const base = defaultState();
+  if (!data || typeof data !== 'object') return base;
+  return { ...base, ...data, order: data.order || base.order };
+}
+
+function loadState(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return normalizeState(JSON.parse(raw));
+  } catch { /* storage unavailable */ }
+  return defaultState();
+}
+
+/* Bản nào được lưu sau cùng (local hay server) thì dùng bản đó */
+const savedTime = (s) => (s && s.savedAt ? new Date(s.savedAt).getTime() || 0 : 0);
+
+function saveState(key, state) {
+  try {
+    localStorage.setItem(key, JSON.stringify(state));
+  } catch { /* storage unavailable */ }
+}
+
+/* ---------- Validation ---------- */
+const isTimelineComplete = (s) => M1_TIMELINE.every(t => s.timeline[t.id] === t.meaningId);
+
+const isStageCorrect = (stage, ans) => !!ans &&
+  Number(ans.start) === Number(stage.start) &&
+  String(ans.end) === String(stage.end) &&
+  ans.nameId === stage.nameId &&
+  ans.eventId === stage.eventId;
+
+const isStagesComplete = (s) => M1_STAGES.every(st => isStageCorrect(st, s.stages[st.id]));
+
+const isTransformCorrect = (t, ans) => !!ans && ans.contextId === t.contextId && ans.changeId === t.changeId;
+
+const isTransformsComplete = (s) => M1_TRANSFORMS.every(t => isTransformCorrect(t, s.transforms[t.stageId]));
+
+const isLegaciesComplete = (s) => M1_LEGACIES.every(l => s.legacies[l.stageId] === l.spiritId);
+
+const isRedThreadCorrect = (s) => s.redThread === M1_RED_THREAD.correctId;
+
+const isReflectionValid = (s) => {
+  const n = countWords(s.reflection);
+  return n >= 15 && n <= 30;
+};
+
+const isTab5Complete = (s) => isLegaciesComplete(s) && isRedThreadCorrect(s) && isReflectionValid(s);
+
+const isAllValid = (s) => s.agreed && isTimelineComplete(s) && isStagesComplete(s) &&
+  isTransformsComplete(s) && isTab5Complete(s);
+
+function maxReachableTab(s) {
+  let max = 1;
+  if (s.agreed) max = 2;
+  if (max === 2 && isTimelineComplete(s)) max = 3;
+  if (max === 3 && isStagesComplete(s)) max = 4;
+  if (max === 4 && isTransformsComplete(s)) max = 5;
+  if (max === 5 && isTab5Complete(s)) max = 6;
+  return max;
+}
+
+function canLeaveTab(tab, s) {
+  switch (tab) {
+    case 1: return s.agreed;
+    case 2: return isTimelineComplete(s);
+    case 3: return isStagesComplete(s);
+    case 4: return isTransformsComplete(s);
+    case 5: return isTab5Complete(s);
+    default: return false;
+  }
+}
+
+/* Nội dung dễ đọc gửi cho admin chấm (hiển thị ở mục "Ghi chú / Trả lời") */
+function buildSubmissionText(s) {
+  const rt = M1_RED_THREAD.options.find(o => o.id === s.redThread);
+  const lines = [
+    `MISSION 01 · ${M1_CONFIG.title} — ${M1_CONFIG.subtitle}`,
+    '',
+    'BẢNG KIỂM:',
+    `✓ ${M1_TIMELINE.length}/${M1_TIMELINE.length} mốc thời gian kết nối đúng`,
+    `✓ ${M1_STAGES.length}/${M1_STAGES.length} giai đoạn: năm, tên, sự kiện tạo đà đúng`,
+    `✓ ${M1_TRANSFORMS.length}/${M1_TRANSFORMS.length} giai đoạn: bối cảnh & chuyển biến đúng`,
+    `✓ ${M1_LEGACIES.length}/${M1_LEGACIES.length} di sản được chọn đúng`,
+    '✓ Sợi chỉ đỏ đúng',
+    '',
+    'SỢI CHỈ ĐỎ:',
+    rt ? rt.text : '—',
+    '',
+    `ĐIỀU TÔI HIỂU RÕ HƠN VỀ CTIN (${countWords(s.reflection)} từ):`,
+    (s.reflection || '').trim()
+  ];
+  if ((s.altStages || '').trim()) {
+    lines.push('', 'GÓC NHÌN KHÁC VỀ CÁC GIAI ĐOẠN (không bắt buộc):', s.altStages.trim());
+  }
+  return lines.join('\n');
+}
 
 const hideSelf = (e) => { e.currentTarget.style.display = 'none'; };
 
+/* ============================================================
+   TAB CONTENTS
+   ============================================================ */
+function Tab1Intro({ state, update }) {
+  return (
+    <section className="m1-panel">
+      <div className="m1-panel__grid">
+        <div className="m1-panel__main">
+          <p className="m1-panel__label mono">{M1_INTRO.label}</p>
+          <h2 className="m1-panel__title">{M1_INTRO.title}</h2>
+          <p className="m1-panel__text">{M1_INTRO.description}</p>
+          <h3 className="m1-panel__subtitle">Kết quả cần hoàn thành</h3>
+          <p className="m1-panel__text">{M1_INTRO.result}</p>
+          <h3 className="m1-panel__subtitle">Điểm thưởng</h3>
+          <p className="m1-panel__text">
+            Hoàn thành Mission 01 và được BTC xác nhận hợp lệ, bạn nhận <strong>{M1_CONFIG.points} điểm</strong>.
+            Tiến trình được tự động lưu — bạn có thể thoát ra và quay lại chơi tiếp bất cứ lúc nào.
+          </p>
+        </div>
+        <aside className="m1-panel__side">
+          <div className="m1-req-box">
+            <h4 className="m1-req-box__title">{M1_INTRO.requirementTitle}</h4>
+            <p className="m1-req-box__text">{M1_INTRO.requirementText}</p>
+            <label className="m1-checkbox">
+              <input
+                type="checkbox"
+                checked={state.agreed}
+                onChange={(e) => update({ agreed: e.target.checked })}
+              />
+              <span>{M1_INTRO.confirmLabel}</span>
+            </label>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function Evidence({ code }) {
+  const ev = code ? M1_EVIDENCE[code] : null;
+  if (!ev) return null;
+  if (ev.status === 'ready' && ev.images.length) {
+    return (
+      <div className="m1-unlock__evidence">
+        {ev.images.map(src => (
+          <img key={src} className="m1-unlock__img" src={src} alt={ev.caption} loading="lazy" onError={hideSelf} />
+        ))}
+      </div>
+    );
+  }
+  return <div className="m1-unlock__placeholder">{ev.caption || 'Tư liệu đang cập nhật'}</div>;
+}
+
+function Tab2Timeline({ state, update, toast }) {
+  function choose(t, value) {
+    update(s => ({ timeline: { ...s.timeline, [t.id]: value } }));
+    if (value === t.meaningId) toast(M1_FEEDBACK.timeline.correct, 'success');
+    else if (value) toast(M1_FEEDBACK.timeline.wrong, 'error');
+  }
+
+  return (
+    <section className="m1-panel">
+      <p className="m1-panel__hint">
+        Hãy lựa chọn ý nghĩa phù hợp cho từng mốc. Khi kết nối đúng, sự kiện lịch sử đầy đủ và tư liệu liên quan sẽ được mở ra để bạn khám phá.
+      </p>
+      <div className="m1-timeline">
+        {M1_TIMELINE.map(t => {
+          const selected = state.timeline[t.id] || '';
+          const isCorrect = selected === t.meaningId;
+          return (
+            <div key={t.id} className={`m1-tl-item ${isCorrect ? 'is-correct' : ''}`}>
+              <div className="m1-tl-item__row">
+                <div className="m1-tl-item__year">{t.year}</div>
+                <div className="m1-tl-item__body">
+                  <select
+                    className="m1-tl-item__select"
+                    value={selected}
+                    disabled={isCorrect}
+                    onChange={(e) => choose(t, e.target.value)}
+                  >
+                    <option value="">— Chọn ý nghĩa phù hợp —</option>
+                    {state.order.meanings.map(m => <option key={m.id} value={m.id}>{m.text}</option>)}
+                  </select>
+                  {isCorrect && t.unlock && (
+                    <div className="m1-unlock">
+                      <p className="m1-unlock__title">{t.unlock.title}</p>
+                      <p className="m1-unlock__text">{t.unlock.text}</p>
+                      <Evidence code={t.unlock.evidence} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function StageFeedback({ stage, ans }) {
+  if (!ans.start || !ans.end) return null;
+  const rangeOk = Number(ans.start) === Number(stage.start) && String(ans.end) === String(stage.end);
+  if (!rangeOk) return <div className="m1-stage-feedback is-error">{M1_FEEDBACK.stages.wrongRange}</div>;
+  if (ans.nameId === stage.nameId && ans.eventId === stage.eventId) {
+    return <div className="m1-stage-feedback is-ok">{M1_FEEDBACK.stages.allCorrect}</div>;
+  }
+  if (ans.nameId || ans.eventId) {
+    return <div className="m1-stage-feedback is-warn">{M1_FEEDBACK.stages.wrongNameOrEvent}</div>;
+  }
+  return <div className="m1-stage-feedback is-ok">{M1_FEEDBACK.stages.rangeOk}</div>;
+}
+
+function Tab3Stages({ state, update }) {
+  function setField(sid, field, value) {
+    update(s => ({ stages: { ...s.stages, [sid]: { ...(s.stages[sid] || {}), [field]: value } } }));
+  }
+
+  return (
+    <section className="m1-panel">
+      <p className="m1-panel__hint">
+        Dựa trên các dấu mốc đã khám phá, hãy xác định cách hành trình CTIN được phân chia thành 5 giai đoạn phát triển. Kết quả của bước này sẽ tạo thành khung hành trình để tiếp tục giải mã sự chuyển mình của CTIN.
+      </p>
+      <div className="m1-stages">
+        {M1_STAGES.map((s, idx) => {
+          const ans = state.stages[s.id] || {};
+          const isCorrect = isStageCorrect(s, ans);
+          const yearOpts = M1_YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>);
+          return (
+            <div key={s.id} className={`m1-stage-card ${isCorrect ? 'is-correct' : ''}`}>
+              <div className="m1-stage-card__head">
+                <span className="m1-stage-card__num">GĐ {String(idx + 1).padStart(2, '0')}</span>
+                <span className="m1-stage-card__label">Giai đoạn {idx + 1}</span>
+              </div>
+              <div className="m1-stage-card__fields">
+                <div className="m1-field">
+                  <label>Từ năm</label>
+                  <select value={ans.start || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'start', e.target.value)}>
+                    <option value="">— Chọn —</option>{yearOpts}
+                  </select>
+                </div>
+                <div className="m1-field">
+                  <label>Đến năm</label>
+                  <select value={ans.end || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'end', e.target.value)}>
+                    <option value="">— Chọn —</option>{yearOpts}
+                  </select>
+                </div>
+                <div className="m1-field">
+                  <label>Tên giai đoạn</label>
+                  <select value={ans.nameId || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'nameId', e.target.value)}>
+                    <option value="">— Chọn tên —</option>
+                    {state.order.names.map(n => <option key={n.id} value={n.id}>{n.text}</option>)}
+                  </select>
+                </div>
+                <div className="m1-field">
+                  <label>Sự kiện tạo đà</label>
+                  <select value={ans.eventId || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'eventId', e.target.value)}>
+                    <option value="">— Chọn sự kiện —</option>
+                    {state.order.events.map(ev => <option key={ev.id} value={ev.id}>{ev.text}</option>)}
+                  </select>
+                </div>
+              </div>
+              <StageFeedback stage={s} ans={ans} />
+            </div>
+          );
+        })}
+      </div>
+      <div className="m1-alt-view">
+        <h4 className="m1-alt-view__title">Góc nhìn khác (không bắt buộc)</h4>
+        <p className="m1-alt-view__desc">Nếu nhìn hành trình CTIN theo một góc độ khác, bạn sẽ thay đổi ranh giới của giai đoạn nào? Vì sao?</p>
+        <textarea
+          rows={3}
+          placeholder="Theo tôi, có thể thay đổi khoảng…"
+          value={state.altStages}
+          onChange={(e) => update({ altStages: e.target.value })}
+        />
+      </div>
+    </section>
+  );
+}
+
+function Tab4Transforms({ state, update, toast }) {
+  function setField(t, field, value) {
+    const ans = { ...(state.transforms[t.stageId] || {}), [field]: value };
+    update(s => ({ transforms: { ...s.transforms, [t.stageId]: ans } }));
+    if (isTransformCorrect(t, ans)) toast(M1_FEEDBACK.transform.correct, 'success');
+  }
+
+  return (
+    <section className="m1-panel">
+      <p className="m1-panel__hint">
+        Với mỗi giai đoạn, hãy kết nối ba thành phần: bối cảnh hoặc điểm xuất phát, sự kiện tạo đà và chuyển biến về bản chất của CTIN. Khi kết nối chính xác, hồ sơ kiến thức chi tiết sẽ được mở.
+      </p>
+      <div className="m1-transforms">
+        {M1_TRANSFORMS.map((t, idx) => {
+          const ans = state.transforms[t.stageId] || {};
+          const isCorrect = isTransformCorrect(t, ans);
+          const opts = state.order.transforms[t.stageId];
+          return (
+            <div key={t.stageId} className={`m1-tf-card ${isCorrect ? 'is-correct' : ''}`}>
+              <div className="m1-tf-card__head">
+                <span className="m1-tf-card__badge">Giai đoạn {idx + 1}</span>
+                <span className="m1-tf-card__name">{t.stageName}</span>
+              </div>
+              <div className="m1-tf-card__fields">
+                <div className="m1-field">
+                  <label>Bối cảnh / Điểm xuất phát</label>
+                  <select value={ans.contextId || ''} disabled={isCorrect} onChange={(e) => setField(t, 'contextId', e.target.value)}>
+                    <option value="">— Chọn bối cảnh —</option>
+                    {opts.contexts.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
+                  </select>
+                </div>
+                <div className="m1-field">
+                  <label>Sự chuyển biến về bản chất</label>
+                  <select value={ans.changeId || ''} disabled={isCorrect} onChange={(e) => setField(t, 'changeId', e.target.value)}>
+                    <option value="">— Chọn chuyển biến —</option>
+                    {opts.changes.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
+                  </select>
+                </div>
+              </div>
+              {isCorrect && (
+                <div className="m1-profile">
+                  <p className="m1-profile__msg">{t.profile.message}</p>
+                  <ul className="m1-profile__list">
+                    {t.profile.details.map(d => <li key={d}>{d}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function Tab5Legacy({ state, update }) {
+  const n = countWords(state.reflection);
+  let fb = { text: '', cls: '' };
+  if (n > 0 && n < 15) fb = { text: M1_FEEDBACK.reflection.tooShort, cls: 'is-error' };
+  else if (n > 30) fb = { text: M1_FEEDBACK.reflection.tooLong, cls: 'is-error' };
+  else if (n > 0) fb = { text: M1_FEEDBACK.reflection.ok, cls: 'is-ok' };
+
+  return (
+    <section className="m1-panel">
+      <p className="m1-panel__intro">
+        Tinh thần và cách lựa chọn của con người CTIN đã tạo ra năng lực tổ chức; năng lực ấy tiếp tục được tích lũy để mở ra giai đoạn phát triển tiếp theo.
+      </p>
+
+      <h3 className="m1-section-title">1. Di sản được hình thành và tiếp nối qua từng giai đoạn</h3>
+      <p className="m1-panel__hint">
+        Với mỗi giai đoạn, hãy lựa chọn phương án thể hiện đúng nhất tinh thần, cách CTIN đã lựa chọn hành động và những năng lực được hình thành từ chính những lựa chọn đó.
+      </p>
+      <div className="m1-legacies">
+        {M1_LEGACIES.map(l => {
+          const selected = state.legacies[l.stageId] || '';
+          const isCorrect = selected === l.spiritId;
+          return (
+            <div key={l.stageId} className={`m1-leg-item ${isCorrect ? 'is-correct' : ''}`}>
+              <span className="m1-leg-item__label">{l.stageLabel}</span>
+              <select
+                value={selected}
+                disabled={isCorrect}
+                onChange={(e) => update(s => ({ legacies: { ...s.legacies, [l.stageId]: e.target.value } }))}
+              >
+                <option value="">— Lựa chọn di sản hình thành và tiếp nối —</option>
+                {state.order.spirits.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+
+      <h3 className="m1-section-title">2. Sợi chỉ đỏ xuyên suốt hành trình CTIN</h3>
+      <p className="m1-panel__hint">Từ những di sản đã xác định, hãy lựa chọn nhận định khái quát phù hợp nhất với toàn bộ hành trình.</p>
+      <div className="m1-redthread">
+        {state.order.redThread.map(o => {
+          const sel = state.redThread === o.id;
+          const isCorrect = sel && o.id === M1_RED_THREAD.correctId;
+          return (
+            <label key={o.id} className={`m1-rt-option ${sel ? 'is-selected' : ''} ${isCorrect ? 'is-correct' : ''}`}>
+              <input type="radio" name="redThread" value={o.id} checked={sel} onChange={() => update({ redThread: o.id })} />
+              <span>{o.text}</span>
+            </label>
+          );
+        })}
+      </div>
+
+      <h3 className="m1-section-title">3. Điều tôi hiểu rõ hơn về CTIN</h3>
+      <p className="m1-panel__hint">
+        Sau khi hoàn thành hành trình này, hãy viết một điều bạn hiểu rõ hơn về CTIN mà trước đây bạn chưa từng chú ý hoặc chưa nhìn nhận đầy đủ.
+      </p>
+      <div className="m1-reflection">
+        <textarea
+          rows={4}
+          placeholder="Sau khi nhìn lại hành trình CTIN, tôi hiểu rõ hơn rằng…"
+          value={state.reflection}
+          onChange={(e) => update({ reflection: e.target.value })}
+        />
+        <div className="m1-reflection__meta">
+          <span>{n} / 15–30 từ</span>
+          <span className={`m1-feedback ${fb.cls}`}>{fb.text}</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Tab6Summary({ state }) {
+  const rtOpt = M1_RED_THREAD.options.find(o => o.id === state.redThread);
+  const checks = [
+    { ok: state.agreed, label: 'Đã xác nhận hiểu cách chơi' },
+    { ok: isTimelineComplete(state), label: '10/10 mốc thời gian kết nối đúng' },
+    { ok: isStagesComplete(state), label: '5 giai đoạn: năm, tên, sự kiện tạo đà đúng' },
+    { ok: isTransformsComplete(state), label: '5 giai đoạn: bối cảnh & chuyển biến đúng' },
+    { ok: isLegaciesComplete(state), label: '5 di sản được chọn đúng' },
+    { ok: isRedThreadCorrect(state), label: 'Sợi chỉ đỏ đúng' },
+    { ok: isReflectionValid(state), label: 'Chia sẻ cá nhân 15–30 từ' }
+  ];
+
+  return (
+    <section className="m1-panel">
+      <p className="m1-panel__hint">
+        Đây là bản tổng hợp toàn bộ lựa chọn của bạn. Có thể quay lại các tab trước để điều chỉnh trước khi nộp.
+      </p>
+      {isAllValid(state) && (
+        <div className="m1-summary-block">
+          <h4>{M1_COMPLETE.title}</h4>
+          <p>{M1_COMPLETE.message}</p>
+        </div>
+      )}
+
+      {M1_STAGES.map((s, idx) => {
+        const tf = M1_TRANSFORMS.find(t => t.stageId === s.id);
+        const leg = M1_LEGACIES.find(l => l.stageId === s.id);
+        return (
+          <div key={s.id} className="m1-summary-stage">
+            <div className="m1-summary-stage__head">
+              <span className="m1-summary-stage__num">GĐ {String(idx + 1).padStart(2, '0')}</span>
+              <span className="m1-summary-stage__name">{s.name}</span>
+              <span className="m1-summary-stage__years">{s.start} – {s.end}</span>
+            </div>
+            <div className="m1-summary-row">
+              <span className="m1-summary-row__label">Sự kiện tạo đà</span>
+              <span className="m1-summary-row__value">{s.event}</span>
+            </div>
+            <div className="m1-summary-row">
+              <span className="m1-summary-row__label">Bối cảnh</span>
+              <span className="m1-summary-row__value">{tf ? tf.context : '—'}</span>
+            </div>
+            <div className="m1-summary-row">
+              <span className="m1-summary-row__label">Chuyển biến</span>
+              <span className="m1-summary-row__value">{tf ? tf.change : '—'}</span>
+            </div>
+            <div className="m1-summary-row">
+              <span className="m1-summary-row__label">Di sản</span>
+              <span className="m1-summary-row__value">{leg ? `${leg.spirit} → ${leg.capacity}` : '—'}</span>
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="m1-summary-block">
+        <h4>Sợi chỉ đỏ xuyên suốt</h4>
+        <p>{rtOpt ? rtOpt.text : '—'}</p>
+      </div>
+
+      <div className="m1-summary-block" style={{ background: 'var(--clr-blue-pale)', borderLeftColor: 'var(--clr-blue)' }}>
+        <h4 style={{ color: 'var(--clr-blue-dark)' }}>Điều tôi hiểu rõ hơn về CTIN</h4>
+        <p>{state.reflection || '—'}</p>
+      </div>
+
+      {(state.altStages || '').trim() && (
+        <div className="m1-summary-block" style={{ background: '#FAFBFC', borderLeftColor: 'var(--clr-ink-3)' }}>
+          <h4 style={{ color: 'var(--clr-ink-3)' }}>Góc nhìn khác (không tính hợp lệ)</h4>
+          <p>{state.altStages}</p>
+        </div>
+      )}
+
+      <div className="m1-checklist">
+        <p className="m1-checklist__title">Bảng kiểm hợp lệ</p>
+        {checks.map(c => (
+          <div key={c.label} className={`m1-check-item ${c.ok ? 'is-ok' : ''}`}>
+            <span className={`m1-check-item__icon ${c.ok ? 'is-ok' : 'is-fail'}`}>{c.ok ? '✓' : '✗'}</span>
+            <span className="m1-check-item__label">{c.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   PAGE
+   ============================================================ */
 export default function Mission1Page() {
-  const [openedCards, setOpenedCards] = useState(() => loadState().openedCards);
-  const [clusters, setClusters] = useState(() => loadState().clusters);
-  const [currentCluster, setCurrentCluster] = useState([]);
-  const [activeTab, setActiveTab] = useState('B');
+  const navigate = useNavigate();
 
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoaded, setUserLoaded] = useState(false);
+  const [storageKey, setStorageKey] = useState(null);
+  const [state, setState] = useState(null);
+
   const [mySubmission, setMySubmission] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [adminSubs, setAdminSubs] = useState(null);
   const [adminError, setAdminError] = useState('');
 
-  const [modalCardId, setModalCardId] = useState(null);
-  const [toast, setToast] = useState({ msg: '', type: '', visible: false });
-
-  const [note, setNote] = useState('');
-  const [formError, setFormError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [justSubmitted, setJustSubmitted] = useState(false);
-
-  const clustersRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const modalCloseRef = useRef(null);
-  const lastFocusedRef = useRef(null);
-  const modalOpenRef = useRef(false);
+  const [toastState, setToastState] = useState({ msg: '', type: '', visible: false });
   const toastTimerRef = useRef(null);
+  const syncTimerRef = useRef(null);
+  const pendingRemoteRef = useRef(null);
+  const [exiting, setExiting] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
 
-  /* ---------- Persist ---------- */
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify({ openedCards, clusters }));
-    } catch { /* storage unavailable */ }
-  }, [openedCards, clusters]);
-
-  function showToast(msg, type) {
+  function toast(msg, type) {
     clearTimeout(toastTimerRef.current);
-    setToast({ msg, type, visible: true });
-    toastTimerRef.current = setTimeout(() => setToast(t => ({ ...t, visible: false })), 2400);
+    setToastState({ msg, type, visible: true });
+    toastTimerRef.current = setTimeout(() => setToastState(t => ({ ...t, visible: false })), 2800);
   }
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
-  /* ---------- INIT ---------- */
   async function loadMySubmission() {
     try {
       const subs = await api.getUserSubmissions();
@@ -87,6 +610,7 @@ export default function Mission1Page() {
     }
   }
 
+  /* ---------- INIT ---------- */
   useEffect(() => {
     let cancelled = false;
     async function init() {
@@ -104,6 +628,17 @@ export default function Mission1Page() {
           if (!cancelled) setAdminError(e.message);
         }
       } else if (u) {
+        // Tiến trình lưu riêng cho từng tài khoản
+        const key = LS_PREFIX + (u.id || u.email);
+        let loaded = loadState(key);
+        try {
+          const remote = await getMissionProgressApi(M1_CONFIG.id);
+          if (remote && savedTime(remote.state) > savedTime(loaded)) loaded = normalizeState(remote.state);
+        } catch { /* offline: dùng bản lưu trên trình duyệt */ }
+        if (cancelled) return;
+        loaded.currentTab = Math.min(loaded.currentTab || 1, maxReachableTab(loaded));
+        setStorageKey(key);
+        setState(loaded);
         await loadMySubmission();
       }
     }
@@ -111,162 +646,156 @@ export default function Mission1Page() {
     return () => { cancelled = true; };
   }, []);
 
-  /* ---------- MODAL ---------- */
-  function openCardModal(id) {
-    if (!getCard(id)) return;
-    setOpenedCards(prev => (prev.includes(id) ? prev : [...prev, id]));
-    lastFocusedRef.current = document.activeElement;
-    setModalCardId(id);
-  }
-
-  function closeModal() {
-    if (!modalOpenRef.current) return;
-    modalOpenRef.current = false;
-    setModalCardId(null);
-    if (lastFocusedRef.current?.focus) lastFocusedRef.current.focus();
-  }
-
+  /* ---------- Auto-save ---------- */
+  // Lưu ngay vào trình duyệt; đồng bộ lên server sau 1.5s không thao tác
   useEffect(() => {
-    modalOpenRef.current = !!modalCardId;
-    if (!modalCardId) return;
-    document.body.style.overflow = 'hidden';
-    const t = setTimeout(() => modalCloseRef.current?.focus(), 50);
+    if (!storageKey || !state) return;
+    saveState(storageKey, state);
+    pendingRemoteRef.current = state;
+    clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => { flushRemote(); }, SYNC_DELAY_MS);
+  }, [storageKey, state]);
+
+  // Rời trang (bấm menu, đóng tab…) → đẩy nốt bản chưa đồng bộ
+  useEffect(() => {
+    const onUnload = () => { flushRemote(); };
+    window.addEventListener('beforeunload', onUnload);
     return () => {
-      clearTimeout(t);
-      document.body.style.overflow = '';
+      window.removeEventListener('beforeunload', onUnload);
+      clearTimeout(syncTimerRef.current);
+      flushRemote();
     };
-  }, [modalCardId]);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  /* ---------- CLUSTERS ---------- */
-  function toggleSelectCard(id) {
-    const c = getCard(id);
-    if (!c) return;
-    setCurrentCluster(prev => {
-      if (prev.includes(id)) return prev.filter(cid => cid !== id);
-      // Mỗi cụm chỉ có 1 thẻ B: chọn thẻ B mới sẽ thay thẻ B cũ
-      const base = c.group === 'B' ? prev.filter(cid => getCard(cid)?.group !== 'B') : prev;
-      return [...base, id];
+  async function flushRemote() {
+    clearTimeout(syncTimerRef.current);
+    const pending = pendingRemoteRef.current;
+    if (!pending) return true;
+    pendingRemoteRef.current = null;
+    try {
+      await saveMissionProgressApi(M1_CONFIG.id, pending);
+      return true;
+    } catch {
+      // Giữ lại để lần sau thử lại (nếu chưa có bản mới hơn)
+      if (!pendingRemoteRef.current) pendingRemoteRef.current = pending;
+      return false;
+    }
+  }
+
+  /* patch: object hoặc hàm (state) => object */
+  function update(patch) {
+    setState(prev => {
+      const p = typeof patch === 'function' ? patch(prev) : patch;
+      return { ...prev, ...p, savedAt: new Date().toISOString() };
     });
   }
 
-  function confirmCluster() {
-    if (!currentCluster.length) return;
-    if (!hasCardB(currentCluster)) { showToast('Cần có 1 thẻ B làm mốc neo', 'error'); return; }
-
-    const clusterId = 'M' + String(clusters.length + 1).padStart(2, '0');
-    setClusters([...clusters, { id: clusterId, cards: [...currentCluster] }]);
-    setCurrentCluster([]);
-    showToast(`Đã lưu cụm ${clusterId}`, 'success');
-  }
-
-  function editCluster(id) {
-    const cl = clusters.find(c => c.id === id);
-    if (!cl) return;
-    setCurrentCluster([...cl.cards]);
-    setClusters(clusters.filter(c => c.id !== id));
-    if (clustersRef.current) {
-      window.scrollTo({ top: clustersRef.current.offsetTop - 80, behavior: 'smooth' });
-    }
-  }
-
-  function deleteCluster(id) {
-    if (!window.confirm('Xóa cụm này?')) return;
-    setClusters(clusters.filter(c => c.id !== id));
-  }
-
-  /* ---------- SUBMIT ---------- */
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setFormError('');
-    const file = fileInputRef.current?.files[0];
-    const trimmedNote = note.trim();
-
-    if (!file && !trimmedNote) {
-      setFormError('Vui lòng đính kèm ít nhất 1 file hoặc ghi chú.');
+  function goToTab(id) {
+    if (!state || id < 1 || id > 6) return;
+    if (id > maxReachableTab(state)) {
+      toast('Hãy hoàn thành bước trước đó trước.', 'error');
       return;
     }
-    if (file && file.size > 10 * 1024 * 1024) {
-      setFormError('File vượt quá 10 MB. Vui lòng chọn file nhỏ hơn.');
+    update({ currentTab: id });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function handleSaveAndExit() {
+    if (storageKey && state) {
+      const snapshot = { ...state, savedAt: new Date().toISOString() };
+      saveState(storageKey, snapshot);
+      pendingRemoteRef.current = snapshot;
+    }
+    setExiting(true);
+    const ok = await flushRemote();
+    setExiting(false);
+    if (ok) toast('Đã lưu tiến trình lên hệ thống. Bạn có thể chơi tiếp trên bất kỳ máy nào.', 'success');
+    else toast('Chưa lưu được lên hệ thống — tiến trình tạm lưu trên trình duyệt này.', 'error');
+    setTimeout(() => navigate('/dashboard'), 1200);
+  }
+
+  async function handleSubmit() {
+    if (!isAllValid(state)) {
+      toast('Chưa hoàn thành đủ điều kiện hợp lệ.', 'error');
       return;
     }
-
-    const fd = new FormData();
-    if (file) fd.append('file', file);
-    if (trimmedNote) fd.append('note', trimmedNote);
-
     setSubmitting(true);
     try {
-      await api.submitMission('1', fd);
-      showToast('Nộp bài thành công!', 'success');
-      setJustSubmitted(true);
-      setNote('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      const answers = {
+        agreed: state.agreed,
+        timeline: state.timeline,
+        stages: state.stages,
+        transforms: state.transforms,
+        legacies: state.legacies,
+        redThread: state.redThread,
+        reflection: state.reflection,
+        altStages: state.altStages || null,
+        valid_submission: true
+      };
+      await submitMissionResponseApi({
+        missionId: M1_CONFIG.id,
+        longTextAnswer: buildSubmissionText(state),
+        selectedOptionsJson: JSON.stringify(answers),
+        evidenceSource: '',
+        witnessName: ''
+      });
+      update({ submittedAt: new Date().toISOString() });
+      toast('Nộp bài thành công! Bài đã được gửi tới BTC chấm.', 'success');
       await loadMySubmission();
     } catch (err) {
-      setFormError(err.message || 'Nộp bài thất bại. Vui lòng thử lại.');
-      showToast('Nộp bài thất bại', 'error');
+      toast(err.message || 'Nộp bài thất bại.', 'error');
     } finally {
       setSubmitting(false);
     }
   }
 
-  function submitStatus() {
-    if (!userLoaded) return { cls: 'info', text: 'Đang kiểm tra trạng thái…' };
-    if (!currentUser) return { cls: 'info', text: 'Bạn cần đăng nhập để nộp bài.' };
-    if (justSubmitted) return { cls: 'success', text: 'Bài của bạn đã được ghi nhận và đang chờ BTC chấm.' };
-    if (!mySubmission) return { cls: 'success', text: 'Mission đang mở. Bạn có thể nộp bài ngay bây giờ.' };
+  /* ---------- RENDER PARTS ---------- */
+  function renderMyStatus() {
+    if (!mySubmission) return null;
     const st = getSubmissionStatus(mySubmission);
-    if (st.code === 'valid') return { cls: 'success', text: '✅ Bài của bạn đã được duyệt hợp lệ. Có thể nộp lại nếu muốn cập nhật.' };
-    if (st.code === 'needs_supplement') return { cls: 'warning', text: '⚠️ Bài của bạn đang ở trạng thái "Cần bổ sung". Vui lòng nộp lại bản đã cập nhật.' };
-    if (st.code === 'invalid') return { cls: 'error', text: '❌ Bài của bạn bị đánh dấu "Không hợp lệ". Liên hệ BTC hoặc nộp lại bản khác.' };
-    return { cls: 'success', text: 'Bạn đã nộp bài. Có thể nộp lại để cập nhật.' };
+    let text;
+    if (mySubmission.reopened) text = 'BTC đã mở lại bài của bạn để chỉnh sửa. Hãy cập nhật và nộp lại.';
+    else if (st.code === 'valid') text = `Bài của bạn đã được duyệt hợp lệ — bạn nhận ${mySubmission.score != null ? mySubmission.score : M1_CONFIG.points} điểm.`;
+    else if (st.code === 'needs_supplement') text = 'BTC yêu cầu bổ sung. Hãy xem lại bài và nộp lại.';
+    else if (st.code === 'invalid') text = 'Bài của bạn bị đánh dấu "Không hợp lệ". Liên hệ BTC hoặc nộp lại.';
+    else text = 'Bài của bạn đã được gửi và đang chờ BTC chấm.';
+
+    return (
+      <div className="m1-summary-block" style={{ marginBottom: '20px' }}>
+        <h4 style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          Bài nộp Mission 01
+          <span className={`status-badge ${st.cls} status-badge--sm`}>{st.label}</span>
+          {mySubmission.score != null && <span className="status-badge status-badge--sm">{mySubmission.score} điểm</span>}
+        </h4>
+        <p>{text} Nộp lúc {fmtDateTime(mySubmission.submitted_at)}.</p>
+      </div>
+    );
   }
 
-  /* ---------- RENDER PARTS ---------- */
-  const cards = M1_CARDS.filter(c => c.group === activeTab);
-  const modalCard = modalCardId ? getCard(modalCardId) : null;
-  const modalGroup = modalCard ? getGroup(modalCard.group) : null;
-  const modalSelected = modalCard ? currentCluster.includes(modalCard.id) : false;
-
   function renderAdminSubmissions() {
-    if (adminError) {
-      return <p style={{ color: '#C25B5B' }}>Không tải được bài nộp: {adminError}</p>;
-    }
-    if (adminSubs === null) {
-      return <p style={{ color: 'var(--clr-ink-3)' }}>Đang tải…</p>;
-    }
+    if (adminError) return <p style={{ color: '#C25B5B' }}>Không tải được bài nộp: {adminError}</p>;
+    if (adminSubs === null) return <p style={{ color: 'var(--clr-ink-3)' }}>Đang tải…</p>;
     if (!adminSubs.length) {
       return (
         <div className="submissions-block submissions-block--empty">
           <div className="empty-state">
             <div className="empty-state__icon">📁</div>
             <h3 className="empty-state__title">Chưa có bài nộp nào</h3>
-            <p className="empty-state__desc">Bài dự thi Mission 1 sẽ hiển thị khi người dùng nộp bài.</p>
+            <p className="empty-state__desc">Bài làm Mission 1 sẽ hiển thị khi người chơi nộp bài.</p>
           </div>
         </div>
       );
     }
 
     const visible = adminSubs.slice(0, ADMIN_SHOW_LIMIT);
-    const openFile = (s) => { if (s.file_url) window.open(s.file_url, '_blank', 'noopener'); };
-
     return (
       <div className="submissions-block">
         <div className="submissions-block__head">
           <h4>📁 Danh sách bài nộp <span>({adminSubs.length} bài)</span></h4>
-          <p className="submissions-block__hint">Nhấn vào từng ô để mở file</p>
+          <p className="submissions-block__hint">Nhấn vào từng ô để mở trang chấm bài</p>
         </div>
         <div className="submissions-grid">
           {visible.map(s => {
-            const fileUrl = s.file_url || '';
-            const isImg = isImageUrl(fileUrl);
-            const isPdf = isPdfUrl(fileUrl);
             const st = getSubmissionStatus(s);
             return (
               <article
@@ -274,16 +803,14 @@ export default function Mission1Page() {
                 className="submission-card"
                 tabIndex={0}
                 role="button"
-                onClick={() => openFile(s)}
+                onClick={() => navigate('/admin')}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFile(s); }
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/admin'); }
                 }}
               >
                 <div className="submission-card__thumb">
-                  {isImg
-                    ? <img src={fileUrl} alt={s.user_name} loading="lazy" onError={hideSelf} />
-                    : <div className="submission-card__thumb-placeholder">{isPdf ? '📄' : '📎'}</div>}
-                  <span className="submission-card__type">{isImg ? 'Ảnh' : (isPdf ? 'PDF' : 'File')}</span>
+                  <div className="submission-card__thumb-placeholder">📝</div>
+                  <span className="submission-card__type">Bài làm</span>
                   {s.score != null
                     ? <span className="submission-card__score">{s.score} đ</span>
                     : <span className="submission-card__score submission-card__score--pending">Chưa chấm</span>}
@@ -298,419 +825,135 @@ export default function Mission1Page() {
           })}
         </div>
         <div className="m1-submissions-toggle">
-          <Link to="/mission-1/all-submissions" className="btn btn--outline">
-            Xem toàn bộ {adminSubs.length} bài →
-          </Link>
+          <Link to="/mission-1/all-submissions" className="btn btn--outline">Xem toàn bộ {adminSubs.length} bài →</Link>
+          <Link to="/admin" className="btn btn--gold" style={{ marginLeft: '10px' }}>Chấm bài tại trang Admin →</Link>
         </div>
       </div>
     );
   }
 
-  function renderMySubmission() {
-    const url = mySubmission.file_url;
-    let media;
-    if (isImageUrl(url)) {
-      media = <div className="submission-detail__image"><img src={url} alt="Bài nộp" /></div>;
-    } else if (isPdfUrl(url)) {
-      media = (
-        <div className="submission-detail__file">
-          <div className="submission-detail__file-icon">📄</div>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn--gold">Mở file PDF →</a>
-        </div>
-      );
-    } else if (url) {
-      media = (
-        <div className="submission-detail__file">
-          <div className="submission-detail__file-icon">📎</div>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn--gold">Mở file →</a>
-        </div>
-      );
-    } else {
-      media = <div className="submission-detail__file"><p>Không có file đính kèm.</p></div>;
+  function renderBody() {
+    if (!userLoaded) {
+      return <section className="m1-panel"><p className="m1-panel__text">Đang tải…</p></section>;
     }
-    const st = getSubmissionStatus(mySubmission);
+    if (!currentUser) {
+      return (
+        <section className="m1-panel" style={{ textAlign: 'center' }}>
+          <h2 className="m1-panel__title">Bạn cần đăng nhập để chơi Mission 01</h2>
+          <p className="m1-panel__text">Tiến trình chơi được lưu theo tài khoản CBNV đã được admin duyệt.</p>
+          <Link to="/login" className="btn btn--gold" style={{ marginTop: '16px' }}>Đăng nhập</Link>
+        </section>
+      );
+    }
+    if (isAdmin) {
+      return (
+        <section className="m1-panel" id="m1-submissions">
+          <span className="m1-section__label mono">ADMIN — SUBMISSIONS</span>
+          <h2 className="m1-panel__title">Danh sách bài nộp Mission 01</h2>
+          <p className="m1-panel__text">Hoàn thành Mission 01 hợp lệ = {M1_CONFIG.points} điểm cho người chơi.</p>
+          {renderAdminSubmissions()}
+        </section>
+      );
+    }
+    if (!state) return null;
 
-    return (
-      <div className="submission-detail">
-        <div className="submission-detail__header">
-          <h3 className="submission-detail__title">Bài nộp Mission 01</h3>
-          <p className="submission-detail__mission">Nộp lúc: {fmtDateTime(mySubmission.submitted_at)}</p>
-          <div className="submission-detail__badges" style={{ marginTop: '12px', justifyContent: 'center' }}>
-            <span className={`status-badge ${st.cls}`}>{st.label}</span>
-          </div>
-        </div>
-        {media}
-        {mySubmission.note && (
-          <p style={{ color: 'var(--clr-ink-2)', fontSize: '0.9rem', lineHeight: 1.7 }}>
-            <strong>Ghi chú:</strong> {mySubmission.note}
-          </p>
-        )}
-        {mySubmission.score != null ? (
-          <div className="submission-detail__points">
-            <span className="label">Điểm</span><span className="value">{mySubmission.score}</span>
-          </div>
-        ) : (
-          <div className="submission-detail__points is-pending">
-            <span className="label">Điểm</span><span className="value" style={{ fontSize: '1rem' }}>Chưa chấm</span>
-          </div>
-        )}
-      </div>
-    );
+    switch (state.currentTab) {
+      case 1: return <Tab1Intro state={state} update={update} />;
+      case 2: return <Tab2Timeline state={state} update={update} toast={toast} />;
+      case 3: return <Tab3Stages state={state} update={update} />;
+      case 4: return <Tab4Transforms state={state} update={update} toast={toast} />;
+      case 5: return <Tab5Legacy state={state} update={update} />;
+      default: return <Tab6Summary state={state} />;
+    }
   }
 
-  const status = submitStatus();
+  const playing = !!(currentUser && !isAdmin && state);
+  const tab = state?.currentTab || 1;
+  const maxTab = state ? maxReachableTab(state) : 1;
 
   return (
-    <main>
-
-      {/* HERO */}
-      <section className="m1-hero">
-        <div className="m1-hero__bg"><div className="m1-hero__grid"></div></div>
-        <div className="container m1-hero__inner">
-          <Link to="/dashboard" className="m1-hero__back">← Quay lại Dashboard</Link>
-          <span className="m1-hero__label mono">CLASSIFIED — MISSION 01</span>
-          <h1 className="m1-hero__title">{M1_CONFIG.title}</h1>
-          <p className="m1-hero__subtitle">{M1_CONFIG.subtitle}</p>
-
-          <div className="m1-hero__meta">
-            <div className="m1-hero__meta-item">
-              <span className="m1-hero__meta-label">Trạng thái</span>
-              <span className="m1-hero__meta-value">Đang mở</span>
-            </div>
-            <div className="m1-hero__meta-item">
-              <span className="m1-hero__meta-label">Trọng số</span>
-              <span className="m1-hero__meta-value">{M1_CONFIG.weight}%</span>
-            </div>
-            <div className="m1-hero__meta-item">
-              <span className="m1-hero__meta-label">Mở từ</span>
-              <span className="m1-hero__meta-value">{fmtDateTime(M1_CONFIG.openAt)}</span>
-            </div>
-            <div className="m1-hero__meta-item">
-              <span className="m1-hero__meta-label">Hạn nộp</span>
-              <span className="m1-hero__meta-value">{fmtDateTime(M1_CONFIG.dueAt)}</span>
-            </div>
-          </div>
-
-          <div className="m1-hero__countdown" aria-live="polite">
-            ⏱ Mission đang mở · Trọng số {M1_CONFIG.weight}%
-          </div>
-        </div>
-      </section>
-
-      {/* MỤC TIÊU */}
-      <section className="m1-section">
+    <main className="m1-page">
+      <div className="m1-header">
         <div className="container">
-          <span className="m1-section__label mono">BRIEF — MỤC TIÊU</span>
-          <h2 className="m1-section__title">Mục tiêu Mission</h2>
-          <p className="m1-section__text">{M1_CONFIG.goal}</p>
-        </div>
-      </section>
-
-      {/* NHIỆM VỤ */}
-      <section className="m1-section m1-section--light">
-        <div className="container">
-          <span className="m1-section__label mono">TASKS — NHIỆM VỤ</span>
-          <h2 className="m1-section__title">Các bước thực hiện</h2>
-          <ul className="m1-tasks">
-            {M1_CONFIG.tasks.map((t, i) => <li key={i}>{t}</li>)}
-          </ul>
-        </div>
-      </section>
-
-      {/* BỘ THẺ */}
-      <section className="m1-section" id="m1-cards">
-        <div className="container">
-          <span className="m1-section__label mono">EVIDENCE — BỘ THẺ MANH MỐI</span>
-          <h2 className="m1-section__title">Khám phá &amp; ghép cụm</h2>
-          <p className="m1-section__desc">
-            Mở từng thẻ để xem chi tiết. Chọn các thẻ liên quan để tạo thành một cụm lịch sử.
-            Mỗi cụm phải có ít nhất <strong>1 thẻ B (Time Fragments)</strong> làm mốc neo.
+          <Link to={isAdmin ? '/admin' : '/dashboard'} className="m1-header__label mono" style={{ display: 'inline-block' }}>
+            ← {isAdmin ? 'Trang Admin' : 'Dashboard'}
+          </Link>
+          <p className="m1-header__label mono">{M1_CONFIG.title}</p>
+          <h1 className="m1-header__title">
+            <span className="m1-header__num">01</span>
+            {M1_CONFIG.subtitle}
+          </h1>
+          <p className="m1-header__desc">
+            Kết nối mốc thời gian, giai đoạn, bước ngoặt và những chuyển biến quan trọng.
+            Hạn nộp: {fmtDateTime(M1_CONFIG.dueAt)} · Hoàn thành: {M1_CONFIG.points} điểm.
           </p>
-
-          <div className="m1-tabs" role="tablist">
-            {M1_GROUPS.map(g => (
-              <button
-                key={g.id}
-                className={`m1-tab ${g.id === activeTab ? 'is-active' : ''}`}
-                role="tab"
-                type="button"
-                aria-selected={g.id === activeTab}
-                onClick={() => setActiveTab(g.id)}
-              >
-                <span>{g.icon} {g.short}</span>
-                <span className="m1-tab__count">{g.count}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="m1-cards" aria-label={`Nhóm thẻ ${activeTab}`}>
-            {cards.map(c => {
-              const isOpened = openedCards.includes(c.id);
-              const isSelected = currentCluster.includes(c.id);
-              const group = getGroup(c.group);
-              return (
-                <article
-                  key={c.id}
-                  className={`m1-card ${isOpened ? 'is-opened' : ''} ${isSelected ? 'is-selected' : ''}`}
-                  tabIndex={0}
-                  onClick={(e) => { if (!e.target.closest('button')) openCardModal(c.id); }}
-                  onKeyDown={(e) => {
-                    if (e.target !== e.currentTarget) return;
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCardModal(c.id); }
-                  }}
-                >
-                  <div className="m1-card__cover">
-                    <img src={c.coverImage} alt={c.alt} loading="lazy" onError={hideSelf} />
-                    <span className="m1-card__code">{c.id}</span>
-                    {isOpened && <span className="m1-card__opened-badge">ĐÃ MỞ</span>}
-                    {isSelected && <span className="m1-card__selected-badge">ĐÃ CHỌN</span>}
-                  </div>
-                  <div className="m1-card__body">
-                    <span className="m1-card__group">{group.icon} {group.name}</span>
-                    <h3 className="m1-card__teaser">{c.teaser}</h3>
-                  </div>
-                  <div className="m1-card__actions">
-                    <button
-                      className="m1-card__btn"
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); openCardModal(c.id); }}
-                    >
-                      Mở hồ sơ
-                    </button>
-                    <button
-                      className={`m1-card__btn m1-card__btn--select ${isSelected ? 'm1-card__btn--selected' : ''}`}
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleSelectCard(c.id); }}
-                    >
-                      {isSelected ? 'Bỏ chọn' : 'Chọn'}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* CỤM */}
-      <section className="m1-section m1-section--light" id="m1-clusters" ref={clustersRef}>
-        <div className="container">
-          <span className="m1-section__label mono">CLUSTERS — CỤM MANH MỐI</span>
-          <h2 className="m1-section__title">Cụm của bạn</h2>
-
-          <div className="m1-cluster-current">
-            <div className="m1-cluster-current__head">
-              <span className="m1-cluster-current__title">Cụm đang chọn</span>
-              <button className="m1-cluster-current__clear" type="button" onClick={() => setCurrentCluster([])}>
-                Xoá hết
-              </button>
-            </div>
-            <div className="m1-cluster-current__slots">
-              {!currentCluster.length ? (
-                <span className="m1-cluster-current__empty">
-                  Chưa chọn thẻ nào. Bắt đầu bằng 1 thẻ B (Time Fragments).
-                </span>
-              ) : (
-                currentCluster.map(id => {
-                  const c = getCard(id);
-                  if (!c) return null;
-                  return (
-                    <span key={c.id} className={`m1-slot m1-slot--${c.group}`}>
-                      <span className="m1-slot__code">{c.id}</span>
-                      <button
-                        className="m1-slot__remove"
-                        aria-label={`Bỏ thẻ ${c.id}`}
-                        type="button"
-                        onClick={() => toggleSelectCard(c.id)}
-                      >×</button>
-                    </span>
-                  );
-                })
-              )}
-            </div>
-            <button
-              className="btn btn--gold m1-cluster-current__confirm"
-              type="button"
-              disabled={!hasCardB(currentCluster)}
-              onClick={confirmCluster}
-            >
-              Xác nhận lưu cụm →
-            </button>
-          </div>
-
-          <h3 className="m1-clusters-list__title">
-            Các cụm đã lưu ({clusters.length})
-          </h3>
-          <div className="m1-clusters-list">
-            {!clusters.length ? (
-              <div className="m1-clusters-empty">Chưa có cụm nào. Chọn thẻ rồi xác nhận để lưu cụm.</div>
-            ) : (
-              clusters.map(cl => (
-                <article key={cl.id} className="m1-cluster-item">
-                  <div className="m1-cluster-item__head">
-                    <span className="m1-cluster-item__code">{cl.id} · {cl.cards.length} thẻ</span>
-                    <div className="m1-cluster-item__actions">
-                      <button title="Sửa" type="button" onClick={() => editCluster(cl.id)}>✎</button>
-                      <button title="Xóa" type="button" onClick={() => deleteCluster(cl.id)}>🗑</button>
-                    </div>
-                  </div>
-                  <div className="m1-cluster-item__chips">
-                    {cl.cards.map(id => {
-                      const c = getCard(id);
-                      return c
-                        ? <span key={id} className={`m1-cluster-chip m1-cluster-chip--${c.group}`}>{c.id}</span>
-                        : null;
-                    })}
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* SẢN PHẨM */}
-      <section className="m1-section">
-        <div className="container">
-          <span className="m1-section__label mono">OUTPUTS — SẢN PHẨM</span>
-          <h2 className="m1-section__title">Sản phẩm cần nộp</h2>
-          <div className="m1-outputs">
-            {M1_CONFIG.outputs.map(o => (
-              <article key={o.code} className="m1-output">
-                <span className="m1-output__code">SẢN PHẨM {o.code}</span>
-                <h3 className="m1-output__name">{o.name}</h3>
-                <p className="m1-output__req">{o.requirement}</p>
-                <p className="m1-output__format"><strong>Định dạng:</strong> {o.format}</p>
-                {o.templateUrl && o.templateUrl !== '#' && (
-                  <a className="m1-output__link" href={o.templateUrl} target="_blank" rel="noopener noreferrer">Tải mẫu →</a>
-                )}
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* BÀI CỦA TÔI (user) */}
-      {!isAdmin && mySubmission && (
-        <section className="m1-section m1-section--light" id="m1-my-submission">
-          <div className="container">
-            <span className="m1-section__label mono">MY SUBMISSION</span>
-            <h2 className="m1-section__title">Bài của tôi</h2>
-            {renderMySubmission()}
-          </div>
-        </section>
-      )}
-
-      {/* DANH SÁCH BÀI NỘP (admin) */}
-      {isAdmin && (
-        <section className="m1-section m1-section--light" id="m1-submissions">
-          <div className="container">
-            <span className="m1-section__label mono">ADMIN — SUBMISSIONS</span>
-            <h2 className="m1-section__title">Danh sách bài nộp Mission 01</h2>
-            {renderAdminSubmissions()}
-          </div>
-        </section>
-      )}
-
-      {/* FORM NỘP BÀI (user) */}
-      {!isAdmin && (
-        <section className="m1-section m1-section--cta" id="m1-submit">
-          <div className="container">
-            <div className="m1-submit__inner">
-              <span className="m1-section__label mono">SUBMIT — NỘP BÀI</span>
-              <h2 className="m1-submit__title">Nộp bài Mission 01</h2>
-
-              <div className={`m1-submit__status m1-submit__status--${status.cls}`}>
-                {status.text}
-              </div>
-
-              {userLoaded && !currentUser && (
-                <div className="m1-submit__locked">
-                  <p>Vui lòng đăng nhập bằng tài khoản CBNV đã được admin duyệt.</p>
-                  <Link to="/login" className="btn btn--gold" style={{ marginTop: '16px' }}>Đăng nhập</Link>
-                </div>
-              )}
-
-              {currentUser && (
-                <form className="m1-submit__form" onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label htmlFor="m1File">File đính kèm (PDF / DOCX / ảnh, tối đa 10 MB)</label>
-                    <input
-                      type="file"
-                      id="m1File"
-                      ref={fileInputRef}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="m1Note">Ghi chú (tuỳ chọn)</label>
-                    <textarea
-                      id="m1Note"
-                      placeholder="Mô tả ngắn về bài nộp, ghi chú về nguồn tư liệu…"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                    ></textarea>
-                  </div>
-                  <div className="form-error">{formError}</div>
-                  <button type="submit" className="btn btn--gold btn--large" style={{ width: '100%' }} disabled={submitting}>
-                    {submitting ? 'Đang nộp…' : 'Nộp bài Mission 01 →'}
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* MODAL */}
-      <div
-        className={`m1-modal ${modalCard ? 'is-open' : ''}`}
-        aria-hidden={!modalCard}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="m1ModalTitle"
-      >
-        <div className="m1-modal__backdrop" onClick={closeModal}></div>
-        <div className="m1-modal__panel">
-          <button className="m1-modal__close" ref={modalCloseRef} onClick={closeModal} aria-label="Đóng">&times;</button>
-          <div className="m1-modal__content">
-            {modalCard && (
-              <>
-                <div className="m1-modal__image">
-                  <img
-                    src={modalCard.openImage}
-                    alt={modalCard.alt}
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-                  />
-                </div>
-                <div className="m1-modal__body">
-                  <span className="m1-modal__group">{modalGroup.icon} {modalGroup.name} · {modalCard.id}</span>
-                  <h3 className="m1-modal__title" id="m1ModalTitle">{modalCard.teaser}</h3>
-                  <p style={{ color: 'var(--clr-ink-2)', fontSize: '0.92rem', lineHeight: 1.65 }}>{modalCard.clue}</p>
-                  <div className="m1-modal__actions">
-                    <button
-                      className={`m1-modal__btn ${modalSelected ? '' : 'm1-modal__btn--primary'}`}
-                      type="button"
-                      onClick={() => { toggleSelectCard(modalCard.id); closeModal(); }}
-                    >
-                      {modalSelected ? 'Bỏ chọn khỏi cụm' : 'Chọn vào cụm'}
-                    </button>
-                    <button className="m1-modal__btn" type="button" onClick={closeModal}>Đóng</button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
         </div>
       </div>
 
+      {playing && (
+        <div className="m1g-tabs-bar">
+          <div className="container">
+            <nav className="m1g-tabs" role="tablist">
+              {M1_TABS.map(t => {
+                let cls = 'm1g-tab';
+                if (t.id === tab) cls += ' is-active';
+                else if (t.id < maxTab || (t.id === 6 && state.submittedAt)) cls += ' is-done';
+                else if (t.id > maxTab) cls += ' is-locked';
+                return (
+                  <button
+                    key={t.id}
+                    className={cls}
+                    type="button"
+                    role="tab"
+                    aria-selected={t.id === tab}
+                    onClick={() => goToTab(t.id)}
+                  >
+                    {t.code} · {t.name}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      <div className="m1-content">
+        <div className="container">
+          {playing && renderMyStatus()}
+          {renderBody()}
+        </div>
+      </div>
+
+      {playing && (
+        <div className="m1-footer-nav">
+          <div className="container m1-footer-nav__inner">
+            {tab > 1 && (
+              <button type="button" className="btn btn--outline" onClick={() => goToTab(tab - 1)}>← Quay lại</button>
+            )}
+            <div className="m1-footer-nav__spacer"></div>
+            <button type="button" className="btn btn--outline" onClick={handleSaveAndExit} disabled={exiting} title="Tiến trình được lưu, lần sau vào sẽ chơi tiếp">
+              {exiting ? 'Đang lưu…' : '💾 Lưu & thoát'}
+            </button>
+            {tab < 6 && (
+              <button type="button" className="btn btn--gold" disabled={!canLeaveTab(tab, state)} onClick={() => goToTab(tab + 1)}>
+                Tiếp tục →
+              </button>
+            )}
+            {tab === 6 && (
+              <button type="button" className="btn btn--gold" disabled={!isAllValid(state) || submitting} onClick={handleSubmit}>
+                {submitting ? 'Đang nộp…' : (mySubmission ? 'Nộp lại Mission 01 →' : 'Nộp Mission 01 →')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div
-        className={`m1-toast ${toast.type ? 'toast--' + toast.type : ''} ${toast.visible ? 'is-visible' : ''}`}
+        className={`m1-toast ${toastState.type ? 'toast--' + toastState.type : ''} ${toastState.visible ? 'is-visible' : ''}`}
         role="status"
         aria-live="polite"
       >
-        {toast.msg}
+        {toastState.msg}
       </div>
     </main>
   );

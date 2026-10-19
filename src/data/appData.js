@@ -5,16 +5,7 @@
 export const CONFIG = {
   API_BASE: '/api',
   leaderboardTop: 10,
-  UNITS: [
-    'Ban Giám đốc',
-    'Phòng Kỹ thuật',
-    'Phòng Kinh doanh',
-    'Phòng Nhân sự',
-    'Phòng Tài chính – Kế toán',
-    'Phòng CNTT',
-    'Trung tâm Giải pháp',
-    'Trung tâm Dịch vụ'
-  ],
+  // Danh sách phòng ban lấy từ backend (GET /api/employees/units), admin quản lý tại trang Admin › Phòng ban
   registerDeadline: '2026-10-15T23:59:59+07:00',
   contact: {
     name: 'Ms. Hương',
