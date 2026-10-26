@@ -221,6 +221,28 @@ ul { list-style: none; }
 }
 .navbar__nav a:hover { color: var(--clr-blue); background: var(--clr-blue-pale); }
 .navbar__cta { padding: 10px 22px; font-size: 0.85rem; flex-shrink: 0; }
+.navbar__logo { flex-shrink: 0; }
+.navbar__nav { min-width: 0; }
+.navbar__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.navbar__cta { height: 40px; display: inline-flex; align-items: center; white-space: nowrap; }
+.navbar__logout-btn {
+  height: 40px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 14px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+  color: #C24141;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(194, 65, 65, 0.35);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.navbar__logout-btn:hover { color: #FFFFFF; background: #C24141; border-color: #C24141; }
+/* Màn hình vừa: nút đăng xuất chỉ còn biểu tượng để menu không bị che */
+@media (max-width: 1360px) {
+  .navbar__logout-btn { width: 40px; padding: 0; }
+  .navbar__logout-text { display: none; }
+}
 .navbar__hamburger { display: none; flex-direction: column; gap: 5px; padding: 8px; margin-left: auto; }
 .navbar__hamburger span { display: block; width: 22px; height: 2px; background: var(--clr-ink); transition: transform 0.3s, opacity 0.3s; }
 .navbar__hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }

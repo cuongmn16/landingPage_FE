@@ -12,11 +12,13 @@ import DashboardPage from './pages/DashboardPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import AdminPage from './pages/AdminPage';
 import Mission1Page from './pages/Mission1Page';
+import Mission2Page from './pages/Mission2Page';
+import Mission4Page from './pages/Mission4Page';
 import AllSubmissionsPage from './pages/AllSubmissionsPage';
 
 import './styles/index.css';
 
-// Admin chỉ được dùng các trang /admin, /leaderboard, /mission-1 (và trang đăng nhập/đăng ký)
+// Admin chỉ được dùng các trang /admin, /leaderboard, /mission-1, /mission-2, /mission-4 (và trang đăng nhập/đăng ký)
 function isAdminSession() {
   if (auth.user) return auth.user.role === 'admin';
   try {
@@ -34,7 +36,7 @@ function AppContent() {
 
   const isAdminAllowed = location.pathname.startsWith('/admin')
     || location.pathname === '/leaderboard'
-    || location.pathname.startsWith('/mission-1');
+    || /^\/mission-[124](\/|$)/.test(location.pathname);
   if (isAdminSession() && !isAuthRoute && !isAdminAllowed) {
     return <Navigate to="/admin" replace />;
   }
@@ -51,6 +53,8 @@ function AppContent() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/mission-1" element={<Mission1Page />} />
         <Route path="/mission-1/all-submissions" element={<AllSubmissionsPage />} />
+        <Route path="/mission-2" element={<Mission2Page />} />
+        <Route path="/mission-4" element={<Mission4Page />} />
         <Route path="*" element={<HomePage />} />
       </Routes>
       {!isAuthRoute && <Footer />}

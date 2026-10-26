@@ -3,6 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, auth, getAdminUnitsApi, createUnitApi, updateUnitApi, deleteUnitApi } from '../services/api';
 import { getSubmissionStatus, fmtDate, fmtDateTime } from '../data/appData';
 import { M1_CONFIG } from '../data/mission1Data';
+import { M2_CONFIG } from '../data/mission2Data';
+import { M4_CONFIG } from '../data/mission4Data';
+
+// Điểm khi hoàn thành hợp lệ, tự điền khi admin chọn "Hợp lệ"
+const MISSION_POINTS = {
+  [M1_CONFIG.id]: M1_CONFIG.points,
+  [M2_CONFIG.missionId]: M2_CONFIG.points,
+  [M4_CONFIG.missionId]: M4_CONFIG.points
+};
 
 function getFileIcon(fileName = '', fileUrl = '') {
   const str = (fileName + fileUrl).toLowerCase();
@@ -242,7 +251,7 @@ export default function AdminPage() {
     { v: 'invalid',          l: 'Không hợp lệ' }
   ];
 
-  const isMission1Sub = !!selectedSub && Number(selectedSub.mission_id) === M1_CONFIG.id;
+  const subPoints = selectedSub ? MISSION_POINTS[Number(selectedSub.mission_id)] : undefined;
 
   const modalFiles = selectedSub
     ? (selectedSub.attachments && selectedSub.attachments.length > 0)
@@ -714,9 +723,9 @@ export default function AdminPage() {
                   onChange={(e) => setScoreInput(e.target.value)}
                   placeholder="Nhập điểm"
                 />
-                {isMission1Sub && (
+                {subPoints != null && (
                   <p style={{ color: 'var(--clr-ink-3)', fontSize: '0.85rem', marginTop: '6px' }}>
-                    Mission 01: hoàn thành hợp lệ = {M1_CONFIG.points} điểm (tự điền khi chọn "Hợp lệ").
+                    Mission {String(selectedSub.mission_id).padStart(2, '0')}: hoàn thành hợp lệ = {subPoints} điểm (tự điền khi chọn "Hợp lệ").
                   </p>
                 )}
               </div>
@@ -733,8 +742,8 @@ export default function AdminPage() {
                         checked={statusInput === o.v}
                         onChange={() => {
                           setStatusInput(o.v);
-                          // Mission 01: hoàn thành hợp lệ = 1 điểm
-                          if (o.v === 'valid' && isMission1Sub && scoreInput === '') setScoreInput(String(M1_CONFIG.points));
+                          // Mission 01/02/04: hoàn thành hợp lệ = điểm cấu hình sẵn
+                          if (o.v === 'valid' && subPoints != null && scoreInput === '') setScoreInput(String(subPoints));
                         }}
                       />
                       <span>{o.l}</span>

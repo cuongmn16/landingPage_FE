@@ -27,9 +27,9 @@ export default function MissionsSection() {
 
   const handleMissionClick = (mId) => {
     const num = String(mId).replace(/[^0-9]/g, '') || '1';
-    // Mission 1 có trang riêng (bộ thẻ manh mối, ghép cụm, nộp bài)
-    if (num === '1') {
-      navigate('/mission-1');
+    // Mission 1, 2, 4 có trang chơi riêng (theo tab, tự lưu tiến trình, nộp bài)
+    if (['1', '2', '4'].includes(num)) {
+      navigate(`/mission-${num}`);
       return;
     }
     if (!auth.isLoggedIn()) {

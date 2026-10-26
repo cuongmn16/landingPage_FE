@@ -26,7 +26,7 @@ export default function Navbar() {
   }, [location.pathname]);
 
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isMission1Route = location.pathname.startsWith('/mission-1');
+  const missionRouteNum = (location.pathname.match(/^\/mission-([124])(\/|$)/) || [])[1];
   const isLeaderboardRoute = location.pathname === '/leaderboard';
   const isDashboardRoute = location.pathname === '/dashboard';
 
@@ -48,7 +48,7 @@ export default function Navbar() {
               {isAdminRoute ? 'ADMIN' : 'TREASURE HUNT'}
             </span>
             <span className="navbar__logo-event-sub">
-              {isMission1Route ? 'Mission 01' : isAdminRoute ? 'Treasure Hunt' : isLeaderboardRoute ? 'Leaderboard' : '25 Years'}
+              {missionRouteNum ? `Mission 0${missionRouteNum}` : isAdminRoute ? 'Treasure Hunt' : isLeaderboardRoute ? 'Leaderboard' : '25 Years'}
             </span>
           </span>
         </Link>
@@ -59,15 +59,13 @@ export default function Navbar() {
               <a href="#pending" onClick={(e) => { e.preventDefault(); navigate('/admin?tab=pending'); }}>Chờ duyệt</a>
               <a href="#submissions" onClick={(e) => { e.preventDefault(); navigate('/admin?tab=submissions'); }}>Bài nộp</a>
               <Link to="/leaderboard">Bảng xếp hạng</Link>
-              <a href="#logout" onClick={handleLogout}>Đăng xuất</a>
             </>
           ) : isDashboardRoute ? (
             <>
               <Link to="/">Trang chủ</Link>
               <Link to="/leaderboard">Bảng xếp hạng</Link>
-              <a href="#logout" onClick={handleLogout}>Đăng xuất</a>
             </>
-          ) : isMission1Route ? (
+          ) : missionRouteNum ? (
             <>
               <Link to="/">Trang chủ</Link>
               <Link to="/dashboard">Dashboard</Link>
@@ -87,7 +85,7 @@ export default function Navbar() {
           )}
         </nav>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="navbar__actions">
           {currentUser ? (
             <>
               {currentUser.role === 'admin' ? (
@@ -102,24 +100,16 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="btn navbar__logout-btn"
+                className="navbar__logout-btn"
                 title="Đăng xuất khỏi hệ thống"
-                style={{
-                  padding: '8px 14px',
-                  fontSize: '13px',
-                  borderColor: 'rgba(239, 68, 68, 0.4)',
-                  color: '#fca5a5',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s ease'
-                }}
+                aria-label="Đăng xuất"
               >
-                <span>🚪</span> Đăng xuất
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span className="navbar__logout-text">Đăng xuất</span>
               </button>
             </>
           ) : (

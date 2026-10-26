@@ -4,6 +4,8 @@ import { api, auth } from '../services/api';
 import { getMissionState, getSubmissionStatus, fmtDateTime } from '../data/appData';
 import MissionSubmitModal from '../components/common/MissionSubmitModal';
 
+const MISSION_PAGES = { 1: '/mission-1', 2: '/mission-2', 4: '/mission-4' };
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -28,9 +30,9 @@ export default function DashboardPage() {
   };
 
   const handleStartMission = (mId) => {
-    // Mission 1 có trang riêng (bộ thẻ manh mối, ghép cụm, nộp bài)
-    if (Number(mId) === 1) {
-      navigate('/mission-1');
+    // Mission 1, 2, 4 có trang chơi riêng (theo tab, tự lưu tiến trình, nộp bài)
+    if (MISSION_PAGES[Number(mId)]) {
+      navigate(MISSION_PAGES[Number(mId)]);
       return;
     }
     setSubmitMissionId(String(mId));
@@ -67,8 +69,8 @@ export default function DashboardPage() {
   }, [navigate]);
 
   const handleOpenReview = (mId) => {
-    if (Number(mId) === 1) {
-      navigate('/mission-1');
+    if (MISSION_PAGES[Number(mId)]) {
+      navigate(MISSION_PAGES[Number(mId)]);
       return;
     }
     const sub = submissions.find(s => Number(s.mission_id) === Number(mId));
