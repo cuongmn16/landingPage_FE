@@ -26,7 +26,7 @@ export default function Navbar() {
   }, [location.pathname]);
 
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const missionRouteNum = (location.pathname.match(/^\/mission-([124])(\/|$)/) || [])[1];
+  const missionRouteNum = (location.pathname.match(/^\/mission-([1-4])(\/|$)/) || [])[1];
   const isLeaderboardRoute = location.pathname === '/leaderboard';
   const isDashboardRoute = location.pathname === '/dashboard';
 

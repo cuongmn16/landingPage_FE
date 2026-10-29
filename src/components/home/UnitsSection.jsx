@@ -46,7 +46,7 @@ export default function UnitsSection() {
         <p className="section__label mono reveal is-visible">UNITS — TIẾN ĐỘ ĐƠN VỊ</p>
         <h2 className="section__title reveal is-visible">Tiến độ đơn vị</h2>
         <p className="section__desc reveal is-visible">
-          Số CBNV tham gia hợp lệ được cập nhật sau khi BTC xác minh. Bấm vào từng đơn vị để xem danh sách.
+          Mỗi mission thành viên nộp hợp lệ = 1 điểm cho đơn vị. Tỷ lệ = điểm đạt / (số nhân sự × số mission). Bấm vào từng đơn vị để xem danh sách.
         </p>
 
         {loading ? (
@@ -72,8 +72,11 @@ export default function UnitsSection() {
                   </div>
                 </div>
                 <p className="unit-card__count">
-                  <strong>{u.participant_count}</strong> người tham gia
+                  <strong>{u.score_percent}%</strong> {u.earned_points}/{u.max_points} điểm · Hạng #{u.rank}
                 </p>
+                <div className="unit-progress" aria-hidden="true">
+                  <div className="unit-progress__bar" style={{ width: `${Math.min(u.score_percent, 100)}%` }}></div>
+                </div>
               </button>
             ))}
           </div>
@@ -87,6 +90,10 @@ export default function UnitsSection() {
             <button className="modal__close" onClick={closeUnit} aria-label="Đóng">&times;</button>
             <p className="mono modal__label">Tiến độ đơn vị</p>
             <h3 className="modal__title">{selectedUnit.unit_name}</h3>
+            <p className="unit-card__count" style={{ marginBottom: '12px' }}>
+              <strong>{selectedUnit.score_percent}%</strong> {selectedUnit.earned_points}/{selectedUnit.max_points} điểm
+              ({selectedUnit.total_personnel} nhân sự × {selectedUnit.total_missions} mission) · Hạng #{selectedUnit.rank}
+            </p>
 
             {participantsLoading ? (
               <p style={{ color: 'var(--clr-ink-3)' }}>Đang tải danh sách…</p>
@@ -103,7 +110,7 @@ export default function UnitsSection() {
                   {participants.map((p, i) => (
                     <li key={p.employee_id} className="unit-participants__item">
                       <span className="unit-participants__name"><span className="unit-participants__index">{i + 1}.</span>{p.full_name}</span>
-                      <span className="unit-participants__meta">{p.valid_submissions} bài hợp lệ</span>
+                      <span className="unit-participants__meta">{p.valid_submissions}/{selectedUnit.total_missions} mission</span>
                     </li>
                   ))}
                 </ol>

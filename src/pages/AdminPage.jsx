@@ -4,12 +4,14 @@ import { api, auth, getAdminUnitsApi, createUnitApi, updateUnitApi, deleteUnitAp
 import { getSubmissionStatus, fmtDate, fmtDateTime } from '../data/appData';
 import { M1_CONFIG } from '../data/mission1Data';
 import { M2_CONFIG } from '../data/mission2Data';
+import { M3_CONFIG } from '../data/mission3Data';
 import { M4_CONFIG } from '../data/mission4Data';
 
 // Điểm khi hoàn thành hợp lệ, tự điền khi admin chọn "Hợp lệ"
 const MISSION_POINTS = {
   [M1_CONFIG.id]: M1_CONFIG.points,
   [M2_CONFIG.missionId]: M2_CONFIG.points,
+  [M3_CONFIG.missionId]: M3_CONFIG.points,
   [M4_CONFIG.missionId]: M4_CONFIG.points
 };
 

@@ -1,6 +1,6 @@
 /* ============================================================
    MISSION GAME — khung chung cho các Mission chơi theo tab
-   (Mission 02, Mission 04 — port từ src_demo/mission-2, mission-4)
+   (Mission 02, 03, 04 — port từ src_demo/mission-2, mission-3, mission-4)
    - User: chơi theo từng tab; tiến trình tự lưu theo từng tài khoản
      (trình duyệt + server), thoát ra vào lại sẽ tiếp tục đúng chỗ cũ.
      Nộp bài → gửi về admin chấm.
@@ -40,12 +40,15 @@ const savedTime = (s) => (s && s.savedAt ? new Date(s.savedAt).getTime() || 0 : 
  * normalizeState(data|null): trả về state đầy đủ (null → state mặc định)
  * maxReachableTab(state), isAllValid(state)
  * buildSubmission(state): { longText, answers }
- * renderTab({ tab, state, update, toast, goToTab })
+ * renderTab({ tab, state, update, toast, goToTab, tabError, checkCurrentTab })
  * getFiles(): File[] đính kèm khi nộp (không bắt buộc)
+ * checkTab(tab, state): null nếu đạt, hoặc { message, focusId } — khi có, nút Tiếp tục
+ *   chỉ đánh giá lúc bấm: báo lỗi cụ thể và cuộn tới khối còn thiếu (không bắt buộc)
+ * canTryNext(tab, state): nút Tiếp tục có được bấm hay không khi dùng checkTab
  */
 export default function MissionGame({
   config, tabs, lsPrefix, normalizeState, maxReachableTab, isAllValid,
-  buildSubmission, renderTab, getFiles
+  buildSubmission, renderTab, getFiles, checkTab, canTryNext
 }) {
   const navigate = useNavigate();
   const lastTab = tabs.length;
@@ -67,6 +70,7 @@ export default function MissionGame({
   const syncTimerRef = useRef(null);
   const pendingRemoteRef = useRef(null);
   const [exiting, setExiting] = useState(false);
+  const [tabError, setTabError] = useState(null); // { tab, message, focusId }
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -160,6 +164,7 @@ export default function MissionGame({
 
   /* patch: object hoặc hàm (state) => object */
   function update(patch) {
+    setTabError(null);
     setState(prev => {
       const p = typeof patch === 'function' ? patch(prev) : patch;
       return { ...prev, ...p, savedAt: new Date().toISOString() };
@@ -174,6 +179,27 @@ export default function MissionGame({
     }
     update({ currentTab: id });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* Đánh giá tab hiện tại; trả về true nếu đạt */
+  function checkCurrentTab() {
+    if (!checkTab || !state) return true;
+    const err = checkTab(state.currentTab, state);
+    if (!err) return true;
+    setTabError({ tab: state.currentTab, ...err });
+    toast(err.message, 'error');
+    if (err.focusId) {
+      setTimeout(() => {
+        const el = document.getElementById(err.focusId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 0);
+    }
+    return false;
+  }
+
+  function handleNext() {
+    if (!checkCurrentTab()) return;
+    goToTab(state.currentTab + 1);
   }
 
   async function handleSaveAndExit() {
@@ -205,7 +231,7 @@ export default function MissionGame({
         evidenceSource: '',
         witnessName: ''
       }, getFiles ? getFiles() : []);
-      update({ submittedAt: new Date().toISOString() });
+      update({ submittedAt: new Date().toISOString(), done: true });
       toast(`Đã nộp ${missionLabel} thành công! Bài đã được gửi tới BTC chấm.`, 'success');
       await loadMySubmission();
     } catch (err) {
@@ -320,7 +346,11 @@ export default function MissionGame({
       );
     }
     if (!state) return null;
-    return renderTab({ tab: state.currentTab, state, update, toast, goToTab });
+    return renderTab({
+      tab: state.currentTab, state, update, toast, goToTab,
+      tabError: tabError && tabError.tab === state.currentTab ? tabError : null,
+      checkCurrentTab
+    });
   }
 
   const playing = !!(currentUser && !isAdmin && state);
@@ -390,7 +420,12 @@ export default function MissionGame({
               {exiting ? 'Đang lưu…' : '💾 Lưu & thoát'}
             </button>
             {tab < lastTab && (
-              <button type="button" className="btn btn--gold" disabled={tab >= maxTab} onClick={() => goToTab(tab + 1)}>
+              <button
+                type="button"
+                className="btn btn--gold"
+                disabled={checkTab ? !(canTryNext ? canTryNext(tab, state) : true) : tab >= maxTab}
+                onClick={handleNext}
+              >
                 Tiếp tục →
               </button>
             )}

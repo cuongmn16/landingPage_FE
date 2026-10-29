@@ -572,14 +572,23 @@ export const api = {
   },
 
   /**
-   * Số CBNV tham gia hợp lệ theo từng đơn vị (GET /api/leaderboard/units)
+   * Xếp hạng đơn vị theo tỷ lệ điểm (GET /api/leaderboard/units).
+   * Mỗi mission một thành viên nộp hợp lệ = 1 điểm; tổng điểm = số nhân sự × số mission.
    */
   async getUnitProgress() {
     const json = await request('/leaderboard/units');
-    return (Array.isArray(json.data) ? json.data : []).map(item => ({
+    return (Array.isArray(json.data) ? json.data : []).map((item, idx) => ({
+      rank: item.rank || idx + 1,
       unit_id: item.unitId,
+      unit_code: item.unitCode || '',
       unit_name: item.unitName || item.unitCode || '—',
-      participant_count: item.validParticipantsCount || 0
+      participant_count: item.validParticipantsCount || 0,
+      total_personnel: item.totalPersonnel || 0,
+      total_missions: item.totalMissions || 0,
+      earned_points: item.earnedPoints || 0,
+      max_points: item.maxPoints || 0,
+      score_percent: item.scorePercent != null ? Number(item.scorePercent) : 0,
+      last_updated_at: item.lastUpdatedAt || null
     }));
   },
 

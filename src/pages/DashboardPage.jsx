@@ -4,7 +4,7 @@ import { api, auth } from '../services/api';
 import { getMissionState, getSubmissionStatus, fmtDateTime } from '../data/appData';
 import MissionSubmitModal from '../components/common/MissionSubmitModal';
 
-const MISSION_PAGES = { 1: '/mission-1', 2: '/mission-2', 4: '/mission-4' };
+const MISSION_PAGES = { 1: '/mission-1', 2: '/mission-2', 3: '/mission-3', 4: '/mission-4' };
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function DashboardPage() {
   };
 
   const handleStartMission = (mId) => {
-    // Mission 1, 2, 4 có trang chơi riêng (theo tab, tự lưu tiến trình, nộp bài)
+    // Mission 1, 2, 3, 4 có trang chơi riêng (theo tab, tự lưu tiến trình, nộp bài)
     if (MISSION_PAGES[Number(mId)]) {
       navigate(MISSION_PAGES[Number(mId)]);
       return;
