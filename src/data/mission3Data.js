@@ -52,7 +52,7 @@ export const M3_LEADERS = [
     qualityId: 'QL-H5',
     quality: 'Dám chịu trách nhiệm; tin tưởng và trao quyền cho cộng sự.',
     contentStatus: 'approved',
-    imageUrl: ''
+    imageUrl: '/assets/submissions/mission-3/leaders/l01-nguyen-tri-dung.jpg'
   },
   {
     id: 'L02',
@@ -66,7 +66,7 @@ export const M3_LEADERS = [
     qualityId: 'QL-C8',
     quality: 'Tầm nhìn công nghệ; khả năng tham mưu và đồng hành trong những lựa chọn chiến lược.',
     contentStatus: 'approved',
-    imageUrl: ''
+    imageUrl: '/assets/submissions/mission-3/leaders/l02-to-hoai-van.jpg'
   },
   {
     id: 'L03',
@@ -80,7 +80,7 @@ export const M3_LEADERS = [
     qualityId: 'QL-W1',
     quality: 'Kiên định trước áp lực; chủ động dẫn dắt thay đổi và duy trì sự ổn định của tổ chức.',
     contentStatus: 'approved',
-    imageUrl: ''
+    imageUrl: '/assets/submissions/mission-3/leaders/l03-ha-thanh-hai.jpg'
   },
   {
     id: 'L04',
@@ -94,7 +94,7 @@ export const M3_LEADERS = [
     qualityId: 'QL-N6',
     quality: 'Năng lực kinh doanh và quản trị; định hướng phát triển bền vững.',
     contentStatus: 'approved',
-    imageUrl: ''
+    imageUrl: '/assets/submissions/mission-3/leaders/l04-hoang-anh-loc.jpg'
   },
   {
     id: 'L05',
@@ -108,7 +108,7 @@ export const M3_LEADERS = [
     qualityId: 'QL-D2',
     quality: 'Tinh thần tiên phong; kết nối đội ngũ với mục tiêu tăng trưởng.',
     contentStatus: 'approved',
-    imageUrl: ''
+    imageUrl: '/assets/submissions/mission-3/leaders/l05-le-thanh-son.jpg'
   }
 ];
 
