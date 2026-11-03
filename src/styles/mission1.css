@@ -5,7 +5,7 @@
 
 .m1-page {
   min-height: calc(100vh - 72px);
-  background: #F7F5F0;
+  background: #0A1F6B url('/assets/bg-ctin-25.jpg') center top / cover no-repeat fixed;
   padding-bottom: 100px;
 }
 

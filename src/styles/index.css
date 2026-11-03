@@ -271,9 +271,14 @@ ul { list-style: none; }
 .hero {
   position: relative; min-height: 90vh; display: flex; align-items: center;
   overflow: hidden; padding: 80px 0;
-  background: linear-gradient(160deg, #F7FAFD 0%, #FFFFFF 60%, #FEFCF7 100%);
+  background: #0A1F6B url('/assets/bg-ctin-25.jpg') center / cover no-repeat;
 }
-.hero__bg { position: absolute; inset: 0; pointer-events: none; }
+/* Lớp phủ tối bên trái để chữ trắng dễ đọc trên ảnh nền CTIN 25 năm */
+.hero__bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(6, 18, 64, 0.88) 0%, rgba(6, 18, 64, 0.65) 45%, rgba(6, 18, 64, 0.2) 100%);
+}
+.hero__grid, .hero__compass, .hero::before { display: none; }
 
 /* ✅ SỬA 1: Lưới nền — đổi sang CAM nhạt + ô nhỏ hơn */
 .hero__grid {
@@ -311,10 +316,10 @@ ul { list-style: none; }
 
 .hero__content { position: relative; z-index: 2; max-width: 820px; }
 .hero__tag {
-  color: var(--clr-orange-dark);
+  color: var(--clr-orange);
   margin-bottom: 20px; display: inline-block;
   padding: 6px 14px;
-  background: var(--clr-orange-pale);
+  background: rgba(240, 164, 34, 0.15);
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -323,31 +328,31 @@ ul { list-style: none; }
   font-family: var(--ff-heading);
   font-size: clamp(2.4rem, 6.5vw, 4.4rem);
   font-weight: 700; line-height: 1.08; margin-bottom: 16px;
-  color: var(--clr-ink);
+  color: #FFFFFF;
 }
 .hero__subtitle {
   font-family: var(--ff-heading);
   font-size: clamp(1.1rem, 2.4vw, 1.5rem);
-  color: var(--clr-blue); font-weight: 500; font-style: italic;
+  color: #9CC7FF; font-weight: 500; font-style: italic;
   letter-spacing: 0.01em; margin-bottom: 24px;
 }
-.hero__desc { color: var(--clr-ink-2); font-size: 1.05rem; max-width: 620px; margin-bottom: 40px; }
+.hero__desc { color: rgba(255, 255, 255, 0.85); font-size: 1.05rem; max-width: 620px; margin-bottom: 40px; }
 .hero__actions { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 48px; }
 
 .hero__stats {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px; padding-top: 28px;
-  border-top: 1px solid var(--clr-line);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 32px;
 }
 .hero__stat { display: flex; flex-direction: column; gap: 4px; }
 .hero__stat-value {
   font-family: var(--ff-heading);
   font-size: clamp(1.2rem, 2vw, 1.55rem);
-  color: var(--clr-blue); font-weight: 700;
+  color: var(--clr-orange); font-weight: 700;
 }
 .hero__stat-label {
-  font-size: 0.72rem; color: var(--clr-ink-3);
+  font-size: 0.72rem; color: rgba(255, 255, 255, 0.65);
   text-transform: uppercase; letter-spacing: 0.1em;
 }
 
@@ -363,6 +368,8 @@ ul { list-style: none; }
 }
 .hero__countdown strong { color: var(--clr-orange-dark); font-weight: 700; }
 .hero__countdown.is-closed { border-color: var(--clr-line-orange); color: var(--clr-orange-dark); }
+.hero .btn--outline { border-color: #FFFFFF; color: #FFFFFF; }
+.hero .btn--outline:hover { background: #FFFFFF; color: var(--clr-blue); }
 
 @media (max-width: 600px) {
   .hero { min-height: auto; padding: 56px 0; }
