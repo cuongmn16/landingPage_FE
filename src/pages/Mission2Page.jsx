@@ -15,7 +15,7 @@ const LS_PREFIX = 'ctin_th_m2_v2_';
 const MAX_FILES = 3;
 // Khớp với cấu hình backend (app.submission.allowed-extensions, max-file-size-mb)
 const ALLOWED_EXT = /\.(jpe?g|png|pdf|docx)$/i;
-const MAX_FILE_MB = 10;
+const MAX_FILE_MB = 50;
 
 const HAS_VERIFIER_OPTIONS = [
   { id: 'yes', label: 'Có người có thể xác nhận' },

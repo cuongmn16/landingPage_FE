@@ -71,7 +71,7 @@ export default function MissionSubmitModal({ isOpen, onClose, onSuccess, onOpenL
   if (!isOpen) return null;
 
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.docx'];
-  const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+  const maxSizeBytes = 50 * 1024 * 1024; // 50MB
 
   const handleFileChange = (e) => {
     setFileErrors('');
@@ -90,7 +90,7 @@ export default function MissionSubmitModal({ isOpen, onClose, onSuccess, onOpenL
         return;
       }
       if (f.size > maxSizeBytes) {
-        setFileErrors(`Tệp "${f.name}" vượt quá dung lượng tối đa 10 MB.`);
+        setFileErrors(`Tệp "${f.name}" vượt quá dung lượng tối đa 50 MB.`);
         return;
       }
       validFiles.push(f);
@@ -393,7 +393,7 @@ export default function MissionSubmitModal({ isOpen, onClose, onSuccess, onOpenL
                   📎 Tải ảnh hoặc tài liệu đính kèm mới:
                 </label>
                 <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '8px' }}>
-                  Tối đa 5 tệp (JPG, PNG, PDF, DOCX &le; 10MB/tệp).
+                  Tối đa 5 tệp (JPG, PNG, PDF, DOCX &le; 50MB/tệp).
                 </p>
 
                 <input
