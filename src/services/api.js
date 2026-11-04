@@ -76,12 +76,20 @@ function normalizeSubmission(s) {
   };
 }
 
+const MISSION_LABELS_OVERRIDE = {
+  1: { title: 'NHIỆM VỤ 01 – BẢN ĐỒ HÀNH TRÌNH', description: 'Giải mã hành trình phát triển CTIN' },
+  2: { title: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ', description: 'Kể lại những ký ức và câu chuyện của người CTIN' },
+  3: { title: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG', description: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo' },
+  4: { title: 'NHIỆM VỤ 04 – BẢN SẮC CTIN', description: 'Từ những giá trị được gìn giữ đến Chương 26' }
+};
+
 function normalizeMission(m) {
+  const override = MISSION_LABELS_OVERRIDE[Number(m.id)];
   return {
     id: m.id,
     code: m.code,
-    title: m.title || `Mission ${m.id}`,
-    description: m.description || '',
+    title: override ? override.title : (m.title || `Mission ${m.id}`),
+    description: override ? override.description : (m.description || ''),
     status: m.isOpen ? 'available' : 'locked',
     open_at: m.startTime || null,
     close_at: m.endTime || null
@@ -274,8 +282,9 @@ export async function registerEmployeeApi(payload) {
     body: JSON.stringify({
       fullName: payload.fullName || payload.full_name,
       email: payload.email,
-      employeeCode: payload.employeeCode || payload.employee_id,
-      unitCode
+      employeeCode: payload.employeeCode || payload.employee_id || '',
+      unitCode,
+      password: payload.password
     })
   });
   return json.data || { email: payload.email, message: json.message };

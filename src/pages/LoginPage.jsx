@@ -60,16 +60,17 @@ export default function LoginPage() {
     setError('');
     setStatusMsg('');
 
-    if (!forgotEmail || !forgotEmail.includes('@')) {
-      setError('Vui lòng nhập địa chỉ Email công ty hợp lệ.');
+    const cleanForgot = (forgotEmail || '').trim().toLowerCase();
+    if (!cleanForgot || !cleanForgot.endsWith('@ctin.vn')) {
+      setError('Vui lòng nhập địa chỉ Email công ty có đuôi @ctin.vn.');
       return;
     }
     if (cooldown > 0) return;
 
     setForgotSending(true);
     try {
-      const res = await sendOtpApi(forgotEmail.trim());
-      setStatusMsg(res?.message || `Mã OTP đã được gửi tới email ${forgotEmail.trim()}.`);
+      const res = await sendOtpApi(cleanForgot);
+      setStatusMsg(res?.message || `Mã OTP đã được gửi tới email ${cleanForgot}.`);
       setForgotStep(2);
       setCooldown(60);
     } catch (err) {
@@ -218,7 +219,7 @@ export default function LoginPage() {
           /* ============================================================ */
           <div>
             <h2>Đăng nhập</h2>
-            <p className="auth-sub">Dành cho CBNV đã được admin duyệt tài khoản.</p>
+            <p className="auth-sub">Đăng nhập bằng email công ty và mật khẩu của bạn.</p>
 
             {statusMsg && (
               <div style={{ background: '#e3f2fd', color: '#0d47a1', padding: '12px', borderRadius: '6px', fontSize: '0.88rem', marginBottom: '16px' }}>
@@ -278,4 +279,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

@@ -3,8 +3,8 @@
    ============================================================ */
 export const M2_CONFIG = {
   missionId: 2,
-  code: 'LEGACY STORIES',
-  title: 'Câu chuyện phía sau lịch sử',
+  code: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ',
+  title: 'Kể lại những ký ức và câu chuyện của người CTIN',
   shortTitle: 'Mission 02',
   points: 1 // điểm nhận được khi hoàn thành Mission 02 (BTC duyệt hợp lệ)
 };
@@ -20,8 +20,8 @@ export const M2_TABS = [
 ];
 
 export const M2_INTRO = {
-  label: 'LEGACY STORIES',
-  title: 'Câu chuyện phía sau lịch sử',
+  label: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ',
+  title: 'Kể lại những ký ức và câu chuyện của người CTIN',
   description:
     'Mỗi dấu mốc lịch sử đều được tạo nên từ những con người và những câu chuyện không phải lúc nào cũng xuất hiện trong hồ sơ chính thức. Hãy kể lại một ký ức giúp chúng ta hiểu thêm CTIN đã đi qua hành trình ấy như thế nào, đồng thời chia sẻ điều CTIN đã để lại trong bạn sau những năm tháng cùng đồng hành.',
   result:

@@ -17,9 +17,10 @@ import {
   api, auth, submitMissionResponseApi, getMissionProgressApi, saveMissionProgressApi
 } from '../services/api';
 import { getSubmissionStatus } from '../data/appData';
+import WrapSelect from '../components/mission/WrapSelect';
 import '../styles/mission1.css';
 
-const LS_PREFIX = 'ctin_th_m1_v2_';
+const LS_PREFIX = 'ctin_th_m1_v3_';
 const ADMIN_SHOW_LIMIT = 6;
 const SYNC_DELAY_MS = 1500;
 
@@ -62,6 +63,45 @@ function buildOrder() {
   };
 }
 
+/* Đồng bộ nhãn text mới nhất từ mission1Data V2 trong khi giữ nguyên thứ tự xáo trộn đã lưu */
+function refreshOrderTexts(savedOrder) {
+  const fresh = buildOrder();
+  if (!savedOrder || typeof savedOrder !== 'object') return fresh;
+
+  const mapById = (arr) => new Map((arr || []).map(item => [item.id, item.text]));
+  const syncList = (oldList, refArr) => {
+    if (!Array.isArray(oldList) || oldList.length !== refArr.length) return shuffle(refArr);
+    const lookup = mapById(refArr);
+    return oldList.map(item => ({ id: item.id, text: lookup.get(item.id) || item.text }));
+  };
+
+  const transforms = {};
+  M1_TRANSFORMS.forEach(t => {
+    const refContexts = [
+      { id: t.contextId, text: t.context },
+      ...t.distractors.contexts.map((txt, i) => ({ id: `${t.contextId}_d${i}`, text: txt }))
+    ];
+    const refChanges = [
+      { id: t.changeId, text: t.change },
+      ...t.distractors.changes.map((txt, i) => ({ id: `${t.changeId}_d${i}`, text: txt }))
+    ];
+    const oldTf = savedOrder.transforms?.[t.stageId];
+    transforms[t.stageId] = {
+      contexts: syncList(oldTf?.contexts, refContexts),
+      changes: syncList(oldTf?.changes, refChanges)
+    };
+  });
+
+  return {
+    meanings: syncList(savedOrder.meanings, M1_MEANINGS),
+    names: syncList(savedOrder.names, M1_STAGE_NAMES),
+    events: syncList(savedOrder.events, M1_STAGE_EVENTS),
+    transforms,
+    spirits: syncList(savedOrder.spirits, M1_SPIRIT_OPTIONS),
+    redThread: syncList(savedOrder.redThread, M1_RED_THREAD.options)
+  };
+}
+
 const defaultState = () => ({
   agreed: false,
   timeline: {},
@@ -80,7 +120,7 @@ const defaultState = () => ({
 function normalizeState(data) {
   const base = defaultState();
   if (!data || typeof data !== 'object') return base;
-  return { ...base, ...data, order: data.order || base.order };
+  return { ...base, ...data, order: refreshOrderTexts(data.order) };
 }
 
 function loadState(key) {
@@ -227,7 +267,7 @@ function Evidence({ code }) {
       </div>
     );
   }
-  return <div className="m1-unlock__placeholder">{ev.caption || 'Tư liệu đang cập nhật'}</div>;
+  return null;
 }
 
 function Tab2Timeline({ state, update, toast }) {
@@ -251,7 +291,7 @@ function Tab2Timeline({ state, update, toast }) {
               <div className="m1-tl-item__row">
                 <div className="m1-tl-item__year">{t.year}</div>
                 <div className="m1-tl-item__body">
-                  <select
+                  <WrapSelect
                     className="m1-tl-item__select"
                     value={selected}
                     disabled={isCorrect}
@@ -259,7 +299,7 @@ function Tab2Timeline({ state, update, toast }) {
                   >
                     <option value="">— Chọn ý nghĩa phù hợp —</option>
                     {state.order.meanings.map(m => <option key={m.id} value={m.id}>{m.text}</option>)}
-                  </select>
+                  </WrapSelect>
                   {isCorrect && t.unlock && (
                     <div className="m1-unlock">
                       <p className="m1-unlock__title">{t.unlock.title}</p>
@@ -298,7 +338,7 @@ function Tab3Stages({ state, update }) {
   return (
     <section className="m1-panel">
       <p className="m1-panel__hint">
-        Dựa trên các dấu mốc đã khám phá, hãy xác định cách hành trình CTIN được phân chia thành 5 giai đoạn phát triển. Kết quả của bước này sẽ tạo thành khung hành trình để tiếp tục giải mã sự chuyển mình của CTIN.
+        Dựa trên các dấu mốc chính vừa khám phá, hãy xác định các mốc thời gian để chia hành trình hình thành và phát triển của CTIN thành 5 giai đoạn. Kết quả của bước này sẽ tạo thành khung hành trình để bạn tiếp tục tìm hiểu những chuyển biến quan trọng của CTIN qua từng giai đoạn.
       </p>
       <div className="m1-stages">
         {M1_STAGES.map((s, idx) => {
@@ -314,29 +354,29 @@ function Tab3Stages({ state, update }) {
               <div className="m1-stage-card__fields">
                 <div className="m1-field">
                   <label>Từ năm</label>
-                  <select value={ans.start || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'start', e.target.value)}>
+                  <WrapSelect value={ans.start || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'start', e.target.value)}>
                     <option value="">— Chọn —</option>{yearOpts}
-                  </select>
+                  </WrapSelect>
                 </div>
                 <div className="m1-field">
                   <label>Đến năm</label>
-                  <select value={ans.end || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'end', e.target.value)}>
+                  <WrapSelect value={ans.end || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'end', e.target.value)}>
                     <option value="">— Chọn —</option>{yearOpts}
-                  </select>
+                  </WrapSelect>
                 </div>
                 <div className="m1-field">
                   <label>Tên giai đoạn</label>
-                  <select value={ans.nameId || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'nameId', e.target.value)}>
+                  <WrapSelect value={ans.nameId || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'nameId', e.target.value)}>
                     <option value="">— Chọn tên —</option>
                     {state.order.names.map(n => <option key={n.id} value={n.id}>{n.text}</option>)}
-                  </select>
+                  </WrapSelect>
                 </div>
                 <div className="m1-field">
                   <label>Sự kiện tạo đà</label>
-                  <select value={ans.eventId || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'eventId', e.target.value)}>
+                  <WrapSelect value={ans.eventId || ''} disabled={isCorrect} onChange={(e) => setField(s.id, 'eventId', e.target.value)}>
                     <option value="">— Chọn sự kiện —</option>
                     {state.order.events.map(ev => <option key={ev.id} value={ev.id}>{ev.text}</option>)}
-                  </select>
+                  </WrapSelect>
                 </div>
               </div>
               <StageFeedback stage={s} ans={ans} />
@@ -368,7 +408,7 @@ function Tab4Transforms({ state, update, toast }) {
   return (
     <section className="m1-panel">
       <p className="m1-panel__hint">
-        Với mỗi giai đoạn, hãy kết nối ba thành phần: bối cảnh hoặc điểm xuất phát, sự kiện tạo đà và chuyển biến về bản chất của CTIN. Khi kết nối chính xác, hồ sơ kiến thức chi tiết sẽ được mở.
+        Với mỗi giai đoạn, hãy kết nối ba thành phần: bối cảnh hoặc điểm xuất phát, sự kiện tạo đà và chuyển biến về bản chất của CTIN. Khi kết nối chính xác, hồ sơ lịch sử chi tiết sẽ được mở.
       </p>
       <div className="m1-transforms">
         {M1_TRANSFORMS.map((t, idx) => {
@@ -384,17 +424,17 @@ function Tab4Transforms({ state, update, toast }) {
               <div className="m1-tf-card__fields">
                 <div className="m1-field">
                   <label>Bối cảnh / Điểm xuất phát</label>
-                  <select value={ans.contextId || ''} disabled={isCorrect} onChange={(e) => setField(t, 'contextId', e.target.value)}>
+                  <WrapSelect value={ans.contextId || ''} disabled={isCorrect} onChange={(e) => setField(t, 'contextId', e.target.value)}>
                     <option value="">— Chọn bối cảnh —</option>
                     {opts.contexts.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
-                  </select>
+                  </WrapSelect>
                 </div>
                 <div className="m1-field">
                   <label>Sự chuyển biến về bản chất</label>
-                  <select value={ans.changeId || ''} disabled={isCorrect} onChange={(e) => setField(t, 'changeId', e.target.value)}>
+                  <WrapSelect value={ans.changeId || ''} disabled={isCorrect} onChange={(e) => setField(t, 'changeId', e.target.value)}>
                     <option value="">— Chọn chuyển biến —</option>
                     {opts.changes.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
-                  </select>
+                  </WrapSelect>
                 </div>
               </div>
               {isCorrect && (
@@ -437,14 +477,14 @@ function Tab5Legacy({ state, update }) {
           return (
             <div key={l.stageId} className={`m1-leg-item ${isCorrect ? 'is-correct' : ''}`}>
               <span className="m1-leg-item__label">{l.stageLabel}</span>
-              <select
+              <WrapSelect
                 value={selected}
                 disabled={isCorrect}
                 onChange={(e) => update(s => ({ legacies: { ...s.legacies, [l.stageId]: e.target.value } }))}
               >
                 <option value="">— Lựa chọn di sản hình thành và tiếp nối —</option>
                 {state.order.spirits.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
-              </select>
+              </WrapSelect>
             </div>
           );
         })}
@@ -840,7 +880,7 @@ export default function Mission1Page() {
       return (
         <section className="m1-panel" style={{ textAlign: 'center' }}>
           <h2 className="m1-panel__title">Bạn cần đăng nhập để chơi Mission 01</h2>
-          <p className="m1-panel__text">Tiến trình chơi được lưu theo tài khoản CBNV đã được admin duyệt.</p>
+          <p className="m1-panel__text">Tiến trình chơi được lưu theo tài khoản CBNV CTIN.</p>
           <Link to="/login" className="btn btn--gold" style={{ marginTop: '16px' }}>Đăng nhập</Link>
         </section>
       );

@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { sendOtpApi, verifyOtpApi, registerEmployeeApi, getRegisterUnitsApi } from '../services/api';
 
 export default function RegisterPage() {
-  const [step, setStep] = useState(1); // 1: Form Info, 2: OTP Verification, 3: Success Screen (Matches attached screenshot)
+  const [step, setStep] = useState(1); // 1: Form Info + Password, 2: OTP Verification, 3: Success Screen
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [unit, setUnit] = useState(''); // mã phòng ban (unit code)
   const [units, setUnits] = useState([]);
@@ -19,6 +21,7 @@ export default function RegisterPage() {
       .catch(err => { if (!cancelled) setUnitsError(err.message || 'Không tải được danh sách phòng ban.'); });
     return () => { cancelled = true; };
   }, []);
+
   const [otpCode, setOtpCode] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
 
@@ -40,14 +43,25 @@ export default function RegisterPage() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // Step 1: Request OTP from backend
+  // Step 1: Validate info (@ctin.vn + password) & Request OTP from backend
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setStatusMsg('');
 
-    if (!email || !email.includes('@')) {
-      setError('Vui lòng nhập địa chỉ Email hợp lệ.');
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.endsWith('@ctin.vn')) {
+      setError('Email đăng ký bắt buộc phải có đuôi @ctin.vn (VD: nhanvien@ctin.vn).');
+      return;
+    }
+
+    if (!password || password.trim().length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
       return;
     }
 
@@ -59,8 +73,8 @@ export default function RegisterPage() {
     setSendingOtp(true);
 
     try {
-      const res = await sendOtpApi(email.trim());
-      setStatusMsg(res?.message || `Mã OTP 6 số đã được gửi tới email ${email.trim()}. Vui lòng kiểm tra hộp thư!`);
+      const res = await sendOtpApi(cleanEmail);
+      setStatusMsg(res?.message || `Mã OTP 6 số đã được gửi tới email ${cleanEmail}. Vui lòng kiểm tra hộp thư!`);
       setOtpVerified(false);
       setStep(2);
       setCooldown(60); // Activate 60s cooldown limit
@@ -85,22 +99,23 @@ export default function RegisterPage() {
     setVerifyingOtp(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       // 1. Verify OTP via backend API (/api/auth/verify-otp) — only once; the code is single-use
       if (!otpVerified) {
-        await verifyOtpApi(email.trim(), otpCode.trim());
+        await verifyOtpApi(cleanEmail, otpCode.trim());
         setOtpVerified(true);
       }
 
-      // 2. Call backend register API (/api/employees/register).
-      //    The backend checks server-side that this email has just passed OTP verification.
+      // 2. Call backend register API (/api/employees/register) with user-chosen password
       await registerEmployeeApi({
         fullName: fullName.trim(),
-        email: email.trim(),
+        email: cleanEmail,
         employeeCode: employeeId.trim(),
-        unitCode: unit
+        unitCode: unit,
+        password: password.trim()
       });
 
-      // 3. Move to Step 3: Success Screen (Matches screenshot!)
+      // 3. Move to Step 3: Success Screen
       setSuccess(true);
       setStep(3);
     } catch (err) {
@@ -118,7 +133,7 @@ export default function RegisterPage() {
         </Link>
         <h2>Đăng ký tài khoản</h2>
         <p className="auth-sub">
-          Sau khi đăng ký, admin sẽ xác minh email công ty và gửi mật khẩu cho bạn qua email.
+          Sử dụng email công ty (@ctin.vn), tự tạo mật khẩu và xác thực mã OTP gửi về email để kích hoạt tài khoản ngay.
         </p>
 
         {/* Status / Notice Alert Banner */}
@@ -135,11 +150,11 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* STEP 3: SUCCESS SCREEN (Exact Layout as User Screenshot!) */}
+        {/* STEP 3: SUCCESS SCREEN */}
         {step === 3 || success ? (
           <div style={{ background: '#E6F4EA', color: '#137333', padding: '20px 16px', borderRadius: '8px', textAlign: 'center', margin: '20px 0', border: '1px solid #CEEAD6' }}>
             <p style={{ fontWeight: 'bold', fontSize: '1.05rem', margin: 0, color: '#137333' }}>
-              Đăng ký thành công, chờ admin duyệt
+              ✅ Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.
             </p>
             <div style={{ marginTop: '18px' }}>
               <Link to="/login" className="btn btn--gold" style={{ display: 'inline-block', width: '100%', padding: '12px 20px', fontSize: '0.95rem', fontWeight: 'bold' }}>
@@ -148,7 +163,7 @@ export default function RegisterPage() {
             </div>
           </div>
         ) : step === 1 ? (
-          /* STEP 1: Enter User Information & Request OTP */
+          /* STEP 1: Enter User Information, Password & Request OTP */
           <form onSubmit={handleSendOtp}>
             <div className="form-group">
               <label htmlFor="fullName">Họ và tên</label>
@@ -163,7 +178,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="email">Email công ty</label>
+              <label htmlFor="email">Email công ty (@ctin.vn)</label>
               <input
                 type="email"
                 id="email"
@@ -175,13 +190,38 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="employeeId">Mã nhân viên</label>
+              <label htmlFor="password">Mật khẩu tự tạo (tối thiểu 6 ký tự)</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                placeholder="Nhập mật khẩu..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Nhập lại mật khẩu</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                placeholder="Nhập lại mật khẩu..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="employeeId">Mã nhân viên (không bắt buộc)</label>
               <input
                 type="text"
                 id="employeeId"
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value)}
-                required
                 placeholder="VD: CT001"
               />
             </div>
@@ -287,4 +327,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

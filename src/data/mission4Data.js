@@ -3,8 +3,8 @@
    ============================================================ */
 export const M4_CONFIG = {
   missionId: 4,
-  code: 'CTIN DNA',
-  title: 'Từ DNA đến Chương 26',
+  code: 'NHIỆM VỤ 04 – BẢN SẮC CTIN',
+  title: 'Từ những giá trị được gìn giữ đến Chương 26',
   shortTitle: 'Mission 04',
   points: 1 // điểm nhận được khi hoàn thành Mission 04 (BTC duyệt hợp lệ)
 };
@@ -20,8 +20,8 @@ export const M4_TABS = [
 ];
 
 export const M4_INTRO = {
-  label: 'CTIN DNA',
-  title: 'Từ DNA đến Chương 26',
+  label: 'NHIỆM VỤ 04 – BẢN SẮC CTIN',
+  title: 'Từ những giá trị được gìn giữ đến Chương 26',
   description:
     'Một hành trình đáng kể không chỉ được tạo nên bởi những gì đã đạt được, mà còn bởi khả năng hiểu mình, nhìn thẳng vào thay đổi và cùng nhau lựa chọn cách bước tiếp. Mission cuối cùng là lời chuyển tiếp từ di sản CTIN đến tương lai mà mỗi chúng ta cùng kiến tạo.',
   result:

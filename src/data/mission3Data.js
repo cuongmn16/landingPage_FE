@@ -5,8 +5,8 @@
    ============================================================ */
 export const M3_CONFIG = {
   missionId: 3,
-  code: 'LEADERSHIP LEGACIES',
-  title: 'Dấu ấn người dẫn đường',
+  code: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG',
+  title: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo',
   shortTitle: 'Mission 03',
   contentVersion: 'm3-2026.10',
   minReflection: 100,
@@ -22,8 +22,8 @@ export const M3_TABS = [
 ];
 
 export const M3_INTRO = {
-  label: 'LEADERSHIP LEGACIES',
-  title: 'Dấu ấn người dẫn đường',
+  label: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG',
+  title: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo',
   description:
     'Một hành trình dài không chỉ được ghi dấu bằng những cột mốc, mà còn bởi những con người đã lựa chọn hướng đi, dẫn dắt sự thay đổi và truyền lại niềm tin cho thế hệ tiếp theo. Qua năm hồ sơ lãnh đạo, hãy khám phá những quyết định, phẩm chất và dấu ấn đã góp phần tạo nên CTIN hôm nay.',
   result:

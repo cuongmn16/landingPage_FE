@@ -14,6 +14,7 @@ import {
   M3_CONFIG, M3_TABS, M3_INTRO, M3_LEADERS, M3_MARKS, M3_QUALITIES, M3_CONTINUATIONS,
   M3_HAS_DRAFT, M3_PUBLISH_BLOCKED, m3Label
 } from '../data/mission3Data';
+import WrapSelect from '../components/mission/WrapSelect';
 import '../styles/mission1.css';
 import '../styles/mission3.css';
 
@@ -363,21 +364,21 @@ function Tab3Decode({ state, update, tabError, checkCurrentTab, toast }) {
             </div>
             <div className="m3-match-field">
               <label className="m3-match-field__label" htmlFor={`m3Mark${l.id}`}>Quyết định / dấu ấn tiêu biểu</label>
-              <select id={`m3Mark${l.id}`} value={markSel} onChange={(e) => pick('markMatches', l.id, e.target.value)}>
+              <WrapSelect id={`m3Mark${l.id}`} value={markSel} onChange={(e) => pick('markMatches', l.id, e.target.value)}>
                 <option value="">— Chọn dấu ấn —</option>
                 {marks.map(m => (
                   <option key={m.id} value={m.id} disabled={usedM.has(m.id)}>{m.label}</option>
                 ))}
-              </select>
+              </WrapSelect>
             </div>
             <div className="m3-match-field">
               <label className="m3-match-field__label" htmlFor={`m3Quality${l.id}`}>Phẩm chất lãnh đạo</label>
-              <select id={`m3Quality${l.id}`} value={qualSel} onChange={(e) => pick('qualityMatches', l.id, e.target.value)}>
+              <WrapSelect id={`m3Quality${l.id}`} value={qualSel} onChange={(e) => pick('qualityMatches', l.id, e.target.value)}>
                 <option value="">— Chọn phẩm chất —</option>
                 {qualities.map(q => (
                   <option key={q.id} value={q.id} disabled={usedQ.has(q.id)}>{q.label}</option>
                 ))}
-              </select>
+              </WrapSelect>
             </div>
           </div>
         );
@@ -402,7 +403,7 @@ function Tab4Legacy({ state, update, tabError }) {
         return (
           <div key={l.id} id={`m3Cont${l.id}`} className={`m3-cont-row ${missing && !sel ? 'is-missing' : ''}`}>
             <label className="m3-cont-row__name" htmlFor={`m3ContSel${l.id}`}>{l.name}</label>
-            <select
+            <WrapSelect
               id={`m3ContSel${l.id}`}
               value={sel}
               onChange={(e) => update(s => {
@@ -414,7 +415,7 @@ function Tab4Legacy({ state, update, tabError }) {
             >
               <option value="">— Điều cần tiếp nối —</option>
               {M3_CONTINUATIONS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
+            </WrapSelect>
           </div>
         );
       })}

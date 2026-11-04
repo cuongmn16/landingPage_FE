@@ -4,6 +4,8 @@ import { registerEmployeeApi, sendOtpApi, verifyOtpApi, getRegisterUnitsApi } fr
 export default function RegisterModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1); // 1: Send OTP, 2: Enter OTP & Complete Register
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [unitCode, setUnitCode] = useState('');
   const [units, setUnits] = useState([]);
@@ -36,8 +38,24 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
   // Step 1: Send OTP to user's email with Rate Limit Check
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
-    if (!email || !email.includes('@')) {
-      setErrorMessage('Vui lòng nhập địa chỉ Email hợp lệ.');
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.endsWith('@ctin.vn')) {
+      setErrorMessage('Email đăng ký bắt buộc phải có đuôi @ctin.vn (VD: nhanvien@ctin.vn).');
+      return;
+    }
+
+    if (!password || password.trim().length < 6) {
+      setErrorMessage('Mật khẩu phải có ít nhất 6 ký tự.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    if (!unitCode) {
+      setErrorMessage('Vui lòng chọn phòng ban.');
       return;
     }
 
@@ -51,8 +69,8 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
     setErrorMessage(null);
 
     try {
-      await sendOtpApi(email.trim());
-      setStatusMessage(`📩 Mã OTP 6 số đã được gửi tới email ${email}. Vui lòng kiểm tra hộp thư!`);
+      await sendOtpApi(cleanEmail);
+      setStatusMessage(`📩 Mã OTP 6 số đã được gửi tới email ${cleanEmail}. Vui lòng kiểm tra hộp thư!`);
       setStep(2);
       setCooldown(60); // Activate 60s cooldown limit
     } catch (err) {
@@ -76,18 +94,20 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
     setErrorMessage(null);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       // 1. Verify OTP with backend
-      await verifyOtpApi(email.trim(), otpCode.trim());
+      await verifyOtpApi(cleanEmail, otpCode.trim());
 
       // 2. Build registration payload
-      const emailPrefix = email.split('@')[0].toUpperCase();
+      const emailPrefix = cleanEmail.split('@')[0].toUpperCase();
       const derivedEmployeeCode = 'NV_' + emailPrefix.replace(/[^A-Z0-9]/g, '');
 
       const payload = {
         employeeCode: derivedEmployeeCode,
-        email: email.trim(),
+        email: cleanEmail,
         fullName: fullName.trim() || emailPrefix,
         unitCode,
+        password: password.trim(),
         emailVerified: true
       };
 
@@ -121,11 +141,11 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
         <div style={{ padding: '12px 4px' }}>
           <div style={{ marginBottom: '16px' }}>
             <span className="mono" style={{ color: 'var(--clr-gold)', fontSize: '0.85rem' }}>
-              EMAIL VERIFICATION (WITH RATE LIMITING)
+              EMAIL VERIFICATION (@CTIN.VN)
             </span>
             <h2 style={{ fontSize: '1.4rem', marginTop: '4px' }}>Đăng ký tài khoản cá nhân</h2>
             <p style={{ color: 'var(--clr-ink-2)', fontSize: '0.85rem' }}>
-              Xác minh địa chỉ Email thực tế qua mã OTP 6 số trước khi gửi yêu cầu tới Admin phê duyệt.
+              Sử dụng email công ty (@ctin.vn), tự tạo mật khẩu và xác thực mã OTP 6 số để kích hoạt tài khoản.
             </p>
           </div>
 
@@ -154,10 +174,10 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
           )}
 
           {step === 3 ? (
-            /* STEP 3: Success Screen (Matches user screenshot) */
+            /* STEP 3: Success Screen */
             <div style={{ background: '#E6F4EA', color: '#137333', padding: '20px 16px', borderRadius: '8px', textAlign: 'center', margin: '16px 0', border: '1px solid #CEEAD6' }}>
               <p style={{ fontWeight: 'bold', fontSize: '1.05rem', margin: 0, color: '#137333' }}>
-                Đăng ký thành công, chờ admin duyệt
+                ✅ Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.
               </p>
               <div style={{ marginTop: '18px' }}>
                 <a href="/login" className="btn btn--gold" style={{ display: 'inline-block', width: '100%', padding: '12px 20px', fontSize: '0.95rem', fontWeight: 'bold', textDecoration: 'none' }}>
@@ -166,11 +186,11 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
           ) : step === 1 ? (
-            /* STEP 1: Enter email info & Request OTP */
+            /* STEP 1: Enter email info, password & Request OTP */
             <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>
-                  📧 Email công ty của bạn:
+                  📧 Email công ty (@ctin.vn):
                 </label>
                 <input
                   type="email"
@@ -198,11 +218,42 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
 
               <div>
                 <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>
+                  Mật khẩu tự tạo (tối thiểu 6 ký tự):
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Nhập mật khẩu..."
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>
+                  Nhập lại mật khẩu:
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Nhập lại mật khẩu..."
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>
                   Đơn vị / Phòng ban:
                 </label>
                 <select
                   value={unitCode}
                   onChange={(e) => setUnitCode(e.target.value)}
+                  required
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
                 >
                   <option value="">— Chọn phòng ban —</option>
@@ -269,7 +320,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
                   ← Quay lại
                 </button>
                 <button type="submit" className="btn btn--gold" disabled={submitting}>
-                  {submitting ? 'Đang xác thực & đăng ký...' : '✅ Xác thực OTP & Gửi Đăng ký →'}
+                  {submitting ? 'Đang xác thực & đăng ký...' : '✅ Xác thực OTP & Đăng ký →'}
                 </button>
               </div>
             </form>

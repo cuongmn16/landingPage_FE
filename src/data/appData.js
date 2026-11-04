@@ -42,7 +42,7 @@ export const HOW_TO_PLAY = {
   },
   steps: [
     { num: '01', title: 'BTC mở Mission', desc: 'Công bố đề bài, thời hạn và các thẻ hoặc câu hỏi.' },
-    { num: '02', title: 'Cá nhân khám phá', desc: 'Người chơi tự giải thể, đọc tư liệu và thực hiện nhiệm vụ.' },
+    { num: '02', title: 'Cá nhân khám phá', desc: 'Mỗi người chơi tự khám phá các tư liệu, giải mã manh mối và hoàn thành nhiệm vụ theo hướng dẫn.' },
     { num: '03', title: 'Lưu và nộp', desc: 'Có thể lưu nháp; chỉ nộp khi đã hoàn thành đủ trường bắt buộc.' },
     { num: '04', title: 'Hệ thống ghi nhận', desc: 'Cập nhật trạng thái cá nhân và tiến độ của đơn vị.' },
     { num: '05', title: 'BTC xác minh', desc: 'Kiểm duyệt đóng góp, công bố tiến độ và mở Mission tiếp theo.' }
@@ -57,10 +57,10 @@ export const HOW_TO_PLAY = {
 };
 
 export const MISSIONS = [
-  { id: 'M1', num: '01', name: 'JOURNEY MAP',          focus: 'Ghép thời gian, bước ngoặt, vật chứng và tiếng nói nhân chứng.', duration: '15–20 phút' },
-  { id: 'M2', num: '02', name: 'LEGACY STORIES',       focus: 'Kể, xác nhận hoặc bổ sung một câu chuyện phía sau lịch sử chính thức.', duration: '10–15 phút' },
-  { id: 'M3', num: '03', name: 'LEADERSHIP LEGACIES',  focus: 'Khám phá quyết định, phẩm chất và di sản lãnh đạo.', duration: '10–12 phút' },
-  { id: 'M4', num: '04', name: 'CTIN DNA',             focus: 'Xác định điều cần gìn giữ, điều cần phát triển và Future Promise.', duration: '8–10 phút' }
+  { id: 'M1', num: '01', name: 'NHIỆM VỤ 01 – BẢN ĐỒ HÀNH TRÌNH',          focus: 'Giải mã hành trình phát triển CTIN', duration: '15–20 phút' },
+  { id: 'M2', num: '02', name: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ', focus: 'Kể lại những ký ức và câu chuyện của người CTIN', duration: '10–15 phút' },
+  { id: 'M3', num: '03', name: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG',      focus: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo', duration: '10–12 phút' },
+  { id: 'M4', num: '04', name: 'NHIỆM VỤ 04 – BẢN SẮC CTIN',                focus: 'Từ những giá trị được gìn giữ đến Chương 26', duration: '8–10 phút' }
 ];
 
 export const PRIZES = {
@@ -83,13 +83,13 @@ export const PRIZES = {
 };
 
 export const TIMELINE = [
-  { date: '2026-10-01', endDate: '2026-10-15', title: 'Chuẩn bị & kích hoạt tài khoản', desc: 'Khóa danh sách nhân sự, admin duyệt tài khoản.' },
-  { date: '2026-10-16', endDate: '2026-10-22', title: 'Mission 1 – Journey Map',        desc: 'Ghép thời gian, bước ngoặt, vật chứng, nhân chứng.' },
-  { date: '2026-10-23', endDate: '2026-10-29', title: 'Mission 2 – Legacy Stories',     desc: 'Câu chuyện phía sau lịch sử chính thức.' },
-  { date: '2026-10-30', endDate: '2026-11-05', title: 'Mission 3 – Leadership Legacies', desc: 'Di sản lãnh đạo CTIN.' },
-  { date: '2026-11-06', endDate: '2026-11-12', title: 'Mission 4 – CTIN DNA',           desc: 'DNA CTIN và Future Promise.' },
-  { date: '2026-11-13', endDate: '2026-11-19', title: 'Catch up',                        desc: 'Hoàn thành các Mission còn thiếu.' },
-  { date: '2026-11-20', endDate: null,         title: 'Xác minh và công bố',             desc: 'Khóa dữ liệu, công bố kết quả và vinh danh.' }
+  { date: '2026-10-01', endDate: '2026-10-15', title: 'Chuẩn bị & kích hoạt tài khoản',              desc: 'Khóa danh sách nhân sự, kích hoạt tài khoản.' },
+  { date: '2026-10-16', endDate: '2026-10-22', title: 'NHIỆM VỤ 01 – BẢN ĐỒ HÀNH TRÌNH',          desc: 'Giải mã hành trình phát triển CTIN' },
+  { date: '2026-10-23', endDate: '2026-10-29', title: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ', desc: 'Kể lại những ký ức và câu chuyện của người CTIN' },
+  { date: '2026-10-30', endDate: '2026-11-05', title: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG',      desc: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo' },
+  { date: '2026-11-06', endDate: '2026-11-12', title: 'NHIỆM VỤ 04 – BẢN SẮC CTIN',                desc: 'Từ những giá trị được gìn giữ đến Chương 26' },
+  { date: '2026-11-13', endDate: '2026-11-19', title: 'Catch up',                                    desc: 'Hoàn thành các Mission còn thiếu.' },
+  { date: '2026-11-20', endDate: null,         title: 'Xác minh và công bố',                         desc: 'Khóa dữ liệu, công bố kết quả và vinh danh.' }
 ];
 
 export const FAQ = [

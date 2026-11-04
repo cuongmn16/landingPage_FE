@@ -9,6 +9,7 @@ import {
   M4_CONFIG, M4_TABS, M4_INTRO, M4_DNA, M4_DNA_MEANINGS, M4_ERA_GROUPS, M4_PRESSURES,
   M4_CHANGES, M4_CHANGE_TARGETS, M4_LEADERSHIP, M4_LEADERSHIP_BEHAVIORS
 } from '../data/mission4Data';
+import WrapSelect from '../components/mission/WrapSelect';
 import '../styles/mission4.css';
 
 const LS_PREFIX = 'ctin_th_m4_v2_';
@@ -216,10 +217,10 @@ function MatchRow({ label, sub, selected, correctId, options, placeholder, onCha
         <span className="m4-match-row__label">{label}</span>
         {sub && <span className="m4-match-row__sub">{sub}</span>}
       </div>
-      <select className={cls} value={selected || ''} onChange={(e) => onChange(e.target.value || null)}>
+      <WrapSelect className={cls} value={selected || ''} onChange={(e) => onChange(e.target.value || null)}>
         <option value="">{placeholder}</option>
         {options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-      </select>
+      </WrapSelect>
     </div>
   );
 }
