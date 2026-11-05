@@ -69,12 +69,12 @@ const inRange = (n, min, max) => n >= min && n <= max;
 
 const isTab1Valid = (s) => !!s.agreed;
 
-const isTab2Valid = (s) => M4_DNA.every(d => s.dna[d.id] === d.meaningId);
+const isTab2Valid = (s) => M4_DNA.every(d => !!s.dna[d.id]);
 
 const isTab3Valid = (s) =>
   M4_ERA_GROUPS.every(g => (s.era[g.id] || []).length === ERA_PICK) &&
-  !!s.pressure &&
-  inRange(countWords(s.challenge), 20, 40);
+  !!s.pressure && true &&
+  !!s.pressure;
 
 const isTab4Valid = (s) => M4_CHANGES.every(c => s.changes[c.id] === c.toId);
 
@@ -119,7 +119,7 @@ function maxReachableTab(s) {
 function validityChecklist(s) {
   return [
     { label: 'Đã xác nhận hiểu yêu cầu', ok: isTab1Valid(s) },
-    { label: 'Ghép đúng 5 giá trị DNA CTIN', ok: isTab2Valid(s) },
+    { label: 'Đã chọn đủ 5 giá trị DNA CTIN', ok: isTab2Valid(s) },
     { label: 'Chọn 2 tác động/nhóm + áp lực lớn nhất + giải thích 20–40 từ', ok: isTab3Valid(s) },
     { label: 'Ghép đúng 5 chuyển đổi', ok: isTab4Valid(s) },
     { label: 'Ghép đúng 5 Leadership Messages + chọn ưu tiên', ok: isTab5Valid(s) },
@@ -210,7 +210,7 @@ function buildAnswers(s) {
 /* Một hàng ghép: nhãn bên trái, dropdown đáp án bên phải (đúng → xanh, sai → đỏ) */
 function MatchRow({ label, sub, selected, correctId, options, placeholder, onChange }) {
   let cls = '';
-  if (selected) cls = selected === correctId ? 'is-correct' : 'is-wrong';
+  if (selected) cls = (!correctId || selected === correctId) ? 'is-correct' : 'is-wrong';
   return (
     <div className="m4-match-row">
       <div>
@@ -284,7 +284,7 @@ function Tab2Dna({ state, update }) {
           label={d.name}
           sub={d.nameVi}
           selected={state.dna[d.id]}
-          correctId={d.meaningId}
+          correctId={null}
           options={meanings}
           placeholder="— Chọn ý nghĩa hành vi —"
           onChange={(v) => update(s => ({ dna: { ...s.dna, [d.id]: v } }))}

@@ -43,8 +43,8 @@ export const M2_ROLES = [
 export const M2_PERIODS = [
   { id: 'P01', label: '1972–1985' },
   { id: 'P02', label: '1985–2000' },
-  { id: 'P03', label: '2001–2006' },
-  { id: 'P04', label: '2007–2019' },
+  { id: 'P03', label: '2001–2007' },
+  { id: 'P04', label: '2008–2019' },
   { id: 'P05', label: '2020–nay' },
   { id: 'P06', label: 'Tôi không nhớ chính xác' }
 ];

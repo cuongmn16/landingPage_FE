@@ -64,22 +64,86 @@ export const MISSIONS = [
 ];
 
 export const PRIZES = {
+  team: {
+    title: 'ĐOÀN THÁM HIỂM ĐỒNG LÒNG',
+    subtitle: 'Giải tập thể',
+    desc: 'Tôn vinh những đơn vị có đông đảo CBNV cùng tham gia và hoàn thành các nhiệm vụ. Kết quả được tính trên mức độ tham gia của toàn đơn vị, không phụ thuộc vào thành tích của một vài cá nhân.',
+    tiers: [
+      { rank: 'Giải Nhất', count: '01', value: '10.000.000 đồng' },
+      { rank: 'Giải Nhì', count: '01', value: '8.000.000 đồng' },
+      { rank: 'Giải Ba', count: '01', value: '5.000.000 đồng' },
+      { rank: 'Giải Khuyến khích', count: '06', value: '3.000.000 đồng mỗi giải' }
+    ]
+  },
+  explorer: {
+    title: 'NHÀ KHÁM PHÁ',
+    subtitle: 'Danh hiệu & thưởng cá nhân',
+    desc: 'Dành cho tất cả người chơi hoàn thành hợp lệ ít nhất 02 trong tổng số 04 nhiệm vụ. Mức thưởng tăng theo số nhiệm vụ hợp lệ đã hoàn thành.',
+    highlight: 'Hoàn thành càng nhiều nhiệm vụ, phần thưởng càng lớn. Tối đa 400.000 đồng khi hoàn thành hợp lệ cả 04 nhiệm vụ.',
+    tiers: [
+      { missions: '0 hoặc 1', title: 'Chưa đủ điều kiện', reward: '0 đồng' },
+      { missions: '02', title: 'Nhà khám phá', reward: '200.000 đồng' },
+      { missions: '03', title: 'Nhà khám phá', reward: '300.000 đồng' },
+      { missions: '04', title: 'Nhà khám phá', reward: '400.000 đồng' }
+    ]
+  },
+  outstanding: {
+    title: '05 NHÀ KHÁM PHÁ XUẤT SẮC',
+    subtitle: 'Giải cá nhân xuất sắc',
+    desc: 'Tôn vinh 05 người chơi có bài làm nổi bật nhất. Bài làm cần đáp ứng xuất sắc ít nhất một trong bốn nhóm tiêu chí.',
+    criteria: [
+      {
+        name: 'Phát hiện và lưu giữ di sản CTIN',
+        desc: 'Cung cấp câu chuyện, thông tin, hình ảnh, tài liệu hoặc hiện vật có nguồn gốc rõ ràng và có giá trị đối với lịch sử CTIN.'
+      },
+      {
+        name: 'Kể câu chuyện CTIN truyền cảm hứng',
+        desc: 'Chia sẻ câu chuyện chân thực, giàu cảm xúc, làm rõ ý nghĩa của CTIN đối với mỗi cá nhân và những người đã đồng hành cùng Công ty.'
+      },
+      {
+        name: 'Giải mã hành trình CTIN',
+        desc: 'Kết nối chính xác và sâu sắc các dấu mốc, con người, lựa chọn và những chuyển biến quan trọng của CTIN.'
+      },
+      {
+        name: 'Kiến tạo Chương 26',
+        desc: 'Đưa ra góc nhìn hoặc đề xuất thực tế, đổi mới và gắn với chặng đường phát triển tiếp theo của CTIN.'
+      }
+    ]
+  },
+  calculation: {
+    formula: 'Tỷ lệ chinh phục = Tổng số nhiệm vụ hợp lệ của CBNV đơn vị ÷ (Tổng số CBNV đơn vị × 4) × 100%',
+    example: 'Đơn vị có 20 CBNV, số nhiệm vụ tối đa là 80. Nếu CBNV hoàn thành 60 nhiệm vụ hợp lệ, tỷ lệ chinh phục là 75%.',
+    notes: [
+      'Tổng số CBNV lấy theo danh sách nhân sự do Ban Tổ chức chốt trước chương trình.',
+      'Mỗi CBNV đóng góp tối đa 04 điểm nhiệm vụ cho đơn vị.',
+      'Chỉ nhiệm vụ ở trạng thái Hợp lệ được đưa vào tử số.'
+    ],
+    tieBreakers: [
+      'Tỷ lệ CBNV hoàn thành đủ cả 04 nhiệm vụ cao hơn.',
+      'Tỷ lệ CBNV đạt danh hiệu Nhà khám phá cao hơn.',
+      'Tỷ lệ CBNV có bài làm Nhiệm vụ 2 hợp lệ cao hơn.',
+      'Thời điểm đơn vị đạt kết quả cuối cùng sớm hơn.'
+    ]
+  },
   personal: [
-    { rank: 'Legacy Explorer',     desc: 'Người hoàn thành sớm nhất với đầy đủ 4 Mission.' },
-    { rank: 'Master Investigator', desc: 'Điểm cao nhất toàn chương trình.' },
-    { rank: 'Legacy Contributor',  desc: 'Đóng góp di sản nổi bật nhất.' },
-    { rank: 'Memory Keeper',       desc: 'Tư liệu/ký ức giá trị nhất.' },
-    { rank: 'Lucky Explorer',      desc: 'Người chơi may mắn.' }
+    { rank: 'Nhà khám phá (02 nhiệm vụ hợp lệ)', desc: '200.000 đồng' },
+    { rank: 'Nhà khám phá (03 nhiệm vụ hợp lệ)', desc: '300.000 đồng' },
+    { rank: 'Nhà khám phá (04 nhiệm vụ hợp lệ)', desc: '400.000 đồng' },
+    { rank: '05 Nhà khám phá xuất sắc', desc: 'Tôn vinh 05 người chơi có bài làm nổi bật nhất theo 4 nhóm tiêu chí.' }
   ],
   unit: [
-    { rank: 'Đơn vị cùng về đích xuất sắc nhất', desc: 'Tỷ lệ CBNV tham gia hợp lệ cao nhất.' }
+    { rank: 'Giải Nhất (01 giải)', desc: '10.000.000 đồng' },
+    { rank: 'Giải Nhì (01 giải)', desc: '8.000.000 đồng' },
+    { rank: 'Giải Ba (01 giải)', desc: '5.000.000 đồng' },
+    { rank: 'Giải Khuyến khích (06 giải)', desc: '3.000.000 đồng mỗi giải' }
   ],
   bonus: [
-    { rank: 'Đơn vị lan tỏa mạnh nhất' },
-    { rank: 'Đơn vị hoàn thành sớm nhất' },
-    { rank: 'Đơn vị đóng góp di sản nổi bật' }
+    { rank: 'Phát hiện và lưu giữ di sản CTIN', desc: 'Cung cấp câu chuyện, thông tin, hình ảnh, tài liệu hoặc hiện vật có nguồn gốc rõ ràng.' },
+    { rank: 'Kể câu chuyện CTIN truyền cảm hứng', desc: 'Chia sẻ câu chuyện chân thực, giàu cảm xúc về ý nghĩa của CTIN.' },
+    { rank: 'Giải mã hành trình CTIN', desc: 'Kết nối chính xác và sâu sắc các dấu mốc, con người và chuyển biến của CTIN.' },
+    { rank: 'Kiến tạo Chương 26', desc: 'Đưa ra góc nhìn hoặc đề xuất thực tế, đổi mới cho chặng đường phát triển tiếp theo.' }
   ],
-  note: 'Giá trị và số lượng giải thưởng do BTC quyết định. Giải Mission và giải phụ không cộng vào điểm xếp hạng chung.'
+  note: 'Hoàn thành càng nhiều nhiệm vụ, phần thưởng càng lớn. Tối đa 400.000 đồng khi hoàn thành hợp lệ cả 04 nhiệm vụ.'
 };
 
 export const TIMELINE = [
@@ -95,8 +159,8 @@ export const TIMELINE = [
 export const FAQ = [
   { q: 'Ai được tham gia?', a: 'Toàn thể CBNV có tên trong danh sách đủ điều kiện do Ban Nhân lực cung cấp.' },
   { q: 'Có phải đăng ký đội không?', a: 'Không. Người chơi đăng nhập cá nhân; hệ thống tự ghi nhận cho đơn vị.' },
-  { q: 'Khi nào được tính là tham gia hợp lệ?', a: 'Khi hoàn thành đủ phần bắt buộc của bốn Mission và nộp đúng hạn.' },
-  { q: 'Giải đơn vị tính thế nào?', a: 'Theo số người tham gia hợp lệ chia cho tổng nhân sự đủ điều kiện của đơn vị.' },
+  { q: 'Khi nào được tính là tham gia hợp lệ?', a: 'Khi hoàn thành đủ phần bắt buộc của mỗi Mission và được xác nhận Hợp lệ.' },
+  { q: 'Giải đơn vị tính thế nào?', a: 'Tỷ lệ chinh phục = Tổng số nhiệm vụ hợp lệ của CBNV đơn vị ÷ (Tổng số CBNV đơn vị × 4) × 100%.' },
   { q: 'Đăng nhập nhưng chưa hoàn thành có được tính không?', a: 'Không.' },
   { q: 'Có thể làm trên điện thoại không?', a: 'Có. Giao diện ưu tiên mobile và cho phép lưu tiếp tục.' },
   { q: 'Có được trao đổi với đồng nghiệp không?', a: 'Có thể trao đổi và cùng xác minh lịch sử, nhưng mỗi người phải tự nộp nội dung cá nhân.' },
@@ -132,10 +196,10 @@ export function fmtDateTime(d) {
 }
 
 export const SUBMISSION_STATUS = {
-  pending:          { label: 'Đã nộp · Chờ chấm', cls: 'status-submitted' },
-  valid:            { label: 'Hợp lệ',            cls: 'status-valid' },
-  needs_supplement: { label: 'Cần bổ sung',       cls: 'status-needs-supplement' },
-  invalid:          { label: 'Không hợp lệ',      cls: 'status-invalid' }
+  pending:          { label: 'Đã nộp · Chờ xác nhận', cls: 'status-submitted' },
+  valid:            { label: 'Hợp lệ',                cls: 'status-valid' },
+  needs_supplement: { label: 'Cần bổ sung',           cls: 'status-needs-supplement' },
+  invalid:          { label: 'Không hợp lệ',          cls: 'status-invalid' }
 };
 
 export const MISSION_STATE_LABELS = {

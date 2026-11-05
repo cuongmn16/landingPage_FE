@@ -36,6 +36,7 @@ export const M3_INTRO = {
 
 /*
  * 5 lãnh đạo — ID ổn định L01–L05 (không dùng tên làm khóa).
+ * Thứ tự hiển thị: Ông Nguyễn Trí Dũng → Ông Tô Hoài Văn → Ông Hoàng Anh Lộc → Ông Lê Thanh Sơn → Ông Hà Thanh Hải.
  * markId / qualityId là mã ngẫu nhiên, không suy ra được từ ID lãnh đạo.
  * contentStatus: 'approved' | 'draft' — production chỉ phát hành khi tất cả approved.
  */
@@ -69,20 +70,6 @@ export const M3_LEADERS = [
     imageUrl: '/assets/submissions/mission-3/leaders/l02-to-hoai-van.jpg'
   },
   {
-    id: 'L03',
-    name: 'Ông Hà Thanh Hải',
-    role: 'Tổng Giám đốc',
-    period: 'Phó TGĐ 11/2016–9/2018; TGĐ 9/2018–7/2/2025',
-    context:
-      'CTIN bước vào giai đoạn thị trường viễn thông truyền thống thu hẹp, chịu tác động của Covid-19 và phải tái cấu trúc để thích ứng.',
-    markId: 'MK-B2',
-    mark: 'Dẫn dắt Công ty vượt qua giai đoạn nhiều khó khăn và biến động; củng cố và tái cấu trúc tổ chức để chuẩn bị cho chặng phát triển tiếp theo.',
-    qualityId: 'QL-W1',
-    quality: 'Kiên định trước áp lực; chủ động dẫn dắt thay đổi và duy trì sự ổn định của tổ chức.',
-    contentStatus: 'approved',
-    imageUrl: '/assets/submissions/mission-3/leaders/l03-ha-thanh-hai.jpg'
-  },
-  {
     id: 'L04',
     name: 'Ông Hoàng Anh Lộc',
     role: 'Chủ tịch HĐQT',
@@ -109,6 +96,20 @@ export const M3_LEADERS = [
     quality: 'Tinh thần tiên phong; kết nối đội ngũ với mục tiêu tăng trưởng.',
     contentStatus: 'approved',
     imageUrl: '/assets/submissions/mission-3/leaders/l05-le-thanh-son.jpg'
+  },
+  {
+    id: 'L03',
+    name: 'Ông Hà Thanh Hải',
+    role: 'Tổng Giám đốc',
+    period: 'Phó TGĐ 11/2016–9/2018; TGĐ 9/2018–7/2/2025',
+    context:
+      'CTIN bước vào giai đoạn thị trường viễn thông truyền thống thu hẹp, chịu tác động của Covid-19 và phải tái cấu trúc để thích ứng.',
+    markId: 'MK-B2',
+    mark: 'Dẫn dắt Công ty vượt qua giai đoạn nhiều khó khăn và biến động; củng cố và tái cấu trúc tổ chức để chuẩn bị cho chặng phát triển tiếp theo.',
+    qualityId: 'QL-W1',
+    quality: 'Kiên định trước áp lực; chủ động dẫn dắt thay đổi và duy trì sự ổn định của tổ chức.',
+    contentStatus: 'approved',
+    imageUrl: '/assets/submissions/mission-3/leaders/l03-ha-thanh-hai.jpg'
   }
 ];
 

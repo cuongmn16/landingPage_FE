@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api, auth } from '../services/api';
-import { getMissionState, getSubmissionStatus, fmtDateTime } from '../data/appData';
+import { MISSIONS, getMissionState, getSubmissionStatus, fmtDateTime } from '../data/appData';
 import MissionSubmitModal from '../components/common/MissionSubmitModal';
 
 const MISSION_PAGES = { 1: '/mission-1', 2: '/mission-2', 3: '/mission-3', 4: '/mission-4' };
 
+const FALLBACK_MISSIONS = MISSIONS.map((m, idx) => ({
+  id: idx + 1,
+  code: m.id,
+  title: m.name,
+  description: m.focus,
+  status: 'open'
+}));
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [missions, setMissions] = useState([]);
+  const [missions, setMissions] = useState(FALLBACK_MISSIONS);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,7 +38,6 @@ export default function DashboardPage() {
   };
 
   const handleStartMission = (mId) => {
-    // Mission 1, 2, 3, 4 có trang chơi riêng (theo tab, tự lưu tiến trình, nộp bài)
     if (MISSION_PAGES[Number(mId)]) {
       navigate(MISSION_PAGES[Number(mId)]);
       return;
@@ -41,26 +48,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function init() {
-      const u = await auth.load();
-      if (!u) {
-        navigate('/login');
-        return;
-      }
-      if (u.role === 'admin') {
-        navigate('/admin');
-        return;
-      }
+      let u = null;
+      try { u = await auth.load(); } catch { u = null; }
       setUser(u);
 
       try {
-        const [mList, sList] = await Promise.all([
-          api.getMissions(),
-          api.getUserSubmissions()
-        ]);
-        setMissions(mList);
-        setSubmissions(sList);
+        const mList = await api.getMissions();
+        if (mList && mList.length) setMissions(mList);
+        if (u && u.role !== 'admin') {
+          const sList = await api.getUserSubmissions();
+          setSubmissions(sList || []);
+        }
       } catch (err) {
-        setError(err.message);
+        // Fallback to local 4 missions if backend is unreachable
       } finally {
         setLoading(false);
       }
@@ -89,6 +89,13 @@ export default function DashboardPage() {
     document.body.style.overflow = '';
   };
 
+  // Tính kết quả & mức thưởng cá nhân theo Tài liệu bàn giao kỹ thuật Giải thưởng
+  const validMissionCount = submissions.filter(s => getSubmissionStatus(s).code === 'valid').length;
+  const submittedMissionCount = submissions.length;
+  const hasExplorerTitle = validMissionCount >= 2;
+  const explorerTitle = hasExplorerTitle ? 'Nhà khám phá' : 'Chưa đủ điều kiện';
+  const rewardAmount = hasExplorerTitle ? `${(validMissionCount * 100000).toLocaleString('vi-VN')} đồng` : '0 đồng';
+
   if (loading) {
     return (
       <main className="dashboard">
@@ -103,12 +110,67 @@ export default function DashboardPage() {
     <main>
       <section className="dashboard">
         <div className="container">
-          <h1 className="dashboard__title">Xin chào, <span>{user?.full_name || 'bạn'}</span></h1>
-          <p className="dashboard__sub">
-            {user?.employee_id || ''} · {user?.unit || ''} · {user?.email || ''}
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="dashboard__title">Xin chào, <span>{user?.full_name || 'Người khám phá CTIN'}</span></h1>
+              <p className="dashboard__sub">
+                {user
+                  ? `${user.employee_id || ''} · ${user.unit || ''} · ${user.email || ''}`
+                  : 'Chế độ xem giao diện — Bấm vào bất kỳ nhiệm vụ nào bên dưới để trải nghiệm'}
+              </p>
+            </div>
+            {user?.role === 'admin' && (
+              <Link to="/admin" className="btn btn--gold">Quản trị Admin →</Link>
+            )}
+          </div>
 
           {error && <p style={{ color: '#C25B5B', marginBottom: '20px' }}>Lỗi: {error}</p>}
+
+          {/* Khối Kết quả cá nhân & Phần thưởng dự kiến */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid var(--clr-line)',
+              borderRadius: '12px',
+              padding: '20px 24px',
+              marginBottom: '28px',
+              boxShadow: 'var(--shadow-sm)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              alignItems: 'center'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--clr-ink-3)', textTransform: 'uppercase' }}>
+                Tiến độ nhiệm vụ hợp lệ
+              </div>
+              <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--clr-ink)', marginTop: '4px' }}>
+                {validMissionCount} / 4 <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--clr-ink-3)' }}>(đã nộp: {submittedMissionCount}/4)</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--clr-ink-3)', textTransform: 'uppercase' }}>
+                Danh hiệu cá nhân
+              </div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: hasExplorerTitle ? '#1A6C3D' : 'var(--clr-ink-2)', marginTop: '4px' }}>
+                {hasExplorerTitle ? '🏅 ' : ''}{explorerTitle}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--clr-ink-3)', textTransform: 'uppercase' }}>
+                Mức thưởng dự kiến
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--clr-orange-dark)', marginTop: '4px' }}>
+                {rewardAmount}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <a href="/#prizes" className="btn btn--outline" style={{ fontSize: '0.85rem', padding: '8px 14px' }}>
+                Xem cơ cấu giải thưởng →
+              </a>
+            </div>
+          </div>
 
           <div className="mission-grid">
             {missions.map(m => {
@@ -116,7 +178,7 @@ export default function DashboardPage() {
               const mState = getMissionState(m);
               const sState = getSubmissionStatus(sub);
 
-              let btnText = 'Bắt đầu Mission';
+              let btnText = 'Bắt đầu Mission →';
               let btnDisabled = false;
               let isReview = false;
 

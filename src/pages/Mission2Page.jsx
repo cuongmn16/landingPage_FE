@@ -7,7 +7,7 @@ import MissionGame from '../components/mission/MissionGame';
 import { countWords } from '../components/mission/missionUtils';
 import {
   M2_CONFIG, M2_TABS, M2_INTRO, M2_ROLES, M2_PERIODS, M2_KINDS, M2_VERIFIER_RELATIONS,
-  M2_PERMISSIONS, M2_VALUES, M2_ARCHIVE_PHOTOS, m2Label, m2PromptsForKind, m2PhotosForPeriod
+  M2_PERMISSIONS, M2_VALUES, m2Label, m2PromptsForKind
 } from '../data/mission2Data';
 import '../styles/mission2.css';
 
@@ -68,11 +68,8 @@ const isTab3Valid = (s) => filled(s.promptA) && filled(s.promptB) && filled(s.pr
 
 const isTab4Valid = (s) => filled(s.title) && countCharsNormalized(s.story) >= 200;
 
-const isTab5Valid = (s) => {
-  if (!s.permission) return false;
-  if (s.hasVerifier === true) return filled(s.verifier) && !!s.verifierRelation;
-  return true;
-};
+/* Tab 5 là phần cung cấp thêm tư liệu (không bắt buộc), luôn cho phép đi tiếp */
+const isTab5Valid = () => true;
 
 const isTab6Valid = (s) => {
   if (!s.value) return false;
@@ -99,7 +96,6 @@ function validityChecklist(s) {
     { label: 'Đã chọn vai trò, thời gian và dạng ký ức', ok: isTab2Valid(s) },
     { label: 'Đã trả lời đủ 3 câu hỏi gợi nhớ', ok: isTab3Valid(s) },
     { label: 'Có tên câu chuyện và nội dung ≥ 200 ký tự', ok: isTab4Valid(s) },
-    { label: 'Đã khai báo quyền sử dụng' + (s.hasVerifier === true ? ' và người xác nhận' : ''), ok: isTab5Valid(s) },
     { label: 'Đã chọn giá trị và đúc kết 20–40 từ', ok: isTab6Valid(s) }
   ];
 }
@@ -109,22 +105,16 @@ function timeLabel(s) {
   return m2Label(M2_PERIODS, s.period);
 }
 
-const findPhoto = (id) => (id ? M2_ARCHIVE_PHOTOS.find(p => p.id === id) || null : null);
-
 /* Nội dung dễ đọc gửi cho admin chấm (hiển thị ở mục "Ghi chú / Trả lời") */
 function buildSubmissionText(s, files) {
   const prompts = m2PromptsForKind(s.kind);
-  const photo = findPhoto(s.archivePhotoId);
   const lines = [
     `MISSION 02 · ${M2_CONFIG.code} — ${M2_CONFIG.title}`,
     '',
     `TÊN CÂU CHUYỆN: ${s.title.trim()}`,
     `Dạng ký ức: ${m2Label(M2_KINDS, s.kind)}`,
     `Thời gian: ${timeLabel(s)}`,
-    `Vai trò: ${m2Label(M2_ROLES, s.role)}`
-  ];
-  if (photo) lines.push(`Ảnh gợi nhớ: ${photo.id} · ${photo.title} (chờ xác minh — chỉ gợi nhớ)`);
-  lines.push(
+    `Vai trò: ${m2Label(M2_ROLES, s.role)}`,
     '',
     'GỌI LẠI KÝ ỨC:',
     `1. ${prompts[0]}`, s.promptA.trim(),
@@ -133,16 +123,17 @@ function buildSubmissionText(s, files) {
     '',
     'CÂU CHUYỆN:',
     s.story.trim()
-  );
+  ];
   if (filled(s.people)) lines.push('', `NGƯỜI / ĐƠN VỊ LIÊN QUAN: ${s.people.trim()}`);
   if (files.length) lines.push('', `TƯ LIỆU ĐÍNH KÈM: ${files.map(f => f.name).join(', ')}`);
-  if (s.hasVerifier === true) {
+  if (s.hasVerifier === true && filled(s.verifier)) {
     lines.push('', 'NGƯỜI CÙNG LƯU GIỮ CÂU CHUYỆN:',
       `${s.verifier.trim()}${filled(s.verifierUnit) ? ` · ${s.verifierUnit.trim()}` : ''} — ${m2Label(M2_VERIFIER_RELATIONS, s.verifierRelation)}`);
   }
+  if (s.permission) {
+    lines.push('', `QUYỀN SỬ DỤNG: ${m2Label(M2_PERMISSIONS, s.permission)}`);
+  }
   lines.push(
-    '',
-    `QUYỀN SỬ DỤNG: ${m2Label(M2_PERMISSIONS, s.permission)}`,
     '',
     `ĐIỀU CÒN LẠI: ${m2Label(M2_VALUES, s.value)}`,
     `Câu chuyện này cho tôi thấy (${countWords(s.takeaway)} từ): ${s.takeaway.trim()}`
@@ -157,7 +148,7 @@ function buildAnswers(s, files) {
     period: m2Label(M2_PERIODS, s.period), period_id: s.period,
     approx_time: s.approxTime || '',
     kind: m2Label(M2_KINDS, s.kind), kind_id: s.kind,
-    archive_photo_id: s.archivePhotoId || null,
+    archive_photo_id: null,
     prompt_a: s.promptA, prompt_b: s.promptB, prompt_c: s.promptC,
     title: s.title,
     story: s.story,
@@ -168,7 +159,7 @@ function buildAnswers(s, files) {
     verifier_unit: s.verifierUnit || '',
     verifier_relation: m2Label(M2_VERIFIER_RELATIONS, s.verifierRelation) || null,
     verifier_relation_id: s.verifierRelation || null,
-    permission: m2Label(M2_PERMISSIONS, s.permission), permission_id: s.permission,
+    permission: m2Label(M2_PERMISSIONS, s.permission) || '', permission_id: s.permission || null,
     value: m2Label(M2_VALUES, s.value), value_id: s.value,
     takeaway: s.takeaway
   };
@@ -196,7 +187,6 @@ const Optional = ({ children }) => (
 
 /** Khối tóm tắt “Câu chuyện bạn đang kể” từ Tab 03 trở đi */
 function StorySummary({ state, goToTab }) {
-  const photo = findPhoto(state.archivePhotoId);
   return (
     <div className="m2-summary">
       <div className="m2-summary__head">
@@ -207,7 +197,6 @@ function StorySummary({ state, goToTab }) {
         <div><span className="m2-summary__k">Dạng ký ức</span><span className="m2-summary__v">{m2Label(M2_KINDS, state.kind) || 'Chưa chọn ký ức'}</span></div>
         <div><span className="m2-summary__k">Thời gian</span><span className="m2-summary__v">{timeLabel(state) || 'Chưa xác định thời gian'}</span></div>
         <div><span className="m2-summary__k">Vai trò</span><span className="m2-summary__v">{m2Label(M2_ROLES, state.role) || 'Chưa xác định vai trò'}</span></div>
-        {photo && <div><span className="m2-summary__k">Ảnh gợi nhớ</span><span className="m2-summary__v">{photo.id}</span></div>}
       </div>
     </div>
   );
@@ -244,15 +233,10 @@ function Tab1Intro({ state, update }) {
 }
 
 function Tab2Choose({ state, update }) {
-  const [showAllPhotos, setShowAllPhotos] = useState(false);
-  const photos = showAllPhotos ? M2_ARCHIVE_PHOTOS : m2PhotosForPeriod(state.period);
-
   function choosePeriod(id) {
-    if (state.period !== id) setShowAllPhotos(false);
     update(s => ({
       period: id,
-      // xóa ảnh khi đổi giai đoạn
-      archivePhotoId: s.period !== id ? null : s.archivePhotoId,
+      archivePhotoId: null,
       approxTime: id !== 'P06' ? '' : s.approxTime
     }));
   }
@@ -283,34 +267,6 @@ function Tab2Choose({ state, update }) {
 
       <h3 className="m2-section-title">Dạng ký ức</h3>
       <Choices name="kind" list={M2_KINDS} selected={state.kind} onSelect={(id) => update({ kind: id })} />
-
-      <h3 className="m2-section-title">Kho ảnh gợi nhớ <Optional>(không bắt buộc)</Optional></h3>
-      <p className="m2-field__hint">Có bức ảnh nào gợi cho bạn một câu chuyện? Ảnh chờ xác minh không được coi là chứng cứ lịch sử.</p>
-      <div className="m2-photos">
-        {photos.map(p => (
-          <button
-            key={p.id}
-            type="button"
-            className={`m2-photo ${state.archivePhotoId === p.id ? 'is-selected' : ''}`}
-            onClick={() => update(s => ({ archivePhotoId: s.archivePhotoId === p.id ? null : p.id }))}
-          >
-            <div className="m2-photo__thumb">{p.id}</div>
-            <div className="m2-photo__body">
-              <div className="m2-photo__id">{p.id}</div>
-              <div className="m2-photo__title">{p.title}</div>
-              <div className="m2-photo__status">Chờ xác minh</div>
-            </div>
-          </button>
-        ))}
-      </div>
-      {state.period && (
-        <p className="m2-note">Đang hiển thị ảnh theo giai đoạn đã chọn. Nút xem đủ sẽ mở toàn bộ Hành lang ký ức ({M2_ARCHIVE_PHOTOS.length} vị trí).</p>
-      )}
-      {state.period && !showAllPhotos && state.period !== 'P06' && (
-        <button type="button" className="btn btn--outline" style={{ marginTop: '12px' }} onClick={() => setShowAllPhotos(true)}>
-          Xem đủ {M2_ARCHIVE_PHOTOS.length} vị trí
-        </button>
-      )}
     </section>
   );
 }
@@ -394,7 +350,6 @@ function Tab4Write({ state, update, goToTab }) {
 
 function Tab5Keep({ state, update, toast, goToTab, files, setFiles }) {
   const hvSel = state.hasVerifier === true ? 'yes' : state.hasVerifier === false ? 'no' : null;
-  const photo = findPhoto(state.archivePhotoId);
 
   function addFiles(e) {
     const picked = Array.from(e.target.files || []);
@@ -430,8 +385,8 @@ function Tab5Keep({ state, update, toast, goToTab, files, setFiles }) {
       <StorySummary state={state} goToTab={goToTab} />
       <section className="m1-panel">
         <p className="m1-panel__label mono">BƯỚC 05</p>
-        <h2 className="m1-panel__title">Lưu giữ</h2>
-        <p className="m1-panel__text">Bạn có thể tải lên ảnh, tài liệu hoặc cung cấp thông tin về người cùng lưu giữ câu chuyện. Nếu đây là ký ức hoặc cảm nhận cá nhân và không có tư liệu hay người xác nhận, bạn vẫn có thể tiếp tục.</p>
+        <h2 className="m1-panel__title">Lưu giữ <Optional>(không bắt buộc)</Optional></h2>
+        <p className="m1-panel__text">Bạn có thể tải lên ảnh, tài liệu hoặc cung cấp thông tin về người cùng lưu giữ câu chuyện. Đây là phần không bắt buộc — bạn có thể bấm <strong>Tiếp tục →</strong> ngay hoặc điền thêm thông tin nếu có.</p>
 
         <h3 className="m2-section-title">Ảnh hoặc tài liệu của bạn <Optional>(không bắt buộc, tối đa {MAX_FILES} file)</Optional></h3>
         <div className="m2-upload">
@@ -459,7 +414,7 @@ function Tab5Keep({ state, update, toast, goToTab, files, setFiles }) {
         {state.hasVerifier === true && (
           <div style={{ marginTop: '20px' }}>
             <div className="m2-field">
-              <label className="m2-field__label" htmlFor="m2VerifierName">Họ và tên <span>(bắt buộc nếu có người xác nhận)</span></label>
+              <label className="m2-field__label" htmlFor="m2VerifierName">Họ và tên <span>(không bắt buộc)</span></label>
               <input type="text" id="m2VerifierName" placeholder="Họ và tên" value={state.verifier} onChange={(e) => update({ verifier: e.target.value })} />
             </div>
             <div className="m2-field">
@@ -467,23 +422,14 @@ function Tab5Keep({ state, update, toast, goToTab, files, setFiles }) {
               <input type="text" id="m2VerifierUnit" placeholder="Đơn vị hoặc phòng ban" value={state.verifierUnit} onChange={(e) => update({ verifierUnit: e.target.value })} />
             </div>
             <div className="m2-field">
-              <label className="m2-field__label">Mối liên hệ với câu chuyện <span>(bắt buộc)</span></label>
+              <label className="m2-field__label">Mối liên hệ với câu chuyện <span>(không bắt buộc)</span></label>
               <Choices name="relation" list={M2_VERIFIER_RELATIONS} selected={state.verifierRelation} onSelect={(id) => update({ verifierRelation: id })} />
             </div>
           </div>
         )}
 
-        <h3 className="m2-section-title">Quyền sử dụng <Optional>(bắt buộc)</Optional></h3>
+        <h3 className="m2-section-title">Quyền sử dụng <Optional>(không bắt buộc)</Optional></h3>
         <Choices name="permission" list={M2_PERMISSIONS} selected={state.permission} onSelect={(id) => update({ permission: id })} />
-
-        {photo && (
-          <>
-            <h3 className="m2-section-title">Ảnh Hành lang ký ức đã chọn</h3>
-            <p className="m2-note">
-              {photo.id} · {photo.title} — Ảnh chỉ gợi nhớ, không thay thế tư liệu cá nhân hoặc thông tin người cùng lưu giữ câu chuyện.
-            </p>
-          </>
-        )}
       </section>
     </>
   );
@@ -517,7 +463,6 @@ function Tab6Takeaway({ state, update, goToTab }) {
 }
 
 function Tab7Card({ state, files }) {
-  const photo = findPhoto(state.archivePhotoId);
   const value = m2Label(M2_VALUES, state.value);
   const perm = m2Label(M2_PERMISSIONS, state.permission);
   const rel = m2Label(M2_VERIFIER_RELATIONS, state.verifierRelation);
@@ -539,12 +484,6 @@ function Tab7Card({ state, files }) {
               <span><strong>Vai trò:</strong> {m2Label(M2_ROLES, state.role) || '—'}</span>
             </div>
           </div>
-          {photo && (
-            <div className="m2-card__section">
-              <div className="m2-card__section-title">Ảnh gợi nhớ</div>
-              <p>{photo.id} · {photo.title} <em style={{ color: 'var(--clr-ink-3)' }}>(chờ xác minh — chỉ gợi nhớ)</em></p>
-            </div>
-          )}
           <div className="m2-card__section">
             <div className="m2-card__section-title">Nội dung</div>
             <div className="m2-card__story">{state.story}</div>

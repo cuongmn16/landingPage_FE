@@ -1,11 +1,9 @@
 /* ============================================================
    MISSION GAME — khung chung cho các Mission chơi theo tab
    (Mission 02, 03, 04 — port từ src_demo/mission-2, mission-3, mission-4)
-   - User: chơi theo từng tab; tiến trình tự lưu theo từng tài khoản
-     (trình duyệt + server), thoát ra vào lại sẽ tiếp tục đúng chỗ cũ.
+   - User / Guest: chơi và xem giao diện theo từng tab; tiến trình tự lưu.
      Nộp bài → gửi về admin chấm.
-   - Admin: xem danh sách bài nộp của Mission, chấm tại trang /admin.
-   Logic giống Mission1Page, phần nội dung từng tab do trang Mission truyền vào.
+   - Admin: có thể chuyển đổi giữa xem giao diện chơi và xem danh sách bài nộp.
    ============================================================ */
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -28,24 +26,14 @@ function loadLocal(key, normalizeState) {
 function saveLocal(key, state) {
   try {
     localStorage.setItem(key, JSON.stringify(state));
-  } catch { /* storage unavailable */ }
+  } catch { /* quota */ }
 }
 
-/* Bản nào được lưu sau cùng (local hay server) thì dùng bản đó */
-const savedTime = (s) => (s && s.savedAt ? new Date(s.savedAt).getTime() || 0 : 0);
+function savedTime(s) {
+  const t = s && s.savedAt ? Date.parse(s.savedAt) : 0;
+  return Number.isFinite(t) ? t : 0;
+}
 
-/**
- * config: { id, num, code, title, desc, points }
- * tabs: [{ id, code, name }]
- * normalizeState(data|null): trả về state đầy đủ (null → state mặc định)
- * maxReachableTab(state), isAllValid(state)
- * buildSubmission(state): { longText, answers }
- * renderTab({ tab, state, update, toast, goToTab, tabError, checkCurrentTab })
- * getFiles(): File[] đính kèm khi nộp (không bắt buộc)
- * checkTab(tab, state): null nếu đạt, hoặc { message, focusId } — khi có, nút Tiếp tục
- *   chỉ đánh giá lúc bấm: báo lỗi cụ thể và cuộn tới khối còn thiếu (không bắt buộc)
- * canTryNext(tab, state): nút Tiếp tục có được bấm hay không khi dùng checkTab
- */
 export default function MissionGame({
   config, tabs, lsPrefix, normalizeState, maxReachableTab, isAllValid,
   buildSubmission, renderTab, getFiles, checkTab, canTryNext
@@ -58,6 +46,8 @@ export default function MissionGame({
   const [userLoaded, setUserLoaded] = useState(false);
   const [storageKey, setStorageKey] = useState(null);
   const [state, setState] = useState(null);
+  const [previewAllTabs, setPreviewAllTabs] = useState(false);
+  const [adminViewMode, setAdminViewMode] = useState('play'); // 'play' | 'submissions'
 
   const [mySubmission, setMySubmission] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -70,9 +60,10 @@ export default function MissionGame({
   const syncTimerRef = useRef(null);
   const pendingRemoteRef = useRef(null);
   const [exiting, setExiting] = useState(false);
-  const [tabError, setTabError] = useState(null); // { tab, message, focusId }
+  const [tabError, setTabError] = useState(null);
 
   const isAdmin = currentUser?.role === 'admin';
+  const isGuest = !currentUser;
 
   function toast(msg, type) {
     clearTimeout(toastTimerRef.current);
@@ -100,6 +91,24 @@ export default function MissionGame({
       setCurrentUser(u);
       setUserLoaded(true);
 
+      // Luôn khởi tạo state để xem/chơi giao diện kể cả khi chưa đăng nhập hoặc là Admin
+      const key = lsPrefix + (u ? (u.id || u.email) : 'guest');
+      let loaded = loadLocal(key, normalizeState);
+      if (u && u.role !== 'admin') {
+        try {
+          const remote = await getMissionProgressApi(config.id);
+          if (remote && savedTime(remote.state) > savedTime(loaded)) loaded = normalizeState(remote.state);
+        } catch { /* offline */ }
+      }
+      if (cancelled) return;
+      if (!u || u.role === 'admin') {
+        setPreviewAllTabs(true);
+      } else {
+        loaded.currentTab = Math.min(loaded.currentTab || 1, maxReachableTab(loaded));
+      }
+      setStorageKey(key);
+      setState(loaded);
+
       if (u && u.role === 'admin') {
         try {
           const all = await api.getAllSubmissions();
@@ -108,17 +117,6 @@ export default function MissionGame({
           if (!cancelled) setAdminError(e.message);
         }
       } else if (u) {
-        // Tiến trình lưu riêng cho từng tài khoản
-        const key = lsPrefix + (u.id || u.email);
-        let loaded = loadLocal(key, normalizeState);
-        try {
-          const remote = await getMissionProgressApi(config.id);
-          if (remote && savedTime(remote.state) > savedTime(loaded)) loaded = normalizeState(remote.state);
-        } catch { /* offline: dùng bản lưu trên trình duyệt */ }
-        if (cancelled) return;
-        loaded.currentTab = Math.min(loaded.currentTab || 1, maxReachableTab(loaded));
-        setStorageKey(key);
-        setState(loaded);
         await loadMySubmission();
       }
     }
@@ -127,16 +125,16 @@ export default function MissionGame({
   }, []);
 
   /* ---------- Auto-save ---------- */
-  // Lưu ngay vào trình duyệt; đồng bộ lên server sau 1.5s không thao tác
   useEffect(() => {
     if (!storageKey || !state) return;
     saveLocal(storageKey, state);
-    pendingRemoteRef.current = state;
-    clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => { flushRemote(); }, SYNC_DELAY_MS);
-  }, [storageKey, state]);
+    if (currentUser && !isAdmin) {
+      pendingRemoteRef.current = state;
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => { flushRemote(); }, SYNC_DELAY_MS);
+    }
+  }, [storageKey, state, currentUser, isAdmin]);
 
-  // Rời trang (bấm menu, đóng tab…) → đẩy nốt bản chưa đồng bộ
   useEffect(() => {
     const onUnload = () => { flushRemote(); };
     window.addEventListener('beforeunload', onUnload);
@@ -150,19 +148,17 @@ export default function MissionGame({
   async function flushRemote() {
     clearTimeout(syncTimerRef.current);
     const pending = pendingRemoteRef.current;
-    if (!pending) return true;
+    if (!pending || !currentUser || isAdmin) return true;
     pendingRemoteRef.current = null;
     try {
       await saveMissionProgressApi(config.id, pending);
       return true;
     } catch {
-      // Giữ lại để lần sau thử lại (nếu chưa có bản mới hơn)
       if (!pendingRemoteRef.current) pendingRemoteRef.current = pending;
       return false;
     }
   }
 
-  /* patch: object hoặc hàm (state) => object */
   function update(patch) {
     setTabError(null);
     setState(prev => {
@@ -171,17 +167,18 @@ export default function MissionGame({
     });
   }
 
+  const effectiveMaxTab = previewAllTabs ? lastTab : (state ? maxReachableTab(state) : 1);
+
   function goToTab(id) {
     if (!state || id < 1 || id > lastTab) return;
-    if (id > maxReachableTab(state)) {
-      toast('Hãy hoàn thành bước trước đó trước.', 'error');
+    if (id > effectiveMaxTab) {
+      toast('Hãy hoàn thành bước trước đó trước (hoặc bật "Mở khóa xem nhanh tất cả Tab").', 'error');
       return;
     }
     update({ currentTab: id });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /* Đánh giá tab hiện tại; trả về true nếu đạt */
   function checkCurrentTab() {
     if (!checkTab || !state) return true;
     const err = checkTab(state.currentTab, state);
@@ -198,7 +195,7 @@ export default function MissionGame({
   }
 
   function handleNext() {
-    if (!checkCurrentTab()) return;
+    if (!previewAllTabs && !checkCurrentTab()) return;
     goToTab(state.currentTab + 1);
   }
 
@@ -206,17 +203,27 @@ export default function MissionGame({
     if (storageKey && state) {
       const snapshot = { ...state, savedAt: new Date().toISOString() };
       saveLocal(storageKey, snapshot);
-      pendingRemoteRef.current = snapshot;
+      if (currentUser && !isAdmin) pendingRemoteRef.current = snapshot;
+    }
+    if (!currentUser) {
+      toast('Đã lưu tiến trình tạm trên trình duyệt này.', 'success');
+      setTimeout(() => navigate('/'), 900);
+      return;
     }
     setExiting(true);
     const ok = await flushRemote();
     setExiting(false);
     if (ok) toast('Đã lưu tiến trình lên hệ thống. Bạn có thể chơi tiếp trên bất kỳ máy nào.', 'success');
     else toast('Chưa lưu được lên hệ thống — tiến trình tạm lưu trên trình duyệt này.', 'error');
-    setTimeout(() => navigate('/dashboard'), 1200);
+    setTimeout(() => navigate(isAdmin ? '/admin' : '/dashboard'), 1200);
   }
 
   async function handleSubmit() {
+    if (!currentUser) {
+      toast('Vui lòng đăng nhập tài khoản CBNV để nộp bài chính thức.', 'error');
+      setTimeout(() => navigate('/login'), 1200);
+      return;
+    }
     if (!isAllValid(state)) {
       toast('Bài chưa đủ điều kiện hợp lệ.', 'error');
       return;
@@ -326,16 +333,7 @@ export default function MissionGame({
     if (!userLoaded) {
       return <section className="m1-panel"><p className="m1-panel__text">Đang tải…</p></section>;
     }
-    if (!currentUser) {
-      return (
-        <section className="m1-panel" style={{ textAlign: 'center' }}>
-          <h2 className="m1-panel__title">Bạn cần đăng nhập để chơi {missionLabel}</h2>
-          <p className="m1-panel__text">Tiến trình chơi được lưu theo tài khoản CBNV đã được admin duyệt.</p>
-          <Link to="/login" className="btn btn--gold" style={{ marginTop: '16px' }}>Đăng nhập</Link>
-        </section>
-      );
-    }
-    if (isAdmin) {
+    if (isAdmin && adminViewMode === 'submissions') {
       return (
         <section className="m1-panel">
           <span className="m1-section__label mono">ADMIN — SUBMISSIONS</span>
@@ -353,17 +351,39 @@ export default function MissionGame({
     });
   }
 
-  const playing = !!(currentUser && !isAdmin && state);
+  const playing = !!(state && (!isAdmin || adminViewMode === 'play'));
   const tab = state?.currentTab || 1;
-  const maxTab = state ? maxReachableTab(state) : 1;
+  const maxTab = effectiveMaxTab;
 
   return (
     <main className="m1-page">
       <div className="m1-header">
         <div className="container">
-          <Link to={isAdmin ? '/admin' : '/dashboard'} className="m1-header__label mono" style={{ display: 'inline-block' }}>
-            ← {isAdmin ? 'Trang Admin' : 'Dashboard'}
-          </Link>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+            <Link to={isAdmin ? '/admin' : (currentUser ? '/dashboard' : '/')} className="m1-header__label mono" style={{ display: 'inline-block', marginBottom: 0 }}>
+              ← {isAdmin ? 'Trang Admin' : (currentUser ? 'Dashboard' : 'Trang chủ')}
+            </Link>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  onClick={() => setAdminViewMode(m => m === 'play' ? 'submissions' : 'play')}
+                >
+                  {adminViewMode === 'play' ? '📁 Xem bài nộp (Admin)' : '👁 Xem giao diện chơi'}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn--outline"
+                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                onClick={() => setPreviewAllTabs(p => !p)}
+              >
+                {previewAllTabs ? '🔒 Chế độ tuần tự' : '🔓 Mở khóa xem nhanh tất cả Tab'}
+              </button>
+            </div>
+          </div>
           <p className="m1-header__label mono">{config.code}</p>
           <h1 className="m1-header__title">
             <span className="m1-header__num">{config.num}</span>
@@ -404,6 +424,15 @@ export default function MissionGame({
 
       <div className="m1-content">
         <div className="container">
+          {isGuest && (
+            <div className="m1-summary-block" style={{ marginTop: 0, marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h4 style={{ marginBottom: '4px' }}>👁 Chế độ xem giao diện &amp; Chơi thử</h4>
+                <p style={{ fontSize: '0.88rem' }}>Bạn có thể chuyển đổi qua lại tất cả các Tab để xem giao diện và làm thử ngay tại đây. Đăng nhập khi cần nộp bài chính thức.</p>
+              </div>
+              <Link to="/login" className="btn btn--gold" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Đăng nhập</Link>
+            </div>
+          )}
           {playing && renderMyStatus()}
           {renderBody()}
         </div>
@@ -423,7 +452,7 @@ export default function MissionGame({
               <button
                 type="button"
                 className="btn btn--gold"
-                disabled={checkTab ? !(canTryNext ? canTryNext(tab, state) : true) : tab >= maxTab}
+                disabled={!previewAllTabs && (checkTab ? !(canTryNext ? canTryNext(tab, state) : true) : tab >= maxTab)}
                 onClick={handleNext}
               >
                 Tiếp tục →

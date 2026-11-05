@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { loginApi, forgotPasswordApi } from '../../services/api';
+import { api, forgotPasswordApi } from '../../services/api';
 
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     setStatusMessage(null);
 
     try {
-      const authData = await loginApi(usernameOrEmail, password);
+      const authData = await api.login(usernameOrEmail.trim(), password);
       localStorage.setItem('ctin_user', JSON.stringify(authData));
       window.dispatchEvent(new Event('storage'));
       if (onLoginSuccess) onLoginSuccess(authData);

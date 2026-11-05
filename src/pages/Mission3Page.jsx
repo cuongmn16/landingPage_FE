@@ -364,19 +364,19 @@ function Tab3Decode({ state, update, tabError, checkCurrentTab, toast }) {
             </div>
             <div className="m3-match-field">
               <label className="m3-match-field__label" htmlFor={`m3Mark${l.id}`}>Quyết định / dấu ấn tiêu biểu</label>
-              <WrapSelect id={`m3Mark${l.id}`} value={markSel} onChange={(e) => pick('markMatches', l.id, e.target.value)}>
+              <WrapSelect id={`m3Mark${l.id}`} className={incorrect && markSel ? (markSel === l.markId ? 'is-correct' : 'is-wrong') : ''} value={markSel} onChange={(e) => pick('markMatches', l.id, e.target.value)}>
                 <option value="">— Chọn dấu ấn —</option>
                 {marks.map(m => (
-                  <option key={m.id} value={m.id} disabled={usedM.has(m.id)}>{m.label}</option>
+                  <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
               </WrapSelect>
             </div>
             <div className="m3-match-field">
               <label className="m3-match-field__label" htmlFor={`m3Quality${l.id}`}>Phẩm chất lãnh đạo</label>
-              <WrapSelect id={`m3Quality${l.id}`} value={qualSel} onChange={(e) => pick('qualityMatches', l.id, e.target.value)}>
+              <WrapSelect id={`m3Quality${l.id}`} className={incorrect && qualSel ? (qualSel === l.qualityId ? 'is-correct' : 'is-wrong') : ''} value={qualSel} onChange={(e) => pick('qualityMatches', l.id, e.target.value)}>
                 <option value="">— Chọn phẩm chất —</option>
                 {qualities.map(q => (
-                  <option key={q.id} value={q.id} disabled={usedQ.has(q.id)}>{q.label}</option>
+                  <option key={q.id} value={q.id}>{q.label}</option>
                 ))}
               </WrapSelect>
             </div>
