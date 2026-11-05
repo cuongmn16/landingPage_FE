@@ -122,7 +122,7 @@ function validityChecklist(s) {
     { label: 'Đã chọn đủ 5 giá trị DNA CTIN', ok: isTab2Valid(s) },
     { label: 'Chọn 2 tác động/nhóm + áp lực lớn nhất + giải thích 20–40 từ', ok: isTab3Valid(s) },
     { label: 'Ghép đúng 5 chuyển đổi', ok: isTab4Valid(s) },
-    { label: 'Ghép đúng 5 Leadership Messages + chọn ưu tiên', ok: isTab5Valid(s) },
+    { label: 'Ghép đúng 5 thông điệp lãnh đạo + chọn ưu tiên', ok: isTab5Valid(s) },
     { label: 'Cam kết 15–60 từ và tầm nhìn 15–70 từ', ok: isTab6Valid(s) }
   ];
 }
@@ -151,7 +151,7 @@ function buildSubmissionText(s) {
     'BẢNG KIỂM:',
     `✓ ${M4_DNA.length}/${M4_DNA.length} giá trị DNA ghép đúng`,
     `✓ ${M4_CHANGES.length}/${M4_CHANGES.length} chuyển đổi ghép đúng`,
-    `✓ ${M4_LEADERSHIP.length}/${M4_LEADERSHIP.length} Leadership Messages ghép đúng`,
+    `✓ ${M4_LEADERSHIP.length}/${M4_LEADERSHIP.length} thông điệp lãnh đạo ghép đúng`,
     '',
     'THỜI ĐẠI MỚI — TÁC ĐỘNG QUAN TRỌNG NHẤT:'
   ];
@@ -390,7 +390,7 @@ function Tab5Leadership({ state, update }) {
     <section className="m1-panel">
       <p className="m4-act mono">HỒI III · KIẾN TẠO TƯƠNG LAI</p>
       <h2 className="m1-panel__title">Người CTIN mới</h2>
-      <p className="m1-panel__text" style={{ marginBottom: '20px' }}>Năm Leadership Messages không phải khẩu hiệu; đó là những kỳ vọng cần được thể hiện bằng hành vi mỗi ngày.</p>
+      <p className="m1-panel__text" style={{ marginBottom: '20px' }}>Năm thông điệp lãnh đạo không phải khẩu hiệu; đó là những kỳ vọng cần được thể hiện bằng hành vi mỗi ngày.</p>
       {M4_LEADERSHIP.map(l => (
         <MatchRow
           key={l.id}

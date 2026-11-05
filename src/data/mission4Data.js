@@ -25,7 +25,7 @@ export const M4_INTRO = {
   description:
     'Một hành trình đáng kể không chỉ được tạo nên bởi những gì đã đạt được, mà còn bởi khả năng hiểu mình, nhìn thẳng vào thay đổi và cùng nhau lựa chọn cách bước tiếp. Mission cuối cùng là lời chuyển tiếp từ di sản CTIN đến tương lai mà mỗi chúng ta cùng kiến tạo.',
   result:
-    'Giải mã đủ 5 giá trị DNA CTIN, nhận diện điều phải thay đổi, hiểu 5 Leadership Messages và hoàn thành cam kết cá nhân cho Chương 26.',
+    'Giải mã đủ 5 giá trị DNA CTIN, nhận diện điều phải thay đổi, hiểu 5 thông điệp lãnh đạo và hoàn thành cam kết cá nhân cho Chương 26.',
   requirementTitle: 'Yêu cầu thực hiện',
   requirementText:
     'Đọc kỹ dữ kiện, hoàn thành các phần ghép kiến thức và chia sẻ cá nhân. Kết quả hợp lệ sẽ được ghi nhận vào thành tích chung của đơn vị.',
