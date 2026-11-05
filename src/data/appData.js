@@ -71,7 +71,7 @@ export const PRIZES = {
       { rank: 'Giải Nhất', count: '01', value: '10.000.000 đồng' },
       { rank: 'Giải Nhì', count: '01', value: '8.000.000 đồng' },
       { rank: 'Giải Ba', count: '01', value: '5.000.000 đồng' },
-      { rank: 'Giải Khuyến khích', count: '06', value: '3.000.000 đồng mỗi giải' }
+      { rank: 'Giải Khuyến khích', count: '05', value: '3.000.000 đồng mỗi giải' }
     ]
   },
   explorer: {
@@ -134,7 +134,7 @@ export const PRIZES = {
     { rank: 'Giải Nhất (01 giải)', desc: '10.000.000 đồng' },
     { rank: 'Giải Nhì (01 giải)', desc: '8.000.000 đồng' },
     { rank: 'Giải Ba (01 giải)', desc: '5.000.000 đồng' },
-    { rank: 'Giải Khuyến khích (06 giải)', desc: '3.000.000 đồng mỗi giải' }
+    { rank: 'Giải Khuyến khích (05 giải)', desc: '3.000.000 đồng mỗi giải' }
   ],
   bonus: [
     { rank: 'Phát hiện và lưu giữ di sản CTIN', desc: 'Cung cấp câu chuyện, thông tin, hình ảnh, tài liệu hoặc hiện vật có nguồn gốc rõ ràng.' },

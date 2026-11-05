@@ -197,7 +197,7 @@ export default function PrizesSection() {
                 Chương trình gồm 03 nhóm giải thưởng nhằm khuyến khích toàn thể CBNV CTIN cùng khám phá hành trình phát triển của Công ty, lưu giữ những câu chuyện di sản và đóng góp vào kết quả chung của đơn vị:
               </p>
               <ul style={{ paddingLeft: '20px', fontSize: '0.92rem', color: 'var(--clr-ink-2)' }}>
-                <li><strong>Giải tập thể – Đoàn thám hiểm đồng lòng:</strong> 01 Giải Nhất (10.000.000đ), 01 Giải Nhì (8.000.000đ), 01 Giải Ba (5.000.000đ), 06 Giải Khuyến khích (3.000.000đ/giải).</li>
+                <li><strong>Giải tập thể – Đoàn thám hiểm đồng lòng:</strong> 01 Giải Nhất (10.000.000đ), 01 Giải Nhì (8.000.000đ), 01 Giải Ba (5.000.000đ), 05 Giải Khuyến khích (3.000.000đ/giải).</li>
                 <li><strong>Danh hiệu &amp; thưởng cá nhân – Nhà khám phá:</strong> Thưởng 200.000đ (02 nhiệm vụ hợp lệ), 300.000đ (03 nhiệm vụ hợp lệ), 400.000đ (04 nhiệm vụ hợp lệ).</li>
                 <li><strong>Giải cá nhân xuất sắc – 05 Nhà khám phá xuất sắc:</strong> Tôn vinh 05 người chơi có bài làm nổi bật nhất toàn chương trình.</li>
               </ul>
