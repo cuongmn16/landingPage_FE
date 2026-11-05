@@ -84,7 +84,7 @@ export default function MissionsSection() {
                   <div className="mission-card-m__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>⏱ {m.duration}</span>
                     <span style={{ color: sub ? '#28a745' : 'var(--clr-gold-dark, #0056b3)', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                      {sub ? '✓ Xem bài / Nộp lại →' : 'Nộp bài →'}
+                      {sub ? '✓ Xem bài / Nộp lại →' : 'Bắt đầu →'}
                     </span>
                   </div>
                 </article>
