@@ -35,7 +35,7 @@ export const HOW_TO_PLAY = {
   intro: {
     title: 'Ai được tham gia?',
     paragraphs: [
-      'Toàn thể CBNV CTIN thuộc danh sách đủ điều kiện đều có thể tham gia.',
+      'Toàn thể CBNV đều có thể tham gia.',
       'Mỗi người sử dụng tài khoản cá nhân, tự hoàn thành các Mission và đóng góp kết quả cho đơn vị mình.',
       'Giải đơn vị được xác định theo tỷ lệ CBNV tham gia hợp lệ.'
     ]
@@ -157,7 +157,7 @@ export const TIMELINE = [
 ];
 
 export const FAQ = [
-  { q: 'Ai được tham gia?', a: 'Toàn thể CBNV có tên trong danh sách đủ điều kiện do Ban Nhân lực cung cấp.' },
+  { q: 'Ai được tham gia?', a: 'Toàn thể CBNV đều có thể tham gia.' },
   { q: 'Có phải đăng ký đội không?', a: 'Không. Người chơi đăng nhập cá nhân; hệ thống tự ghi nhận cho đơn vị.' },
   { q: 'Khi nào được tính là tham gia hợp lệ?', a: 'Khi hoàn thành đủ phần bắt buộc của mỗi Mission và được xác nhận Hợp lệ.' },
   { q: 'Giải đơn vị tính thế nào?', a: 'Tỷ lệ chinh phục = Tổng số nhiệm vụ hợp lệ của CBNV đơn vị ÷ (Tổng số CBNV đơn vị × 4) × 100%.' },
