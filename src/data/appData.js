@@ -6,7 +6,7 @@ export const CONFIG = {
   API_BASE: '/api',
   leaderboardTop: 10,
   // Danh sách phòng ban lấy từ backend (GET /api/employees/units), admin quản lý tại trang Admin › Phòng ban
-  registerDeadline: '2026-10-15T23:59:59+07:00',
+  registerDeadline: '2026-11-15T23:59:59+07:00',
   contact: {
     name: 'Ms. Hương',
     phone: '0366 778 895',
@@ -146,13 +146,29 @@ export const PRIZES = {
 };
 
 export const TIMELINE = [
-  { date: '2026-10-01', endDate: '2026-10-15', title: 'Chuẩn bị & kích hoạt tài khoản',              desc: 'Khóa danh sách nhân sự, kích hoạt tài khoản.' },
-  { date: '2026-10-16', endDate: '2026-10-22', title: 'NHIỆM VỤ 01 – BẢN ĐỒ HÀNH TRÌNH',          desc: 'Giải mã hành trình phát triển CTIN' },
-  { date: '2026-10-23', endDate: '2026-10-29', title: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ', desc: 'Kể lại những ký ức và câu chuyện của người CTIN' },
-  { date: '2026-10-30', endDate: '2026-11-05', title: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG',      desc: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo' },
-  { date: '2026-11-06', endDate: '2026-11-12', title: 'NHIỆM VỤ 04 – BẢN SẮC CTIN',                desc: 'Từ những giá trị được gìn giữ đến Chương 26' },
-  { date: '2026-11-13', endDate: '2026-11-19', title: 'Catch up',                                    desc: 'Hoàn thành các Mission còn thiếu.' },
-  { date: '2026-11-20', endDate: null,         title: 'Xác minh và công bố',                         desc: 'Khóa dữ liệu, công bố kết quả và vinh danh.' }
+  {
+    date: '2026-11-06',
+    endDate: '2026-11-15',
+    title: 'HÀNH TRÌNH TRUY TÌM KHO BÁU',
+    desc: `Cả 04 nhiệm vụ được mở đồng thời. Người chơi tự do lựa chọn thứ tự khám phá và hoàn thành theo tiến độ cá nhân:
+- Nhiệm vụ 01 – Bản đồ hành trình
+- Nhiệm vụ 02 – Câu chuyện phía sau lịch sử
+- Nhiệm vụ 03 – Dấu ấn người dẫn đường
+- Nhiệm vụ 04 – Bản sắc CTIN
+Hệ thống tự động lưu tiến độ trong suốt thời gian chương trình.`
+  },
+  {
+    date: '2026-11-16',
+    endDate: '2026-11-18',
+    title: 'XÁC NHẬN THÀNH QUẢ',
+    desc: 'Ban Tổ chức kiểm tra bài làm, xác nhận các nhiệm vụ hợp lệ và chốt kết quả của cá nhân, đơn vị.'
+  },
+  {
+    date: '2026-11-20',
+    endDate: null,
+    title: 'CÔNG BỐ VÀ VINH DANH',
+    desc: 'Công bố giải tập thể và cá nhân. Giải tập thể và cá nhân xuất sắc sẽ được trao trong đêm Gala.'
+  }
 ];
 
 export const FAQ = [
