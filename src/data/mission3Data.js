@@ -44,7 +44,7 @@ export const M3_LEADERS = [
   {
     id: 'L01',
     name: 'Ông Nguyễn Trí Dũng',
-    role: 'Chủ tịch HĐQT kiêm Tổng Giám đốc',
+    role: 'Nguyên Chủ tịch HĐQT kiêm Tổng Giám đốc',
     period: 'Gắn bó với Công ty từ 4/1981\nChủ tịch HĐQT kiêm Tổng giám đốc: 11/2001–9/2018; Chủ tịch HĐQT 10/2018–6/2022.',
     context:
       'Sau cổ phần hóa, CTIN chủ động xác lập con đường phát triển: tự tìm kiếm thị trường, lựa chọn công nghệ, xây dựng đội ngũ và chịu trách nhiệm về kết quả. Công ty lần lượt trải qua quá trình hình thành năng lực tích hợp hệ thống, mở rộng quy mô và vươn tới cột mốc doanh thu trên 3.000 tỷ đồng, lợi nhuận trên 100 tỷ đồng vào năm 2017.',
@@ -58,7 +58,7 @@ export const M3_LEADERS = [
   {
     id: 'L02',
     name: 'Ông Tô Hoài Văn',
-    role: 'Phó Chủ tịch HĐQT kiêm Phó Tổng Giám đốc',
+    role: 'Thành viên Hội đồng Quản trị',
     period: 'Gia nhập Công ty từ 01/1990; Phó Chủ tịch HĐQT kiêm Phó Tổng Giám đốc 11/2001–1/9/2025.',
     context:
       'Đầu những năm 1990, CTIN vẫn chủ yếu hoạt động bằng sửa chữa, bảo dưỡng thiết bị. Quá trình số hóa ngành Bưu điện mở ra cơ hội để Công ty tiếp cận công nghệ viễn thông hiện đại. Sau đó, khi CTIN mở rộng sang lĩnh vực tin học và công nghệ thông tin, Công ty tiếp tục cần lựa chọn công nghệ, xây dựng quan hệ với các hãng quốc tế và phát triển năng lực tích hợp hệ thống trên phạm vi rộng hơn.',
@@ -100,7 +100,7 @@ export const M3_LEADERS = [
   {
     id: 'L03',
     name: 'Ông Hà Thanh Hải',
-    role: 'Tổng Giám đốc',
+    role: 'Nguyên Tổng giám đốc',
     period: 'Phó Tổng giám đốc: 11/2016–9/2018; Tổng Giám đốc: 9/2018–7/2/2025.',
     context:
       'Ông tiếp nhận vai trò Tổng Giám đốc khi CTIN vừa đi qua cột mốc cao nhất về quy mô kinh doanh, nhưng thị trường viễn thông truyền thống bắt đầu bão hòa và cơ hội tăng trưởng ngày càng hạn chế. Sau đó, Công ty tiếp tục chịu tác động của Covid-19, áp lực suy giảm thị trường và yêu cầu phải củng cố, tái cấu trúc tổ chức để thích ứng.',
