@@ -536,7 +536,7 @@ function Tab7Card({ state, files }) {
             </li>
           ))}
         </ul>
-        <p className="m2-note" style={{ marginTop: '16px' }}>Bài hợp lệ được tính vào tỷ lệ tham gia của đơn vị. Điểm nội dung dùng cho xếp hạng cá nhân (chờ BTC khóa rubric).</p>
+        <p className="m2-note" style={{ marginTop: '16px' }}>Bài hợp lệ được tính vào tỷ lệ tham gia của đơn vị. Điểm nội dung dùng cho xếp hạng cá nhân.</p>
       </section>
     </>
   );
