@@ -4,32 +4,10 @@ import { HERO, CONFIG, fmtDate } from '../../data/appData';
 import { auth } from '../../services/api';
 
 export default function HeroSection() {
-  const [timeLeft, setTimeLeft] = useState('');
-  const [isClosed, setIsClosed] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(auth.isLoggedIn());
 
   useEffect(() => {
     setIsLoggedIn(auth.isLoggedIn());
-  }, []);
-
-  useEffect(() => {
-    const deadline = new Date(CONFIG.registerDeadline).getTime();
-    function tick() {
-      const diff = deadline - Date.now();
-      if (diff <= 0) {
-        setIsClosed(true);
-        setTimeLeft('⏱ Đã đóng đăng ký');
-        return;
-      }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${d} ngày ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
-    }
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -65,14 +43,6 @@ export default function HeroSection() {
           <div className="hero__stat"><span className="hero__stat-value">Toàn thể</span><span className="hero__stat-label">CBNV</span></div>
           <div className="hero__stat"><span className="hero__stat-value">Tỷ lệ</span><span className="hero__stat-label">Đơn vị</span></div>
           <div className="hero__stat"><span className="hero__stat-value">{fmtDate(CONFIG.registerDeadline)}</span><span className="hero__stat-label">Hạn</span></div>
-        </div>
-
-        <div className={`hero__countdown ${isClosed ? 'is-closed' : ''}`} id="heroCountdown" aria-live="polite">
-          {isClosed ? (
-            '⏱ Đã đóng đăng ký'
-          ) : (
-            <>⏱ Còn lại: <strong>{timeLeft}</strong></>
-          )}
         </div>
       </div>
     </section>
