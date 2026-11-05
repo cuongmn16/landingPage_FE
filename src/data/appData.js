@@ -50,7 +50,6 @@ export const HOW_TO_PLAY = {
   fairplayTitle: 'Fair play',
   fairplay: [
     { title: 'Nguồn thông tin rõ ràng', desc: 'Tư liệu lịch sử phải có nguồn; ký ức chưa xác minh phải gắn nhãn phù hợp.' },
-    { title: 'AI hỗ trợ, không được bịa', desc: 'AI được hỗ trợ trình bày, biên tập, thiết kế — nhưng không được tạo dữ kiện hay nhân vật giả.' },
     { title: 'Chấm chất lượng', desc: 'Không chấm theo tốc độ; đơn vị xếp hạng theo tỷ lệ tham gia hợp lệ.' },
     { title: 'Mỗi người tự nộp', desc: 'Có thể trao đổi và cùng xác minh lịch sử nhưng mỗi người phải tự nộp nội dung cá nhân.' }
   ]
