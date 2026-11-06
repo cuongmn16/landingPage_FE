@@ -101,7 +101,7 @@ export const M1_TIMELINE = [
   {
     id: 'T07', year: 2009,
     meaningId: 'M07',
-    meaning: 'Chuyển hóa năng lực tích hợp và tổng thầu thành tăng trưởng doanh thu, quy mô và vị thế thị trường',
+    meaning: 'Chuyển hóa năng lực tích hợp hệ thống và khả năng đảm nhận trọn gói các dự án lớn thành tăng trưởng về doanh thu, quy mô và vị thế trên thị trường',
     unlock: {
       title: 'Thắng thầu dự án MAN-Ethernet & vượt mốc doanh thu 1.000 tỷ đồng',
       text: 'CTIN thắng thầu dự án thiết kế, cung cấp và lắp đặt mạng MAN-Ethernet cho 10 viễn thông tỉnh, thành phố thuộc VNPT. Doanh thu vượt 1.000 tỷ đồng, đạt hơn 1.300 tỷ đồng. Trong năm tài chính 2009, CTIN đồng thời nhận nhiều giải thưởng của Cisco về tích hợp hệ thống, cung cấp dịch vụ và mức độ hài lòng của khách hàng.',
@@ -217,7 +217,7 @@ export const M1_TRANSFORMS = [
     contextId: 'C02',
     context: 'Từ năm 1975 sau kháng chiến chống Mỹ đến đầu những năm 1990 hoạt động của đơn vị còn nhiều khó khăn, công việc chủ yếu vẫn là sửa chữa, bảo dưỡng thiết bị truyền dẫn tải ba và một số thiết bị dân dụng như amplifier, bộ nắn điện để duy trì hoạt động và giữ lực lượng kỹ thuật.',
     changeId: 'CH02',
-    change: 'Từ một đơn vị chủ yếu tồn tại bằng sửa chữa và bảo dưỡng thiết bị, CTIN từng bước tham gia triển khai tổng đài, viba số, hệ thống truyền dẫn và mạng thông tin di động. Quá trình làm việc với các đối tác công nghệ quốc tế giúp Công ty tích lũy đội ngũ, kinh nghiệm thực tiễn và năng lực dịch vụ kỹ thuật, tạo tiền đề để phát triển năng lực tích hợp hệ thống trong giai đoạn sau.',
+    change: 'Từ một đơn vị chủ yếu hoạt động bằng sửa chữa và bảo dưỡng thiết bị, CTIN từng bước tham gia triển khai tổng đài, viba số, hệ thống truyền dẫn và mạng thông tin di động. Quá trình làm việc với các đối tác công nghệ quốc tế giúp Công ty tích lũy đội ngũ, kinh nghiệm thực tiễn và năng lực dịch vụ kỹ thuật, tạo tiền đề để phát triển năng lực tích hợp hệ thống trong giai đoạn sau.',
     distractors: {
       contexts: [
         'CTIN đã khẳng định đầy đủ vai trò nhà tích hợp hệ thống trên thị trường.',
@@ -265,7 +265,7 @@ export const M1_TRANSFORMS = [
     contextId: 'C04',
     context: 'CTIN đã tích lũy năng lực công nghệ và tích hợp nhưng cần chứng minh khả năng thực hiện các dự án lớn, phức tạp.',
     changeId: 'CH04',
-    change: 'CTIN chuyển từ giai đoạn chứng minh năng lực sang triển khai năng lực ở quy mô lớn. Khả năng làm chủ giải pháp và tích hợp hệ thống trọn gói được chuyển hóa thành sự tăng trưởng về quy mô dự án, doanh thu, lợi nhuận và vị thế thị trường. Đồng thời, bắt đầu tìm kiếm những dịch vụ và động lực tăng trưởng mới, thay vì chỉ dựa vào mô hình kinh doanh đã tạo nên thành công trước đó.',
+    change: 'CTIN bước qua giai đoạn xây dựng nền tảng năng lực để chuyển sang giai đoạn triển khai các dự án ở quy mô lớn. Khả năng làm chủ giải pháp và tích hợp hệ thống trọn gói được chuyển hóa thành sự tăng trưởng về quy mô dự án, doanh thu, lợi nhuận và vị thế thị trường. Đồng thời, bắt đầu tìm kiếm những dịch vụ và động lực tăng trưởng mới, thay vì chỉ dựa vào mô hình kinh doanh đã tạo nên thành công trước đó.',
     distractors: {
       contexts: [
         'CTIN mới bắt đầu hình thành năng lực sửa chữa thiết bị viễn thông chuyên dụng.',
