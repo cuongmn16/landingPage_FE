@@ -45,7 +45,7 @@ export const HOW_TO_PLAY = {
     { num: '02', title: 'Cá nhân khám phá', desc: 'Mỗi người chơi tự khám phá các tư liệu, giải mã manh mối và hoàn thành nhiệm vụ theo hướng dẫn.' },
     { num: '03', title: 'Lưu và nộp', desc: 'Có thể lưu nháp; chỉ nộp khi đã hoàn thành đủ trường bắt buộc.' },
     { num: '04', title: 'Hệ thống ghi nhận', desc: 'Cập nhật trạng thái cá nhân và tiến độ của đơn vị.' },
-    { num: '05', title: 'BTC xác minh', desc: 'Kiểm duyệt đóng góp, công bố tiến độ và mở Mission tiếp theo.' }
+    { num: '05', title: 'BTC xác nhận kết quả', desc: 'Kiểm duyệt bài làm, xác nhận nhiệm vụ hợp lệ và cập nhật tiến độ của cá nhân, đơn vị.' }
   ],
   fairplayTitle: 'Fair play',
   fairplay: [
