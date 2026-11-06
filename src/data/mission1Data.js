@@ -163,7 +163,7 @@ export const M1_STAGES = [
   {
     id: 'S03',
     start: 2001, end: 2006,
-    nameId: 'SN03', name: 'TỰ LẬP',
+    nameId: 'SN03', name: 'TỰ LẬP VÀ VƯƠN LÊN KHẲNG ĐỊNH CHÍNH MÌNH',
     eventId: 'SE03', event: 'Chuyển từ doanh nghiệp nhà nước sang công ty cổ phần'
   },
   {
@@ -176,7 +176,7 @@ export const M1_STAGES = [
     id: 'S05',
     start: 2018, end: 'Nay',
     nameId: 'SN05', name: 'CHUYỂN MÌNH CHO CHẶNG ĐƯỜNG MỚI',
-    eventId: 'SE05', event: 'Chuyển giao thế hệ lãnh đạo và thành lập R&D'
+    eventId: 'SE05', event: 'Chuyển giao thế hệ lãnh đạo và Thành lập Trung tâm R&D - nay là Trung tâm Tư vấn giải pháp.'
   }
 ];
 
@@ -303,7 +303,7 @@ export const M1_TRANSFORMS = [
     profile: {
       message: 'Kế thừa nền tảng đã có, đồng thời chuẩn bị năng lực và mô hình phát triển cho một chặng đường mới.',
       details: [
-        'Việc chuyển giao thế hệ lãnh đạo diễn ra khi lãnh đạo tiền nhiệm đến tuổi nghỉ hưu, bảo đảm sự kế thừa trong tổ chức. Cùng thời điểm, thị trường viễn thông dần bão hòa và dư địa tăng trưởng từ mô hình truyền thống thu hẹp, đặt CTIN trước yêu cầu phải chủ động hơn về giải pháp, thị trường và phương thức kinh doanh. Công ty thành lập bộ phận R&D, nâng cao chuẩn quản trị và minh bạch khi chuyển niêm yết lên HOSE, đồng thời đưa một hướng dịch vụ mới vào vận hành thông qua Vietlott. Giai đoạn này chưa phải là sự rời bỏ năng lực tích hợp hệ thống, mà là quá trình củng cố năng lực cốt lõi, kết hợp với nghiên cứu, dịch vụ mới và đổi mới tổ chức để tìm kiếm động lực cho chu kỳ phát triển tiếp theo.'
+        'Việc chuyển giao thế hệ lãnh đạo diễn ra khi lãnh đạo tiền nhiệm đến tuổi nghỉ hưu, bảo đảm sự kế thừa trong tổ chức. Cùng thời điểm, thị trường viễn thông dần bão hòa và dư địa tăng trưởng từ mô hình truyền thống thu hẹp, đặt CTIN trước yêu cầu phải chủ động hơn về giải pháp, thị trường và phương thức kinh doanh. Công ty thành lập bộ phận R&D, nâng cao chuẩn quản trị và minh bạch khi chuyển niêm yết lên HOSE, đồng thời đưa một hướng dịch vụ mới vào vận hành thông qua Vietlott. Giai đoạn này không phải là sự rời bỏ năng lực tích hợp hệ thống, mà là quá trình củng cố năng lực cốt lõi, kết hợp với nghiên cứu, dịch vụ mới và đổi mới tổ chức để tìm kiếm động lực cho chu kỳ phát triển tiếp theo.'
       ]
     }
   }
@@ -459,8 +459,7 @@ export const M1_FEEDBACK = {
     wrong: 'Chưa phù hợp. Hãy chọn lại.'
   },
   reflection: {
-    tooShort: 'Vui lòng viết từ 15 đến 30 từ.',
-    tooLong: 'Vượt quá 30 từ. Hãy rút gọn lại.',
+    tooShort: 'Vui lòng viết tối thiểu 15 từ.',
     ok: 'Đã ghi nhận.'
   }
 };

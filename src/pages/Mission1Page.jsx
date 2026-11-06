@@ -159,7 +159,7 @@ const isRedThreadCorrect = (s) => s.redThread === M1_RED_THREAD.correctId;
 
 const isReflectionValid = (s) => {
   const n = countWords(s.reflection);
-  return n >= 15 && n <= 30;
+  return n >= 15;
 };
 
 const isTab5Complete = (s) => isLegaciesComplete(s) && isRedThreadCorrect(s) && isReflectionValid(s);
@@ -455,7 +455,6 @@ function Tab5Legacy({ state, update }) {
   const n = countWords(state.reflection);
   let fb = { text: '', cls: '' };
   if (n > 0 && n < 15) fb = { text: M1_FEEDBACK.reflection.tooShort, cls: 'is-error' };
-  else if (n > 30) fb = { text: M1_FEEDBACK.reflection.tooLong, cls: 'is-error' };
   else if (n > 0) fb = { text: M1_FEEDBACK.reflection.ok, cls: 'is-ok' };
 
   return (
@@ -515,7 +514,7 @@ function Tab5Legacy({ state, update }) {
           onChange={(e) => update({ reflection: e.target.value })}
         />
         <div className="m1-reflection__meta">
-          <span>{n} / 15–30 từ</span>
+          <span>{n} / tối thiểu 15 từ</span>
           <span className={`m1-feedback ${fb.cls}`}>{fb.text}</span>
         </div>
       </div>
@@ -532,7 +531,7 @@ function Tab6Summary({ state }) {
     { ok: isTransformsComplete(state), label: '5 giai đoạn: bối cảnh & chuyển biến đúng' },
     { ok: isLegaciesComplete(state), label: '5 di sản được chọn đúng' },
     { ok: isRedThreadCorrect(state), label: 'Sợi chỉ đỏ đúng' },
-    { ok: isReflectionValid(state), label: 'Chia sẻ cá nhân 15–30 từ' }
+    { ok: isReflectionValid(state), label: 'Chia sẻ cá nhân tối thiểu 15 từ' }
   ];
 
   return (
@@ -930,8 +929,7 @@ export default function Mission1Page() {
             {M1_CONFIG.subtitle}
           </h1>
           <p className="m1-header__desc">
-            Kết nối mốc thời gian, giai đoạn, bước ngoặt và những chuyển biến quan trọng.
-            Hạn nộp: {fmtDateTime(M1_CONFIG.dueAt)} · Hoàn thành: {M1_CONFIG.points} điểm.
+            Kết nối mốc thời gian, giai đoạn, bước ngoặt và những chuyển biến quan trọng. Hoàn thành: {M1_CONFIG.points} điểm.
           </p>
         </div>
       </div>

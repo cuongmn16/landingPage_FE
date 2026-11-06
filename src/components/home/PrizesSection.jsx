@@ -172,8 +172,6 @@ export default function PrizesSection() {
             </ol>
           </div>
         )}
-
-        <p className="prizes__note">{PRIZES.note}</p>
       </div>
 
       {/* Lớp 3: Modal Thể lệ đầy đủ */}
