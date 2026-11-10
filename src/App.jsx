@@ -1,3 +1,4 @@
+// CTIN 30 Years - Treasure Hunt Application
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { auth } from './services/api';
