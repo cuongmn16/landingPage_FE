@@ -100,7 +100,7 @@ const isTab6Valid = (s) => {
   const commit = commitFullText(s);
   const vision = visionFullText(s);
   if (!commit || !vision) return false;
-  return inRange(countWords(commit), 15, 60) && inRange(countWords(vision), 15, 70);
+  return countWords(commit) >= 15 && countWords(vision) >= 15;
 };
 
 const TAB_CHECKS = [isTab1Valid, isTab2Valid, isTab3Valid, isTab4Valid, isTab5Valid, isTab6Valid];
@@ -120,10 +120,10 @@ function validityChecklist(s) {
   return [
     { label: 'Đã xác nhận hiểu yêu cầu', ok: isTab1Valid(s) },
     { label: 'Đã chọn đủ 5 giá trị DNA CTIN', ok: isTab2Valid(s) },
-    { label: 'Chọn 2 tác động/nhóm + áp lực lớn nhất + giải thích 20–40 từ', ok: isTab3Valid(s) },
+    { label: 'Chọn 2 tác động/nhóm + áp lực lớn nhất + giải thích tối thiểu 20 từ', ok: isTab3Valid(s) },
     { label: 'Ghép đúng 5 chuyển đổi', ok: isTab4Valid(s) },
     { label: 'Ghép đúng 5 thông điệp lãnh đạo + chọn ưu tiên', ok: isTab5Valid(s) },
-    { label: 'Cam kết 15–60 từ và tầm nhìn 15–70 từ', ok: isTab6Valid(s) }
+    { label: 'Cam kết tối thiểu 15 từ và tầm nhìn tối thiểu 15 từ', ok: isTab6Valid(s) }
   ];
 }
 
@@ -225,10 +225,10 @@ function MatchRow({ label, sub, selected, correctId, options, placeholder, onCha
   );
 }
 
-function WordMeta({ text, min, max }) {
+function WordMeta({ text, min }) {
   if (!text) return <p className="m4-field__meta"></p>;
   const n = countWords(text);
-  return <p className={`m4-field__meta ${inRange(n, min, max) ? 'is-ok' : 'is-warn'}`}>{n} từ (yêu cầu {min}–{max})</p>;
+  return <p className={`m4-field__meta ${n >= min ? 'is-ok' : 'is-warn'}`}>{n} từ (yêu cầu tối thiểu {min})</p>;
 }
 
 function TextField({ id, label, placeholder, value, onChange }) {
@@ -346,7 +346,7 @@ function Tab3Era({ state, update }) {
         ))}
       </div>
       <div className="m4-field" style={{ marginTop: '20px' }}>
-        <label className="m4-field__label" htmlFor="m4Challenge">Vì sao? <span>(20–40 từ)</span></label>
+        <label className="m4-field__label" htmlFor="m4Challenge">Vì sao? <span>(tối thiểu 20 từ)</span></label>
         <textarea
           id="m4Challenge"
           rows={3}
@@ -354,8 +354,8 @@ function Tab3Era({ state, update }) {
           value={state.challenge}
           onChange={(e) => update({ challenge: e.target.value })}
         />
-        <p className={`m4-field__meta ${inRange(countWords(state.challenge), 20, 40) ? 'is-ok' : 'is-warn'}`}>
-          {countWords(state.challenge)} từ (yêu cầu 20–40)
+        <p className={`m4-field__meta ${countWords(state.challenge) >= 20 ? 'is-ok' : 'is-warn'}`}>
+          {countWords(state.challenge)} từ (yêu cầu tối thiểu 20)
         </p>
       </div>
     </section>
@@ -438,7 +438,7 @@ function Tab6Chapter26({ state, update }) {
       <TextField id="m4CommitScope" label="Trong phạm vi nào?" placeholder="Công việc, đội nhóm hoặc khách hàng" {...field('commitScope')} />
       <TextField id="m4CommitOutcome" label="Để tạo ra kết quả gì?" placeholder="Kết quả có thể nhận thấy" {...field('commitOutcome')} />
       <div className="m4-preview">{cText || <em>Câu hoàn chỉnh sẽ hiện tại đây…</em>}</div>
-      <WordMeta text={cText} min={15} max={60} />
+      <WordMeta text={cText} min={15} />
       <details className="m4-hint">
         <summary>Gợi ý (không bắt buộc)</summary>
         <div className="m4-hint__body">Tôi sẽ chủ động chia sẻ thông tin và phối hợp sớm hơn, trong các công việc liên đơn vị, để vấn đề được giải quyết nhanh và đồng bộ hơn.</div>
@@ -450,7 +450,7 @@ function Tab6Chapter26({ state, update }) {
       <TextField id="m4VisionValue" label="CTIN sẽ tạo ra giá trị gì?" placeholder="Cho khách hàng, xã hội hoặc CBNV" {...field('visionValue')} />
       <TextField id="m4VisionCapability" label="Bằng năng lực/cách làm nào?" placeholder="Năng lực hoặc cách thức cốt lõi" {...field('visionCapability')} />
       <div className="m4-preview">{vText || <em>Câu hoàn chỉnh sẽ hiện tại đây…</em>}</div>
-      <WordMeta text={vText} min={15} max={70} />
+      <WordMeta text={vText} min={15} />
       <details className="m4-hint">
         <summary>Gợi ý (không bắt buộc)</summary>
         <div className="m4-hint__body">CTIN trở thành doanh nghiệp tích hợp giải pháp công nghệ được khách hàng tin cậy, tạo ra giá trị bền vững, bằng năng lực đổi mới, học hỏi và tinh thần One Team.</div>

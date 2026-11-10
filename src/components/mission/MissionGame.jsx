@@ -228,7 +228,10 @@ export default function MissionGame({
         witnessName: ''
       }, getFiles ? getFiles() : []);
       update({ submittedAt: new Date().toISOString(), done: true });
-      toast(`Đã nộp ${missionLabel} thành công! Bài đã được gửi tới BTC chấm.`, 'success');
+      const successNotice = Number(config.id) === 2
+        ? `Đã nộp ${missionLabel} thành công! Bài đã được gửi tới BTC chấm.`
+        : `Đã hoàn thành ${missionLabel} thành công! Hệ thống đã tự động ghi nhận điểm hợp lệ.`;
+      toast(successNotice, 'success');
       await loadMySubmission();
     } catch (err) {
       toast(err.message || 'Nộp bài thất bại.', 'error');

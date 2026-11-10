@@ -42,7 +42,7 @@ export default function AdminPage() {
   const [activeView, setActiveView] = useState(initialView);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [submissions, setSubmissions] = useState([]);
-  const [currentFilter, setCurrentFilter] = useState('all');
+  const [currentFilter, setCurrentFilter] = useState('2');
   const [loadingPending, setLoadingPending] = useState(true);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [toastMsg, setToastMsg] = useState({ text: '', type: '' });
@@ -245,6 +245,10 @@ export default function AdminPage() {
   const filteredSubmissions = currentFilter === 'all'
     ? submissions
     : submissions.filter(s => Number(s.mission_id) === Number(currentFilter));
+
+  const m2PendingCount = submissions.filter(s => Number(s.mission_id) === 2 && (
+    s.status === 'pending' || s.status === 'submitted' || s.status === 'SUBMITTED' || s.score == null
+  )).length;
 
   const statusOptions = [
     { v: 'pending',          l: 'Chờ chấm' },
@@ -460,34 +464,47 @@ export default function AdminPage() {
 
             <div className="admin-tabs" id="missionTabs">
               <button
-                className={`admin-tab ${currentFilter === 'all' ? 'is-active' : ''}`}
-                onClick={() => setCurrentFilter('all')}
+                className={`admin-tab ${currentFilter === '2' ? 'is-active' : ''}`}
+                onClick={() => setCurrentFilter('2')}
               >
-                Tất cả
+                Mission 2 (Chấm thủ công)
+                {m2PendingCount > 0 && (
+                  <span style={{
+                    marginLeft: '8px',
+                    background: '#d93025',
+                    color: '#fff',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 'bold'
+                  }}>
+                    {m2PendingCount} chờ chấm
+                  </span>
+                )}
               </button>
               <button
                 className={`admin-tab ${currentFilter === '1' ? 'is-active' : ''}`}
                 onClick={() => setCurrentFilter('1')}
               >
-                Mission 1
-              </button>
-              <button
-                className={`admin-tab ${currentFilter === '2' ? 'is-active' : ''}`}
-                onClick={() => setCurrentFilter('2')}
-              >
-                Mission 2
+                Mission 1 (Tự động)
               </button>
               <button
                 className={`admin-tab ${currentFilter === '3' ? 'is-active' : ''}`}
                 onClick={() => setCurrentFilter('3')}
               >
-                Mission 3
+                Mission 3 (Tự động)
               </button>
               <button
                 className={`admin-tab ${currentFilter === '4' ? 'is-active' : ''}`}
                 onClick={() => setCurrentFilter('4')}
               >
-                Mission 4
+                Mission 4 (Tự động)
+              </button>
+              <button
+                className={`admin-tab ${currentFilter === 'all' ? 'is-active' : ''}`}
+                onClick={() => setCurrentFilter('all')}
+              >
+                Tất cả bài nộp
               </button>
             </div>
 
@@ -704,6 +721,16 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
+
+              {Number(selectedSub.mission_id) === 2 ? (
+                <div style={{ background: '#fef7e0', color: '#b06000', padding: '12px 16px', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '16px', border: '1px solid #f9df9b' }}>
+                  ✍️ <strong>Mission 02 — Chấm điểm thủ công:</strong> Đọc câu chuyện ký ức và xem tệp đính kèm để đánh giá chất lượng (thang điểm 0–100). Điểm số này là căn cứ chính để xếp hạng giải cá nhân.
+                </div>
+              ) : (
+                <div style={{ background: '#e8f0fe', color: '#1a73e8', padding: '12px 16px', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '16px', border: '1px solid #d2e3fc' }}>
+                  ⚡ <strong>Nhiệm vụ tự động:</strong> Mission 0{selectedSub.mission_id} đã được hệ thống tự động kiểm tra đáp án và xác nhận hợp lệ (1 điểm) ngay khi người chơi nộp bài.
+                </div>
+              )}
 
               {selectedSub.note && (
                 <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '16px' }}>

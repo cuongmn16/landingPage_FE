@@ -786,7 +786,7 @@ export default function Mission1Page() {
         witnessName: ''
       });
       update({ submittedAt: new Date().toISOString() });
-      toast('Nộp bài thành công! Bài đã được gửi tới BTC chấm.', 'success');
+      toast('Hoàn thành Mission 01 thành công! Hệ thống đã tự động ghi nhận điểm hợp lệ.', 'success');
       await loadMySubmission();
     } catch (err) {
       toast(err.message || 'Nộp bài thất bại.', 'error');

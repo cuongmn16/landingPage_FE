@@ -74,7 +74,7 @@ const isTab5Valid = () => true;
 const isTab6Valid = (s) => {
   if (!s.value) return false;
   const n = countWords(s.takeaway);
-  return n >= 20 && n <= 40;
+  return n >= 20;
 };
 
 const TAB_CHECKS = [isTab1Valid, isTab2Valid, isTab3Valid, isTab4Valid, isTab5Valid, isTab6Valid];
@@ -96,7 +96,7 @@ function validityChecklist(s) {
     { label: 'Đã chọn vai trò, thời gian và dạng ký ức', ok: isTab2Valid(s) },
     { label: 'Đã trả lời đủ 3 câu hỏi gợi nhớ', ok: isTab3Valid(s) },
     { label: 'Có tên câu chuyện và nội dung ≥ 200 ký tự', ok: isTab4Valid(s) },
-    { label: 'Đã chọn giá trị và đúc kết 20–40 từ', ok: isTab6Valid(s) }
+    { label: 'Đã chọn giá trị và đúc kết tối thiểu 20 từ', ok: isTab6Valid(s) }
   ];
 }
 
@@ -447,7 +447,7 @@ function Tab6Takeaway({ state, update, goToTab }) {
         <h3 className="m2-section-title">Giá trị hoặc tinh thần được thể hiện</h3>
         <Choices name="value" list={M2_VALUES} selected={state.value} onSelect={(id) => update({ value: id })} grid />
         <div className="m2-field" style={{ marginTop: '24px' }}>
-          <label className="m2-field__label" htmlFor="m2Takeaway">Câu chuyện này cho tôi thấy… <span>(20–40 từ)</span></label>
+          <label className="m2-field__label" htmlFor="m2Takeaway">Câu chuyện này cho tôi thấy… <span>(tối thiểu 20 từ)</span></label>
           <textarea
             id="m2Takeaway"
             rows={4}
@@ -455,7 +455,7 @@ function Tab6Takeaway({ state, update, goToTab }) {
             value={state.takeaway}
             onChange={(e) => update({ takeaway: e.target.value })}
           />
-          <p className={`m2-field__meta ${n >= 20 && n <= 40 ? 'is-ok' : 'is-warn'}`}>{n} từ (yêu cầu 20–40)</p>
+          <p className={`m2-field__meta ${n >= 20 ? 'is-ok' : 'is-warn'}`}>{n} từ (yêu cầu tối thiểu 20 từ)</p>
         </div>
       </section>
     </>
