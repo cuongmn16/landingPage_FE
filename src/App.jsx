@@ -17,10 +17,12 @@ import Mission2Page from './pages/Mission2Page';
 import Mission3Page from './pages/Mission3Page';
 import Mission4Page from './pages/Mission4Page';
 import AllSubmissionsPage from './pages/AllSubmissionsPage';
+import WishesLivePage from './pages/WishesLivePage';
+import SendWishPage from './pages/SendWishPage';
 
 import './styles/index.css';
 
-// Admin chỉ được dùng các trang /admin, /leaderboard, /mission-1, /mission-2, /mission-3, /mission-4 (và trang đăng nhập/đăng ký)
+// Admin chỉ được dùng các trang /admin, /leaderboard, /mission-1..4, /wishes, /gui-loi-chuc (và trang đăng nhập/đăng ký)
 function isAdminSession() {
   if (auth.user) return auth.user.role === 'admin';
   try {
@@ -35,9 +37,12 @@ function isAdminSession() {
 function AppContent() {
   const location = useLocation();
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
+  const isStandAloneEventRoute = location.pathname === '/wishes' || location.pathname === '/gui-loi-chuc';
+  const hideChrome = isAuthRoute || isStandAloneEventRoute;
 
   const isAdminAllowed = location.pathname.startsWith('/admin')
     || location.pathname === '/leaderboard'
+    || isStandAloneEventRoute
     || /^\/mission-[1-4](\/|$)/.test(location.pathname);
   if (isAdminSession() && !isAuthRoute && !isAdminAllowed) {
     return <Navigate to="/admin" replace />;
@@ -45,7 +50,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      {!isAuthRoute && <Navbar />}
+      {!hideChrome && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -58,10 +63,12 @@ function AppContent() {
         <Route path="/mission-2" element={<Mission2Page />} />
         <Route path="/mission-3" element={<Mission3Page />} />
         <Route path="/mission-4" element={<Mission4Page />} />
+        <Route path="/wishes" element={<WishesLivePage />} />
+        <Route path="/gui-loi-chuc" element={<SendWishPage />} />
         <Route path="*" element={<HomePage />} />
       </Routes>
-      {!isAuthRoute && <Footer />}
-      {!isAuthRoute && <BackToTop />}
+      {!hideChrome && <Footer />}
+      {!hideChrome && <BackToTop />}
     </div>
   );
 }

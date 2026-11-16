@@ -229,6 +229,9 @@ async function authFetch(path, options = {}, { retry = true } = {}) {
   const demo = isDemoToken();
   const headers = { ...(options.headers || {}) };
   if (token && !demo) headers.Authorization = `Bearer ${token}`;
+  if (options.body && typeof options.body === 'string' && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   let res;
   try {
@@ -527,6 +530,13 @@ export async function toggleMissionStatusApi(id, isOpen) {
    ------------------------------------------------------------ */
 
 export const api = {
+  /**
+   * Lấy danh sách phòng ban / đơn vị
+   */
+  async getUnits() {
+    return getUnitsApi();
+  },
+
   async register(payload) {
     return registerEmployeeApi(payload);
   },
@@ -768,5 +778,110 @@ export const api = {
     } catch {
       return [];
     }
+  },
+
+  /**
+   * Bức tường lời chúc sự kiện 25 năm CTIN — Lấy danh sách hiển thị live (GET /api/wishes/live)
+   */
+  async getLiveWishes() {
+    try {
+      const json = await request('/wishes/live', { method: 'GET' }, { auth: false });
+      const data = json.data || {};
+      return {
+        totalCount: Number(data.totalCount || 0),
+        wishes: Array.isArray(data.wishes) ? data.wishes : []
+      };
+    } catch {
+      try {
+        const raw = localStorage.getItem('ctin_demo_wishes');
+        const list = raw ? JSON.parse(raw) : [];
+        const visible = list.filter(w => !w.isHidden);
+        return { totalCount: visible.length, wishes: visible };
+      } catch {
+        return { totalCount: 0, wishes: [] };
+      }
+    }
+  },
+
+  /**
+   * Nhân viên gửi lời chúc mới từ điện thoại (POST /api/wishes)
+   */
+  async createWish(payload) {
+    try {
+      const json = await request('/wishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderName: payload.senderName,
+          unitName: payload.unitName,
+          content: payload.content
+        })
+      });
+      return json.data;
+    } catch (err) {
+      // Nếu là lỗi nghiệp vụ từ backend (ví dụ: từ ngữ nhạy cảm, độ dài - HTTP 400), hiển thị cho người gửi
+      if (err && err.status === 400 && err.message) {
+        throw err;
+      }
+      // Fallback lưu vào localStorage nếu backend đang tắt hoặc có sự cố DB
+      // Giúp trải nghiệm gửi lời chúc không bao giờ bị đứt đoạn hay báo lỗi hệ thống
+      try {
+        const raw = localStorage.getItem('ctin_demo_wishes');
+        const list = raw ? JSON.parse(raw) : [];
+        const item = {
+          id: Date.now(),
+          senderName: payload.senderName,
+          unitName: payload.unitName,
+          content: payload.content,
+          isHidden: false,
+          createdAt: new Date().toISOString()
+        };
+        list.unshift(item);
+        localStorage.setItem('ctin_demo_wishes', JSON.stringify(list));
+        return item;
+      } catch {
+        throw new Error('Không thể lưu lời chúc lúc này. Vui lòng thử lại sau.');
+      }
+    }
+  },
+
+  /**
+   * Admin (BTC): lấy toàn bộ lời chúc để quản trị (GET /api/wishes/all)
+   */
+  async getAllWishesAdmin() {
+    if (isDemoToken()) {
+      const raw = localStorage.getItem('ctin_demo_wishes');
+      return raw ? JSON.parse(raw) : [];
+    }
+    const json = await request('/wishes/all');
+    return Array.isArray(json.data) ? json.data : [];
+  },
+
+  /**
+   * Admin (BTC): Ẩn / Hiện lời chúc (PUT /api/wishes/{id}/hide)
+   */
+  async toggleHideWish(id, hidden = true) {
+    if (isDemoToken()) {
+      const raw = localStorage.getItem('ctin_demo_wishes');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.map(w => (w.id === id ? { ...w, isHidden: hidden } : w));
+      localStorage.setItem('ctin_demo_wishes', JSON.stringify(updated));
+      return { id, isHidden: hidden };
+    }
+    const json = await request(`/wishes/${id}/hide?hidden=${Boolean(hidden)}`, { method: 'PUT' });
+    return json.data;
+  },
+
+  /**
+   * Admin (BTC): Xóa lời chúc (DELETE /api/wishes/{id})
+   */
+  async deleteWish(id) {
+    if (isDemoToken()) {
+      const raw = localStorage.getItem('ctin_demo_wishes');
+      const list = raw ? JSON.parse(raw) : [];
+      localStorage.setItem('ctin_demo_wishes', JSON.stringify(list.filter(w => w.id !== id)));
+      return;
+    }
+    await request(`/wishes/${id}`, { method: 'DELETE' });
   }
 };

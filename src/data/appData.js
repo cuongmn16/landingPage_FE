@@ -25,8 +25,8 @@ export const STORY = {
   paragraph: '25 năm không chỉ được tạo nên bởi những dấu mốc trên giấy. Đó còn là những câu chuyện, những con người, những ký ức và những giá trị đã cùng nhau làm nên CTIN hôm nay. Và giờ là lúc mỗi chúng ta cùng mở lại những "kho báu" ấy — mỗi người một mảnh ghép, cùng đơn vị về đích.',
   note: 'Đây KHÔNG phải cuộc thi kiểm tra kiến thức lịch sử.',
   cards: [
-    { title: 'Mỗi người một mảnh ghép',   desc: 'Khám phá cá nhân, đóng góp cho tập thể.' },
-    { title: 'Đơn vị cùng về đích',        desc: 'Tỷ lệ CBNV tham gia hợp lệ quyết định kết quả.' },
+    { title: 'Mỗi người một mảnh ghép', desc: 'Khám phá cá nhân, đóng góp cho tập thể.' },
+    { title: 'Đơn vị cùng về đích', desc: 'Tỷ lệ CBNV tham gia hợp lệ quyết định kết quả.' },
     { title: 'Câu chuyện thật, tư liệu thật', desc: 'Cách khám phá sâu và cách kể khác biệt.' }
   ]
 };
@@ -56,10 +56,10 @@ export const HOW_TO_PLAY = {
 };
 
 export const MISSIONS = [
-  { id: 'M1', num: '01', name: 'NHIỆM VỤ 01 – BẢN ĐỒ HÀNH TRÌNH',          focus: 'Giải mã hành trình phát triển CTIN', duration: '15–20 phút' },
+  { id: 'M1', num: '01', name: 'NHIỆM VỤ 01 – BẢN ĐỒ HÀNH TRÌNH', focus: 'Giải mã hành trình phát triển CTIN', duration: '15–20 phút' },
   { id: 'M2', num: '02', name: 'NHIỆM VỤ 02 – CÂU CHUYỆN PHÍA SAU LỊCH SỬ', focus: 'Kể lại những ký ức và câu chuyện của người CTIN', duration: '10–15 phút' },
-  { id: 'M3', num: '03', name: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG',      focus: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo', duration: '10–12 phút' },
-  { id: 'M4', num: '04', name: 'NHIỆM VỤ 04 – BẢN SẮC CTIN',                focus: 'Từ những giá trị được gìn giữ đến Chương 26', duration: '8–10 phút' }
+  { id: 'M3', num: '03', name: 'NHIỆM VỤ 03 – DẤU ẤN NGƯỜI DẪN ĐƯỜNG', focus: 'Khám phá những quyết định, dấu ấn và phẩm chất lãnh đạo', duration: '10–12 phút' },
+  { id: 'M4', num: '04', name: 'NHIỆM VỤ 04 – BẢN SẮC CTIN', focus: 'Từ những giá trị được gìn giữ đến Chương 26', duration: '8–10 phút' }
 ];
 
 export const PRIZES = {
@@ -211,23 +211,23 @@ export function fmtDateTime(d) {
 }
 
 export const SUBMISSION_STATUS = {
-  pending:          { label: 'Đã nộp · Chờ xác nhận', cls: 'status-submitted' },
-  valid:            { label: 'Hợp lệ',                cls: 'status-valid' },
-  needs_supplement: { label: 'Cần bổ sung',           cls: 'status-needs-supplement' },
-  invalid:          { label: 'Không hợp lệ',          cls: 'status-invalid' }
+  pending: { label: 'Đã nộp · Chờ xác nhận', cls: 'status-submitted' },
+  valid: { label: 'Hợp lệ', cls: 'status-valid' },
+  needs_supplement: { label: 'Cần bổ sung', cls: 'status-needs-supplement' },
+  invalid: { label: 'Không hợp lệ', cls: 'status-invalid' }
 };
 
 export const MISSION_STATE_LABELS = {
-  not_open: { label: 'Chưa mở',  cls: 'status-locked' },
-  open:     { label: 'Đang mở',  cls: 'status-available' },
-  closed:   { label: 'Đã đóng',  cls: 'status-closed' }
+  not_open: { label: 'Chưa mở', cls: 'status-locked' },
+  open: { label: 'Đang mở', cls: 'status-available' },
+  closed: { label: 'Đã đóng', cls: 'status-closed' }
 };
 
 export function getMissionState(mission) {
   if (!mission) return { code: 'not_open', ...MISSION_STATE_LABELS.not_open };
   const s = mission.status || 'locked';
   if (s === 'locked') return { code: 'not_open', ...MISSION_STATE_LABELS.not_open };
-  if (s === 'closed') return { code: 'closed',   ...MISSION_STATE_LABELS.closed };
+  if (s === 'closed') return { code: 'closed', ...MISSION_STATE_LABELS.closed };
   if (mission.close_at && Date.now() > new Date(mission.close_at).getTime()) {
     return { code: 'closed', ...MISSION_STATE_LABELS.closed };
   }
