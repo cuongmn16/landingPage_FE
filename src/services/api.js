@@ -400,6 +400,10 @@ export async function fetchAllEmployeesApi() {
   return api.getPendingUsers();
 }
 
+export async function updateEmployeeByAdminApi(id, payload) {
+  return api.updateEmployee(id, payload);
+}
+
 export async function fetchRuleConfigApi() {
   if (isDemoToken()) {
     return { ruleType: 'MIN_COMPLETED_MISSIONS', configValue: '1' };
@@ -654,16 +658,33 @@ export const api = {
   async getPendingUsers() {
     if (isDemoToken()) return [];
     const json = await request('/employees');
-    return (Array.isArray(json.data) ? json.data : []).map(e => ({
-      id: e.id,
-      full_name: e.fullName || e.full_name,
-      email: e.email,
-      employee_id: e.employeeCode || e.employee_id,
-      unit: e.unit ? (e.unit.name || e.unit.code) : (e.unitName || e.unitCode || '—'),
-      approvalStatus: String(e.approvalStatus || e.status || 'PENDING').toUpperCase(),
-      status: String(e.approvalStatus || e.status || 'PENDING').toLowerCase(),
-      created_at: e.createdAt || null
-    }));
+    return (Array.isArray(json.data) ? json.data : [])
+      .filter(e => String(e.role || '').toUpperCase() !== 'ROLE_ADMIN')
+      .map(e => ({
+        id: e.id,
+        full_name: e.fullName || e.full_name,
+        email: e.email,
+        employee_id: e.employeeCode || e.employee_id,
+        unit: e.unit ? (e.unit.name || e.unit.code) : (e.unitName || e.unitCode || '—'),
+        unitCode: e.unit ? (e.unit.code || '') : (e.unitCode || ''),
+        unitId: e.unit ? (e.unit.id || null) : (e.unitId || null),
+        approvalStatus: String(e.approvalStatus || e.status || 'PENDING').toUpperCase(),
+        status: String(e.approvalStatus || e.status || 'PENDING').toLowerCase(),
+        created_at: e.createdAt || null
+      }));
+  },
+
+  /**
+   * Admin: cập nhật thông tin nhân sự (PUT /api/employees/{id})
+   */
+  async updateEmployee(id, payload) {
+    if (isDemoToken()) return { message: 'Cập nhật thông tin nhân sự thành công!' };
+    const json = await request(`/employees/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return json.data || json;
   },
 
   /**

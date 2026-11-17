@@ -48,6 +48,18 @@ export default function AdminPage() {
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [toastMsg, setToastMsg] = useState({ text: '', type: '' });
 
+  // Tìm kiếm & lọc danh sách nhân sự
+  const [userSearch, setUserSearch] = useState('');
+  const [userUnitFilter, setUserUnitFilter] = useState('all');
+
+  // Chỉnh sửa thông tin nhân sự (Tên & Đơn vị)
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserForm, setEditUserForm] = useState({
+    fullName: '',
+    unitCode: ''
+  });
+  const [savingUser, setSavingUser] = useState(false);
+
   // Quản lý Bức tường Lời chúc sự kiện
   const [wishes, setWishes] = useState([]);
   const [loadingWishes, setLoadingWishes] = useState(false);
@@ -186,6 +198,63 @@ export default function AdminPage() {
       return true;
     });
   }, [wishes, wishStatusFilter, wishUnitFilter, wishSearch]);
+
+  const handleOpenEditUser = (u) => {
+    const matchedUnit = units.find(
+      unit => unit.code === u.unitCode || unit.name === u.unit || unit.id === u.unitId
+    );
+    setEditingUser(u);
+    setEditUserForm({
+      fullName: u.full_name || '',
+      unitCode: u.unitCode || matchedUnit?.code || ''
+    });
+  };
+
+  const handleSaveEditUser = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    if (!editUserForm.fullName.trim()) {
+      showToast('Vui lòng nhập họ và tên người tham gia.', 'error');
+      return;
+    }
+    if (!editUserForm.unitCode.trim()) {
+      showToast('Vui lòng chọn đơn vị / phòng ban.', 'error');
+      return;
+    }
+    setSavingUser(true);
+    try {
+      await api.updateEmployee(editingUser.id, {
+        fullName: editUserForm.fullName.trim(),
+        unitCode: editUserForm.unitCode.trim()
+      });
+      showToast('Đã cập nhật tên và đơn vị của nhân sự thành công!', 'success');
+      setEditingUser(null);
+      loadPending();
+      loadSubmissions();
+      loadUnits();
+    } catch (err) {
+      showToast(err.message || 'Không thể cập nhật thông tin nhân sự.', 'error');
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
+  const filteredPendingUsers = useMemo(() => {
+    return pendingUsers.filter(u => {
+      if (userUnitFilter !== 'all' && u.unit !== userUnitFilter && u.unitCode !== userUnitFilter) {
+        return false;
+      }
+      if (userSearch.trim()) {
+        const q = userSearch.toLowerCase();
+        const matchName = (u.full_name || '').toLowerCase().includes(q);
+        const matchEmail = (u.email || '').toLowerCase().includes(q);
+        const matchCode = (u.employee_id || '').toLowerCase().includes(q);
+        const matchUnit = (u.unit || '').toLowerCase().includes(q);
+        if (!matchName && !matchEmail && !matchCode && !matchUnit) return false;
+      }
+      return true;
+    });
+  }, [pendingUsers, userUnitFilter, userSearch]);
 
   useEffect(() => {
     async function checkAdmin() {
@@ -357,7 +426,7 @@ export default function AdminPage() {
     <main className="admin-page">
       <div className="container">
         {/* Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
           <button
             className={`btn ${activeView === 'pending' ? 'btn--gold' : 'btn--outline'}`}
             onClick={() => setActiveView('pending')}
@@ -479,8 +548,41 @@ export default function AdminPage() {
         {activeView === 'pending' && (
           <section id="view-pending" className="admin-view">
             <h1 className="admin-title">
-              Quản lý Nhân sự Đăng ký <span className="badge" id="pendingCount">{pendingUsers.length}</span>
+              Quản lý Nhân sự Đăng ký <span className="badge" id="pendingCount">{filteredPendingUsers.length}</span>
             </h1>
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Tìm theo họ tên, email, mã nhân viên..."
+                style={{
+                  flex: '1 1 260px',
+                  padding: '9px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--clr-line)'
+                }}
+              />
+              <select
+                value={userUnitFilter}
+                onChange={(e) => setUserUnitFilter(e.target.value)}
+                style={{
+                  padding: '9px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--clr-line)',
+                  minWidth: '220px'
+                }}
+              >
+                <option value="all">Tất cả đơn vị ({pendingUsers.length})</option>
+                {units.map(unit => (
+                  <option key={unit.id || unit.code} value={unit.name}>
+                    {unit.name} ({unit.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -497,10 +599,10 @@ export default function AdminPage() {
                 <tbody id="pendingTable">
                   {loadingPending ? (
                     <tr><td colSpan="7" style={{ textAlign: 'center' }}>Đang tải…</td></tr>
-                  ) : pendingUsers.length === 0 ? (
-                    <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--clr-ink-3)' }}>Không có nhân sự nào trong hệ thống.</td></tr>
+                  ) : filteredPendingUsers.length === 0 ? (
+                    <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--clr-ink-3)' }}>Không có nhân sự nào phù hợp.</td></tr>
                   ) : (
-                    pendingUsers.map(u => {
+                    filteredPendingUsers.map(u => {
                       const st = String(u.approvalStatus || u.status || '').toUpperCase();
                       const isAccepted = st === 'ACCEPTED' || st === 'APPROVED';
                       const isRejected = st === 'REJECTED';
@@ -522,27 +624,37 @@ export default function AdminPage() {
                               fontWeight: 'bold',
                               display: 'inline-block'
                             }}>
-                              {isAccepted ? '✓ Đã duyệt' : isRejected ? '✕ Từ chối' : '⏳ Chờ duyệt'}
+                              {isAccepted ? 'Đã duyệt' : isRejected ? 'Từ chối' : 'Chờ duyệt'}
                             </span>
                           </td>
                           <td style={{ textAlign: 'center' }}>
-                            {!isAccepted && (
-                              <>
-                                <button className="btn-sm btn-approve" onClick={() => handleApprove(u.id)} style={{ marginRight: '6px' }}>
-                                  ✓ Duyệt &amp; Gửi Mail Pass
-                                </button>
-                                {!isRejected && (
-                                  <button className="btn-sm btn-reject" onClick={() => handleReject(u.id)}>
-                                    Từ chối
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                              {!isAccepted && (
+                                <>
+                                  <button className="btn-sm btn-approve" onClick={() => handleApprove(u.id)}>
+                                    ✓ Duyệt &amp; Gửi Mail Pass
                                   </button>
-                                )}
-                              </>
-                            )}
-                            {isAccepted && (
-                              <span style={{ fontSize: '0.82rem', color: '#28a745', fontWeight: 'bold' }}>
-                                ✓ Đã duyệt &amp; Gửi Mail Pass
-                              </span>
-                            )}
+                                  {!isRejected && (
+                                    <button className="btn-sm btn-reject" onClick={() => handleReject(u.id)}>
+                                      Từ chối
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                              {isAccepted && (
+                                <span style={{ fontSize: '0.82rem', color: '#28a745', fontWeight: 'bold' }}>
+                                  ✓ Đã duyệt &amp; Gửi Mail Pass
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className="btn-sm btn-score"
+                                onClick={() => handleOpenEditUser(u)}
+                                title="Chỉnh sửa họ tên và đơn vị"
+                              >
+                                Sửa
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1121,6 +1233,74 @@ export default function AdminPage() {
                 <button className="btn btn--gold" type="button" onClick={handleSaveScore}>Lưu thay đổi</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CHỈNH SỬA HỌ TÊN & ĐƠN VỊ NGƯỜI THAM GIA */}
+      {editingUser && (
+        <div className="modal is-open" aria-hidden="false" role="dialog">
+          <div className="modal__backdrop" onClick={() => setEditingUser(null)}></div>
+          <div className="modal__panel" style={{ maxWidth: '500px', width: '100%' }}>
+            <button className="modal__close" onClick={() => setEditingUser(null)} aria-label="Đóng">&times;</button>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '1.25rem', color: 'var(--clr-ink-1)' }}>
+              Chỉnh sửa tên và đơn vị người tham gia
+            </h2>
+            <p style={{ margin: '0 0 18px 0', fontSize: '0.88rem', color: 'var(--clr-ink-3)' }}>
+              Email: <strong>{editingUser.email}</strong> · Mã NV: <code>{editingUser.employee_id}</code>
+            </p>
+
+            <form onSubmit={handleSaveEditUser} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label htmlFor="editFullName">Họ và tên người tham gia *</label>
+                <input
+                  id="editFullName"
+                  type="text"
+                  required
+                  value={editUserForm.fullName}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, fullName: e.target.value }))}
+                  placeholder="Nhập họ và tên đầy đủ"
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label htmlFor="editUnitCode">Đơn vị / Phòng ban *</label>
+                <select
+                  id="editUnitCode"
+                  required
+                  value={editUserForm.unitCode}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, unitCode: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--clr-line)',
+                    fontSize: '0.95rem'
+                  }}
+                >
+                  <option value="">-- Chọn đơn vị / phòng ban --</option>
+                  {units.map(unit => (
+                    <option key={unit.id || unit.code} value={unit.code}>
+                      {unit.name} ({unit.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={() => setEditingUser(null)}
+                  disabled={savingUser}
+                >
+                  Hủy
+                </button>
+                <button type="submit" className="btn btn--gold" disabled={savingUser}>
+                  {savingUser ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
