@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api, auth, getAdminUnitsApi, createUnitApi, updateUnitApi, deleteUnitApi } from '../services/api';
 import { getSubmissionStatus, fmtDate, fmtDateTime } from '../data/appData';
 import { M1_CONFIG } from '../data/mission1Data';
 import { M2_CONFIG } from '../data/mission2Data';
 import { M3_CONFIG } from '../data/mission3Data';
 import { M4_CONFIG } from '../data/mission4Data';
+import '../styles/wishes.css';
 
 // Điểm khi hoàn thành hợp lệ, tự điền khi admin chọn "Hợp lệ"
 const MISSION_POINTS = {
@@ -37,7 +38,7 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const initialView = ['submissions', 'units'].includes(tabParam) ? tabParam : 'pending';
+  const initialView = ['submissions', 'units', 'wishes'].includes(tabParam) ? tabParam : 'pending';
 
   const [activeView, setActiveView] = useState(initialView);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -46,6 +47,13 @@ export default function AdminPage() {
   const [loadingPending, setLoadingPending] = useState(true);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [toastMsg, setToastMsg] = useState({ text: '', type: '' });
+
+  // Quản lý Bức tường Lời chúc sự kiện
+  const [wishes, setWishes] = useState([]);
+  const [loadingWishes, setLoadingWishes] = useState(false);
+  const [wishSearch, setWishSearch] = useState('');
+  const [wishUnitFilter, setWishUnitFilter] = useState('all');
+  const [wishStatusFilter, setWishStatusFilter] = useState('all');
 
   // Modal State
   const [selectedSub, setSelectedSub] = useState(null);
@@ -100,6 +108,85 @@ export default function AdminPage() {
     }
   };
 
+  const loadWishes = async () => {
+    setLoadingWishes(true);
+    try {
+      const data = await api.getAllWishesAdmin();
+      setWishes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showToast(err.message || 'Không thể tải danh sách lời chúc', 'error');
+    } finally {
+      setLoadingWishes(false);
+    }
+  };
+
+  const handleToggleHideWish = async (id, currentHidden) => {
+    try {
+      await api.toggleHideWish(id, !currentHidden);
+      showToast(!currentHidden ? 'Đã ẩn lời chúc khỏi màn hình sự kiện' : 'Đã hiển thị lại lời chúc lên màn hình');
+      setWishes(prev => prev.map(w => w.id === id ? { ...w, isHidden: !currentHidden } : w));
+    } catch (err) {
+      showToast(err.message || 'Không thể cập nhật trạng thái', 'error');
+    }
+  };
+
+  const handleDeleteWish = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN lời chúc này?')) return;
+    try {
+      await api.deleteWish(id);
+      showToast('Đã xóa lời chúc thành công');
+      setWishes(prev => prev.filter(w => w.id !== id));
+    } catch (err) {
+      showToast(err.message || 'Không thể xóa lời chúc', 'error');
+    }
+  };
+
+  const handleResetWishes = async () => {
+    const confirmText = window.prompt(
+      '⚠️ CẢNH BÁO QUAN TRỌNG TỪ BAN TỔ CHỨC:\n\n' +
+      'Bạn đang chuẩn bị XÓA SẠCH TOÀN BỘ lời chúc trên bức tường sự kiện.\n' +
+      'Hành động này thường dùng để dọn sạch dữ liệu test trước giờ G sự kiện.\n\n' +
+      'Nhập chữ "RESET" (viết hoa) để xác nhận xóa toàn bộ:'
+    );
+    if (confirmText !== 'RESET') {
+      if (confirmText !== null) {
+        alert('Mã xác nhận không đúng. Đã hủy thao tác reset.');
+      }
+      return;
+    }
+    try {
+      await api.resetAllWishes();
+      showToast('Đã reset toàn bộ bức tường lời chúc thành công');
+      setWishes([]);
+    } catch (err) {
+      showToast(err.message || 'Không thể reset lời chúc', 'error');
+    }
+  };
+
+  const wishUnitsList = useMemo(() => {
+    const set = new Set();
+    wishes.forEach(w => {
+      if (w.unitName && w.unitName.trim()) set.add(w.unitName.trim());
+    });
+    return Array.from(set).sort();
+  }, [wishes]);
+
+  const filteredWishes = useMemo(() => {
+    return wishes.filter(w => {
+      if (wishStatusFilter === 'visible' && w.isHidden) return false;
+      if (wishStatusFilter === 'hidden' && !w.isHidden) return false;
+      if (wishUnitFilter !== 'all' && (w.unitName || '').trim() !== wishUnitFilter) return false;
+      if (wishSearch.trim()) {
+        const q = wishSearch.toLowerCase();
+        const matchName = (w.senderName || '').toLowerCase().includes(q);
+        const matchContent = (w.content || '').toLowerCase().includes(q);
+        const matchUnit = (w.unitName || '').toLowerCase().includes(q);
+        if (!matchName && !matchContent && !matchUnit) return false;
+      }
+      return true;
+    });
+  }, [wishes, wishStatusFilter, wishUnitFilter, wishSearch]);
+
   useEffect(() => {
     async function checkAdmin() {
       const u = await auth.load();
@@ -110,6 +197,7 @@ export default function AdminPage() {
       loadPending();
       loadSubmissions();
       loadUnits();
+      loadWishes();
     }
     checkAdmin();
   }, [navigate]);
@@ -287,6 +375,15 @@ export default function AdminPage() {
             onClick={() => setActiveView('units')}
           >
             Phòng ban ({units.length})
+          </button>
+          <button
+            className={`btn ${activeView === 'wishes' ? 'btn--gold' : 'btn--outline'}`}
+            onClick={() => {
+              setActiveView('wishes');
+              loadWishes();
+            }}
+          >
+            Bức tường Lời chúc ({wishes.length})
           </button>
         </div>
 
@@ -592,6 +689,244 @@ export default function AdminPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </section>
+        )}
+
+        {/* VIEW 4: QUẢN LÝ BỨC TƯỜNG LỜI CHÚC SỰ KIỆN */}
+        {activeView === 'wishes' && (
+          <section id="view-wishes" className="admin-view">
+            <div className="aw-container">
+              {/* HEADER TOOLBAR SANG TRỌNG */}
+              <div className="aw-header">
+                <div className="aw-header__info">
+                  <span className="aw-header__badge">
+                    SỰ KIỆN KỶ NIỆM 25 NĂM CTIN (2001 – 2026)
+                  </span>
+                  <h1 className="aw-header__title">
+                    Bức Tường Lời Chúc Sự Kiện
+                    <span className="aw-header__count-badge">{wishes.length}</span>
+                  </h1>
+                  <p className="aw-header__subtitle">
+                    Kiểm duyệt trực tiếp, ẩn/hiện, xóa và điều phối luồng lời chúc trên màn hình sân khấu lớn
+                  </p>
+                </div>
+
+                <div className="aw-header__actions">
+                  <Link
+                    to="/wishes"
+                    target="_blank"
+                    className="aw-btn-stage"
+                    title="Mở tab mới xem màn hình sân khấu trực tiếp"
+                  >
+                    <span className="live-dot" />
+                    <span>Mở Màn hình Sân khấu ↗</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="aw-btn-refresh"
+                    onClick={loadWishes}
+                    disabled={loadingWishes}
+                  >
+                    {loadingWishes ? 'Đang tải...' : 'Tải lại danh sách'}
+                  </button>
+                  <button
+                    type="button"
+                    className="aw-btn-reset"
+                    onClick={handleResetWishes}
+                    title="Xóa toàn bộ lời chúc để bắt đầu sự kiện"
+                  >
+                    Xóa tất cả (Reset)
+                  </button>
+                </div>
+              </div>
+
+              {/* BỘ 3 THẺ THỐNG KÊ (EXECUTIVE STAT CARDS) */}
+              <div className="aw-stats-grid">
+                <div className="aw-stat-card aw-stat-card--total">
+                  <div className="aw-stat-card__body">
+                    <span className="aw-stat-card__label">Tổng số lời chúc</span>
+                    <div className="aw-stat-card__number">{wishes.length}</div>
+                    <span className="aw-stat-card__sub">Gửi từ điện thoại khán phòng</span>
+                  </div>
+                </div>
+
+                <div className="aw-stat-card aw-stat-card--visible">
+                  <div className="aw-stat-card__body">
+                    <span className="aw-stat-card__label">Đang chiếu trên LED</span>
+                    <div className="aw-stat-card__number">{wishes.filter(w => !w.isHidden).length}</div>
+                    <span className="aw-stat-card__sub">
+                      Chiếm {wishes.length > 0 ? Math.round((wishes.filter(w => !w.isHidden).length / wishes.length) * 100) : 100}% tổng số lời chúc
+                    </span>
+                  </div>
+                </div>
+
+                <div className="aw-stat-card aw-stat-card--hidden">
+                  <div className="aw-stat-card__body">
+                    <span className="aw-stat-card__label">Tạm ẩn kiểm duyệt</span>
+                    <div className="aw-stat-card__number">{wishes.filter(w => w.isHidden).length}</div>
+                    <span className="aw-stat-card__sub">Không xuất hiện trên sân khấu</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* BỘ LỌC TÌM KIẾM LIỀN MẠCH (UNIFIED FILTER BAR) */}
+              <div className="aw-filter-bar">
+                <div className="aw-search-box">
+                  <input
+                    type="text"
+                    className="aw-search-input"
+                    placeholder="Tìm theo họ tên người gửi hoặc từ khóa lời chúc..."
+                    value={wishSearch}
+                    onChange={(e) => setWishSearch(e.target.value)}
+                  />
+                </div>
+
+                <div className="aw-select-box">
+                  <select
+                    className="aw-select"
+                    value={wishUnitFilter}
+                    onChange={(e) => setWishUnitFilter(e.target.value)}
+                  >
+                    <option value="all">Tất cả phòng ban ({wishUnitsList.length})</option>
+                    {wishUnitsList.map(u => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="aw-select-box">
+                  <select
+                    className="aw-select"
+                    value={wishStatusFilter}
+                    onChange={(e) => setWishStatusFilter(e.target.value)}
+                  >
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="visible">Đang hiển thị ({wishes.filter(w => !w.isHidden).length})</option>
+                    <option value="hidden">Tạm ẩn ({wishes.filter(w => w.isHidden).length})</option>
+                  </select>
+                </div>
+
+                {(wishSearch || wishUnitFilter !== 'all' || wishStatusFilter !== 'all') && (
+                  <button
+                    type="button"
+                    className="aw-clear-filters-btn"
+                    onClick={() => {
+                      setWishSearch('');
+                      setWishUnitFilter('all');
+                      setWishStatusFilter('all');
+                    }}
+                  >
+                    Xóa bộ lọc
+                  </button>
+                )}
+              </div>
+
+              {/* BẢNG DỮ LIỆU LỜI CHÚC CAO CẤP */}
+              <div className="aw-table-container">
+                <table className="aw-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '60px', textAlign: 'center' }}>#</th>
+                      <th style={{ width: '220px' }}>Người gửi</th>
+                      <th style={{ width: '180px' }}>Đơn vị / Phòng ban</th>
+                      <th>Nội dung lời chúc</th>
+                      <th style={{ width: '150px' }}>Thời gian</th>
+                      <th style={{ width: '140px', textAlign: 'center' }}>Trạng thái</th>
+                      <th style={{ width: '160px', textAlign: 'center' }}>Thao tác Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loadingWishes ? (
+                      <tr>
+                        <td colSpan="7">
+                          <div className="aw-empty-state">
+                            <h3 className="aw-empty-title">Đang tải danh sách lời chúc...</h3>
+                            <p className="aw-empty-desc">Hệ thống đang đồng bộ với cơ sở dữ liệu thời gian thực.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredWishes.length === 0 ? (
+                      <tr>
+                        <td colSpan="7">
+                          <div className="aw-empty-state">
+                            {wishes.length === 0 ? (
+                              <>
+                                <h3 className="aw-empty-title">Bức tường đang sẵn sàng đón nhận lời chúc!</h3>
+                                <p className="aw-empty-desc">
+                                  Khi nhân viên hoặc khách mời quét mã QR trên điện thoại gửi lời chúc, toàn bộ dữ liệu sẽ tự động xuất hiện tại đây theo thời gian thực.
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <h3 className="aw-empty-title">Không tìm thấy lời chúc phù hợp</h3>
+                                <p className="aw-empty-desc">
+                                  Không có lời chúc nào khớp với từ khóa tìm kiếm hoặc bộ lọc hiện tại. Thử xóa bộ lọc để xem toàn bộ danh sách.
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredWishes.map((w, idx) => {
+                        const initial = (w.senderName || 'C').trim().charAt(0).toUpperCase();
+                        return (
+                          <tr key={w.id || idx} className={w.isHidden ? 'is-hidden' : ''}>
+                            <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
+                              {idx + 1}
+                            </td>
+                            <td>
+                              <div className="aw-sender-cell">
+                                <div className="aw-sender-avatar">{initial}</div>
+                                <span className="aw-sender-name">{w.senderName}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="aw-unit-pill">{w.unitName}</span>
+                            </td>
+                            <td>
+                              <div className="aw-wish-content">
+                                “{w.content}”
+                              </div>
+                            </td>
+                            <td>
+                              <span className="aw-time-cell">
+                                {fmtDateTime(w.createdAt)}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span className={`aw-status-pill ${w.isHidden ? 'hidden' : 'visible'}`}>
+                                {w.isHidden ? 'Đã ẩn' : 'Đang chiếu'}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <div className="aw-actions-cell">
+                                <button
+                                  type="button"
+                                  className={`aw-action-toggle ${w.isHidden ? 'show' : 'hide'}`}
+                                  onClick={() => handleToggleHideWish(w.id, w.isHidden)}
+                                  title={w.isHidden ? 'Cho phép hiển thị lại lời chúc lên sân khấu' : 'Ẩn lời chúc này khỏi màn hình lớn'}
+                                >
+                                  {w.isHidden ? 'Cho hiện' : 'Ẩn đi'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="aw-action-delete"
+                                  onClick={() => handleDeleteWish(w.id)}
+                                  title="Xóa vĩnh viễn lời chúc này khỏi hệ thống"
+                                >
+                                  Xóa
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
         )}

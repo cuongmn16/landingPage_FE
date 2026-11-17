@@ -883,5 +883,17 @@ export const api = {
       return;
     }
     await request(`/wishes/${id}`, { method: 'DELETE' });
+  },
+
+  /**
+   * Admin (BTC): Reset toàn bộ lời chúc trên bức tường (DELETE /api/wishes/reset)
+   */
+  async resetAllWishes() {
+    if (isDemoToken()) {
+      localStorage.setItem('ctin_demo_wishes', JSON.stringify([]));
+      return { message: 'Đã reset toàn bộ bức tường lời chúc' };
+    }
+    const json = await request('/wishes/reset', { method: 'DELETE' });
+    return json?.data || json;
   }
 };

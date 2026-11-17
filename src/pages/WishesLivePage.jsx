@@ -14,6 +14,14 @@ export default function WishesLivePage() {
   const [latestWish, setLatestWish] = useState(null);
   const [isZoomQr, setIsZoomQr] = useState(false);
 
+  // Admin Moderation State (Chỉ xem và thao tác được khi đăng nhập tài khoản Admin)
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [adminWishes, setAdminWishes] = useState([]);
+  const [loadingAdminWishes, setLoadingAdminWishes] = useState(false);
+  const [adminSearch, setAdminSearch] = useState('');
+  const [adminUnitFilter, setAdminUnitFilter] = useState('all');
+  const [adminStatusFilter, setAdminStatusFilter] = useState('all');
+
   const wishesPoolRef = useRef([]);
   const seenIdsRef = useRef(new Set());
   const poolCursorRef = useRef(0);
@@ -142,22 +150,102 @@ export default function WishesLivePage() {
     return () => clearInterval(streamTimer);
   }, [spawnFloatingCard]);
 
-  const handleAdminHide = async (e, wishId) => {
-    e.stopPropagation();
-    if (!wishId) return;
+  // Tải toàn bộ lời chúc cho Admin kiểm duyệt
+  const loadAdminWishes = useCallback(async () => {
+    if (!isAdmin) return;
+    setLoadingAdminWishes(true);
     try {
-      await api.toggleHideWish(wishId, true);
-      wishesPoolRef.current = wishesPoolRef.current.filter((w) => w.id !== wishId);
-      setFloatingCards((prev) => prev.filter((c) => c.wish.id !== wishId));
-      setTotalCount((prev) => Math.max(0, prev - 1));
+      const data = await api.getAllWishesAdmin();
+      setAdminWishes(Array.isArray(data) ? data : []);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingAdminWishes(false);
+    }
+  }, [isAdmin]);
+
+  const handleAdminToggleHide = async (wishId, currentHidden) => {
+    try {
+      await api.toggleHideWish(wishId, !currentHidden);
+      if (!currentHidden) {
+        wishesPoolRef.current = wishesPoolRef.current.filter((w) => w.id !== wishId);
+        setFloatingCards((prev) => prev.filter((c) => c.wish.id !== wishId));
+        setTotalCount((prev) => Math.max(0, prev - 1));
+      } else {
+        setTotalCount((prev) => prev + 1);
+      }
+      setAdminWishes((prev) =>
+        prev.map((w) => (w.id === wishId ? { ...w, isHidden: !currentHidden } : w))
+      );
+      fetchWishes();
     } catch {
       // ignore
     }
   };
 
-  // Mã QR luôn giữ độ tương phản cao nhất (opacity 1.0) và kích thước lớn dễ quét,
-  // chỉ co nhẹ khi có trên 50 lời chúc để nhường không gian sân khấu nhưng tối thiểu vẫn 88%
-  const qrScale = Math.max(0.88, 1 - totalCount * 0.002);
+  const handleAdminDelete = async (wishId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN lời chúc này khỏi hệ thống?')) return;
+    try {
+      await api.deleteWish(wishId);
+      wishesPoolRef.current = wishesPoolRef.current.filter((w) => w.id !== wishId);
+      setFloatingCards((prev) => prev.filter((c) => c.wish.id !== wishId));
+      setAdminWishes((prev) => prev.filter((w) => w.id !== wishId));
+      setTotalCount((prev) => Math.max(0, prev - 1));
+      fetchWishes();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAdminReset = async () => {
+    const confirmText = window.prompt(
+      '⚠️ CẢNH BÁO QUAN TRỌNG TỪ BAN TỔ CHỨC:\n\n' +
+      'Bạn đang chuẩn bị XÓA SẠCH TOÀN BỘ lời chúc trên bức tường sự kiện.\n' +
+      'Hành động này thường dùng để dọn sạch dữ liệu test trước giờ G sự kiện.\n\n' +
+      'Nhập chữ "RESET" (viết hoa) để xác nhận xóa toàn bộ:'
+    );
+    if (confirmText !== 'RESET') {
+      if (confirmText !== null) {
+        alert('Mã xác nhận không đúng. Đã hủy thao tác reset.');
+      }
+      return;
+    }
+    try {
+      await api.resetAllWishes();
+      wishesPoolRef.current = [];
+      setFloatingCards([]);
+      setAdminWishes([]);
+      setTotalCount(0);
+      setLatestWish(null);
+      alert('Đã reset toàn bộ bức tường lời chúc thành công!');
+    } catch {
+      alert('Không thể reset bức tường lời chúc lúc này.');
+    }
+  };
+
+  const adminUnitsList = useMemo(() => {
+    const set = new Set();
+    adminWishes.forEach((w) => {
+      if (w.unitName && w.unitName.trim()) set.add(w.unitName.trim());
+    });
+    return Array.from(set).sort();
+  }, [adminWishes]);
+
+  const adminFilteredWishes = useMemo(() => {
+    return adminWishes.filter((w) => {
+      if (adminStatusFilter === 'visible' && w.isHidden) return false;
+      if (adminStatusFilter === 'hidden' && !w.isHidden) return false;
+      if (adminUnitFilter !== 'all' && (w.unitName || '').trim() !== adminUnitFilter) return false;
+      if (adminSearch.trim()) {
+        const q = adminSearch.toLowerCase();
+        const matchName = (w.senderName || '').toLowerCase().includes(q);
+        const matchContent = (w.content || '').toLowerCase().includes(q);
+        const matchUnit = (w.unitName || '').toLowerCase().includes(q);
+        if (!matchName && !matchContent && !matchUnit) return false;
+      }
+      return true;
+    });
+  }, [adminWishes, adminStatusFilter, adminUnitFilter, adminSearch]);
 
   const qrSize = qrMatrix.length;
   const quietZone = 4;
@@ -186,6 +274,19 @@ export default function WishesLivePage() {
             <span className="ww-live-count">{totalCount}</span>
             <span className="ww-live-label">lời chúc</span>
           </div>
+          {isAdmin && (
+            <button
+              type="button"
+              className="ww-admin-panel-btn"
+              onClick={() => {
+                setIsAdminPanelOpen(true);
+                loadAdminWishes();
+              }}
+              title="Mở Bảng Điều Khiển Quản Trị Lời Chúc (Chỉ Admin xem được)"
+            >
+              🛡️ Quản trị ({adminWishes.length || totalCount})
+            </button>
+          )}
           <button
             type="button"
             className="ww-zoom-btn"
@@ -200,21 +301,16 @@ export default function WishesLivePage() {
         </div>
       </header>
 
-      {/* TRUNG TÂM SÂN KHẤU: MÃ QR PHÁT SÁNG NẰM TRỌN Ở KHOẢNG GIỮA, KHÔNG BỊ THẺ CHE */}
-      <div
-        className="ww-qr-wrap"
-        style={{
-          transform: `translate(-50%, -50%) scale(${qrScale.toFixed(3)})`
-        }}
-      >
+      {/* MÃ QR ĐẶT GÓC PHẢI DƯỚI CÙNG - KHÔNG CHE KHUẤT KEY VISUAL 25 NĂM Ở TRUNG TÂM */}
+      <div className="ww-qr-wrap">
         <div className="ww-qr-card">
           <div className="ww-qr-header-brand">
             <div className="ww-qr-logo-badge">
               <img src="/assets/ctin-logo.png" alt="CTIN" />
             </div>
-            <span className="ww-qr-badge">Sự kiện kỷ niệm 25 năm CTIN</span>
+            <span className="ww-qr-badge">CTIN 25 NĂM</span>
           </div>
-          <h2 className="ww-qr-heading">QUÉT MÃ ĐỂ GỬI LỜI CHÚC</h2>
+          <h2 className="ww-qr-heading">QUÉT MÃ GỬI LỜI CHÚC</h2>
 
           {/* Hộp mã QR chuẩn ISO với quietZone 4 modules */}
           <div
@@ -306,6 +402,129 @@ export default function WishesLivePage() {
         </div>
       )}
 
+      {/* MODAL QUẢN TRỊ LỜI CHÚC DÀNH RIÊNG CHO TÀI KHOẢN ADMIN */}
+      {isAdmin && isAdminPanelOpen && (
+        <div className="ww-modal-backdrop" onClick={() => setIsAdminPanelOpen(false)}>
+          <div className="ww-admin-panel-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="ww-modal-close"
+              onClick={() => setIsAdminPanelOpen(false)}
+              aria-label="Đóng"
+            >
+              ✕
+            </button>
+
+            <div className="ww-admin-panel__header">
+              <div className="ww-admin-panel__title-box">
+                <span className="ww-admin-panel__badge">BẢNG ĐIỀU KHIỂN BAN TỔ CHỨC</span>
+                <h2 className="ww-admin-panel__title">🛡️ Quản Trị Lời Chúc Màn Hình Sự Kiện</h2>
+              </div>
+              <div className="ww-admin-panel__header-actions">
+                <Link to="/admin?tab=wishes" className="ww-admin-dash-link">
+                  Mở trên Admin Dashboard ↗
+                </Link>
+                <button
+                  type="button"
+                  className="ww-admin-reset-btn"
+                  onClick={handleAdminReset}
+                  title="Xóa toàn bộ lời chúc để sẵn sàng trước giờ G"
+                >
+                  ⚠️ Reset Bức Tường (Xóa tất cả)
+                </button>
+              </div>
+            </div>
+
+            {/* BỘ LỌC TÌM KIẾM CHO ADMIN */}
+            <div className="ww-admin-panel__filter-bar">
+              <input
+                type="text"
+                className="ww-admin-input"
+                placeholder="🔍 Tìm theo họ tên, nội dung lời chúc..."
+                value={adminSearch}
+                onChange={(e) => setAdminSearch(e.target.value)}
+              />
+              <select
+                className="ww-admin-select"
+                value={adminUnitFilter}
+                onChange={(e) => setAdminUnitFilter(e.target.value)}
+              >
+                <option value="all">Tất cả phòng ban ({adminUnitsList.length})</option>
+                {adminUnitsList.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+              <select
+                className="ww-admin-select"
+                value={adminStatusFilter}
+                onChange={(e) => setAdminStatusFilter(e.target.value)}
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="visible">🟢 Đang chiếu ({adminWishes.filter((w) => !w.isHidden).length})</option>
+                <option value="hidden">⚪ Đã ẩn ({adminWishes.filter((w) => w.isHidden).length})</option>
+              </select>
+              <button
+                type="button"
+                className="ww-admin-refresh-btn"
+                onClick={loadAdminWishes}
+                disabled={loadingAdminWishes}
+              >
+                {loadingAdminWishes ? 'Đang tải...' : '🔄 Làm mới'}
+              </button>
+            </div>
+
+            {/* DANH SÁCH LỜI CHÚC TRONG MODAL */}
+            <div className="ww-admin-panel__list">
+              {loadingAdminWishes ? (
+                <div className="ww-admin-loading">Đang tải danh sách lời chúc...</div>
+              ) : adminFilteredWishes.length === 0 ? (
+                <div className="ww-admin-empty">
+                  {adminWishes.length === 0
+                    ? 'Bức tường hiện đang trống. Chưa có lời chúc nào.'
+                    : 'Không có lời chúc nào khớp với bộ lọc tìm kiếm.'}
+                </div>
+              ) : (
+                adminFilteredWishes.map((w, index) => (
+                  <div key={w.id || index} className={`ww-admin-item ${w.isHidden ? 'is-hidden' : ''}`}>
+                    <div className="ww-admin-item__top">
+                      <div className="ww-admin-item__meta">
+                        <strong className="ww-admin-item__name">{w.senderName}</strong>
+                        <span className="ww-admin-item__unit">🏛️ {w.unitName}</span>
+                      </div>
+                      <div className="ww-admin-item__status">
+                        <span className={`ww-admin-status-pill ${w.isHidden ? 'hidden' : 'visible'}`}>
+                          {w.isHidden ? '⚪ Đã ẩn' : '🟢 Đang hiển thị'}
+                        </span>
+                        <span className="ww-admin-item__time">
+                          {new Date(w.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="ww-admin-item__content">“{w.content}”</p>
+                    <div className="ww-admin-item__actions">
+                      <button
+                        type="button"
+                        className={`ww-admin-toggle-btn ${w.isHidden ? 'show' : 'hide'}`}
+                        onClick={() => handleAdminToggleHide(w.id, w.isHidden)}
+                      >
+                        {w.isHidden ? '👁️ Cho hiển thị lại' : '🙈 Ẩn khỏi màn hình'}
+                      </button>
+                      <button
+                        type="button"
+                        className="ww-admin-delete-btn"
+                        onClick={() => handleAdminDelete(w.id)}
+                      >
+                        🗑️ Xóa vĩnh viễn
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* LUỒNG THẺ LỜI CHÚC BAY LÊN Ở 2 BÊN CÁNH */}
       <div className="ww-stream">
         {floatingCards.map((item) => {
@@ -338,14 +557,30 @@ export default function WishesLivePage() {
               <div className="ww-card__footer">
                 <span>✨ CTIN 25 NĂM</span>
                 {isAdmin ? (
-                  <button
-                    type="button"
-                    className="ww-card__hide-btn"
-                    onClick={(e) => handleAdminHide(e, wish.id)}
-                    title="Ẩn lời chúc này khỏi màn hình"
-                  >
-                    Ẩn
-                  </button>
+                  <div className="ww-card__admin-actions">
+                    <button
+                      type="button"
+                      className="ww-card__hide-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdminToggleHide(wish.id, wish.isHidden || false);
+                      }}
+                      title="Ẩn lời chúc này khỏi màn hình"
+                    >
+                      Ẩn
+                    </button>
+                    <button
+                      type="button"
+                      className="ww-card__del-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdminDelete(wish.id);
+                      }}
+                      title="Xóa vĩnh viễn"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 ) : (
                   <span>Trực tiếp</span>
                 )}

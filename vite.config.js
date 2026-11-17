@@ -142,7 +142,15 @@ function wishesDevSyncPlugin() {
           }
         }
 
-        // 5. Admin: Xóa lời chúc: DELETE /api/wishes/:id
+        // 5. Admin: Reset toàn bộ lời chúc: DELETE /api/wishes/reset
+        if (req.method === 'DELETE' && (url === '/api/wishes/reset' || url === '/api/wishes/reset/')) {
+          saveStoredWishes([])
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ status: 200, message: 'Đã reset toàn bộ bức tường lời chúc' }))
+          return
+        }
+
+        // 6. Admin: Xóa 1 lời chúc: DELETE /api/wishes/:id
         if (req.method === 'DELETE' && url.startsWith('/api/wishes/')) {
           const match = url.match(/\/api\/wishes\/(\d+)/)
           if (match) {
@@ -156,7 +164,7 @@ function wishesDevSyncPlugin() {
           }
         }
 
-        // 6. Danh sách phòng ban: GET /api/units
+        // 7. Danh sách phòng ban: GET /api/units
         if (req.method === 'GET' && (url === '/api/units' || url === '/api/units/')) {
           const defaultUnits = [
             'Ban Lãnh đạo',
