@@ -59,8 +59,16 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
   const fullName = letterData?.fullName || currentUser?.fullName || 'Người CTIN';
   const unitName = letterData?.unitName || currentUser?.unitName || 'Đại gia đình CTIN';
   const rawSalutation = letterData?.salutation || currentUser?.salutation;
-  // Giữ đúng 100% danh xưng: Bà, Ông, Anh, Chị
-  const salutation = rawSalutation && rawSalutation.trim() ? rawSalutation.trim() : 'Anh';
+  // Quy đổi danh xưng thân thiện, trẻ trung: Ông -> Anh, Bà -> Chị, Anh -> Anh, Chị -> Chị
+  let salutation = 'Anh';
+  if (rawSalutation && rawSalutation.trim()) {
+    const clean = rawSalutation.trim();
+    if (clean === 'Bà' || clean === 'Chị') {
+      salutation = 'Chị';
+    } else {
+      salutation = 'Anh';
+    }
+  }
   const salutationUpper = salutation.toUpperCase();
 
   const daysOfService = letterData?.daysOfService ? Number(letterData.daysOfService).toLocaleString('vi-VN') : '3.485';

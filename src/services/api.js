@@ -47,7 +47,7 @@ const BUILT_IN_ACCOUNTS = {
       email: 'lanmh@ctin.vn',
       role: 'ROLE_USER',
       unitName: 'Văn phòng Hồ Chí Minh',
-      salutation: 'Bà',
+      salutation: 'Chị',
       daysOfService: 9120,
       yearsDesc: 'Hơn 24 năm 12 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
       status: 'APPROVED'
@@ -63,7 +63,7 @@ const BUILT_IN_ACCOUNTS = {
       email: 'nangpn@ctin.vn',
       role: 'ROLE_USER',
       unitName: 'Văn phòng Hồ Chí Minh',
-      salutation: 'Ông',
+      salutation: 'Anh',
       daysOfService: 9273,
       yearsDesc: 'Hơn 25 năm 4 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
       status: 'APPROVED'
