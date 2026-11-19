@@ -247,7 +247,7 @@ export default function AdminPage() {
     if (mode === 'MANUAL_PUBLISHED') {
       confirmMsg = 'Bạn có chắc chắn muốn PHÁT HÀNH CHỦ ĐỘNG ngay lập tức cho toàn bộ 298 nhân sự?';
     } else if (mode === 'AUTO_20H') {
-      confirmMsg = 'Bạn có muốn chuyển sang chế độ TỰ ĐỘNG PHÁT HÀNH LÚC 20:00? Hệ thống sẽ tự động mở thư khi đồng hồ điểm từ 20:00 trở đi.';
+      confirmMsg = 'Bạn có muốn chuyển sang chế độ TỰ ĐỘNG PHÁT HÀNH LÚC 20:00 NGÀY 20/11/2026? Hiện tại thư sẽ ẩn với CBNV cho đến đúng 20h ngày 20/11.';
     } else {
       confirmMsg = 'Bạn có chắc chắn muốn TẠM KHÓA NIÊM PHONG Thư Tri Ân?';
     }
@@ -1167,10 +1167,10 @@ export default function AdminPage() {
                     }}></span>
                     <strong style={{ fontSize: '13.5px', color: lettersData.isPublished ? '#16a34a' : '#d97706' }}>
                       {lettersData.publishMode === 'MANUAL_PUBLISHED'
-                        ? 'ĐÃ PHÁT HÀNH CHỦ ĐỘNG (ĐANG MỞ)'
+                        ? 'ĐÃ PHÁT HÀNH CHỦ ĐỘNG (ĐANG MỞ TOÀN BỘ)'
                         : lettersData.publishMode === 'MANUAL_LOCKED'
-                          ? 'ĐANG TẠM KHÓA NIÊM PHONG'
-                          : `TỰ ĐỘNG LÚC 20:00 (${lettersData.isPublished ? 'ĐÃ ĐẾN GIỜ MỞ' : 'CHỜ ĐẾN 20:00'})`}
+                          ? 'ĐANG TẠM KHÓA NIÊM PHONG (ẨN VỚI USER)'
+                          : `TỰ ĐỘNG 20H NGÀY 20/11 (${lettersData.isPublished ? 'ĐÃ ĐẾN GIỜ MỞ' : 'HIỆN ĐANG ẨN VỚI USER'})`}
                     </strong>
                   </div>
                 </div>
@@ -1198,12 +1198,12 @@ export default function AdminPage() {
                     🚀 Phát hành ngay
                   </button>
 
-                  {/* Nút 2: Tự động lúc 20:00 */}
+                  {/* Nút 2: Tự động lúc 20:00 ngày 20/11 */}
                   <button
                     type="button"
                     onClick={() => handleChangePublishMode('AUTO_20H')}
                     disabled={isPublishing || (lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode)}
-                    title="Hệ thống tự động phát hành khi đồng hồ điểm 20:00"
+                    title="Hệ thống tự động phát hành đúng 20:00 ngày 20/11/2026"
                     style={{
                       padding: '7px 14px',
                       borderRadius: '8px',
@@ -1216,7 +1216,7 @@ export default function AdminPage() {
                       transition: 'all 0.2s ease'
                     }}
                   >
-                    ⏰ Tự động lúc 20:00
+                    ⏰ Tự động 20h ngày 20/11
                   </button>
 
                   {/* Nút 3: Tạm khóa niêm phong */}

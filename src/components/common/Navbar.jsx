@@ -11,6 +11,7 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState(auth.user);
   const [showLetterModal, setShowLetterModal] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  const [letterPublished, setLetterPublished] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,11 +30,15 @@ export default function Navbar() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (currentUser && !hasAutoOpened) {
+    if (currentUser) {
       gratitudeLetterApi.getMyLetter().then(letter => {
-        if (letter && !letter.isOpened) {
-          setShowLetterModal(true);
-          setHasAutoOpened(true);
+        if (letter) {
+          setLetterPublished(Boolean(letter.isPublished));
+          // Chỉ tự động mở modal khi THƯ ĐÃ ĐƯỢC PHÁT HÀNH và chưa mở
+          if (letter.isPublished && !letter.isOpened && !hasAutoOpened) {
+            setShowLetterModal(true);
+            setHasAutoOpened(true);
+          }
         }
       }).catch(() => {});
     }
@@ -112,19 +117,22 @@ export default function Navbar() {
                   Tiếp tục hành trình
                 </Link>
               )}
-              <button
-                type="button"
-                onClick={() => setShowLetterModal(true)}
-                className="navbar__letter-btn"
-                title="Xem Thư Tri Ân CTIN 25 Năm"
-                aria-label="Xem Thư Tri Ân CTIN 25 Năm"
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect width="20" height="16" x="2" y="4" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-                <span>Thư Tri Ân</span>
-              </button>
+              {/* Nút Thư Tri Ân: Luôn hiển thị với Admin để kiểm tra và phát hành; với User thường chỉ hiển thị khi đã phát hành (đến 20h ngày 20/11) */}
+              {(currentUser?.role === 'admin' || letterPublished) && (
+                <button
+                  type="button"
+                  onClick={() => setShowLetterModal(true)}
+                  className="navbar__letter-btn"
+                  title="Xem Thư Tri Ân CTIN 25 Năm"
+                  aria-label="Xem Thư Tri Ân CTIN 25 Năm"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  <span>Thư Tri Ân</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleLogout}

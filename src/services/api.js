@@ -940,6 +940,7 @@ export const gratitudeLetterApi = {
     const u = auth.user;
     if (u) {
       const isBtcAdmin = u.role === 'admin' || u.email === 'admin@ctin.vn';
+      const isAfterRelease = new Date() >= new Date('2026-11-20T20:00:00+07:00');
       return {
         id: u.id || 1,
         employeeCode: u.employee_id || (isBtcAdmin ? 'ADMIN001' : 'C30050'),
@@ -951,7 +952,7 @@ export const gratitudeLetterApi = {
           ? 'Hơn 25 năm đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN'
           : 'Hơn 13 năm 3 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
         isOpened: false,
-        isPublished: true
+        isPublished: isBtcAdmin || isAfterRelease
       };
     }
     return null;
