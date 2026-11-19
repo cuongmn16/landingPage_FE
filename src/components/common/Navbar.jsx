@@ -115,19 +115,15 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setShowLetterModal(true)}
-                className="btn btn--gold navbar__cta"
-                style={{
-                  background: 'linear-gradient(135deg, #1e293b 0%, #0b132b 100%)',
-                  border: '1.5px solid #d4af37',
-                  color: '#fef08a',
-                  boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
+                className="navbar__letter-btn"
                 title="Xem Thư Tri Ân CTIN 25 Năm"
+                aria-label="Xem Thư Tri Ân CTIN 25 Năm"
               >
-                <span>✉️</span> Thư Tri Ân
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                <span>Thư Tri Ân</span>
               </button>
               <button
                 type="button"
