@@ -945,5 +945,41 @@ export const gratitudeLetterApi = {
     } catch (err) {
       console.warn('Đánh dấu mở thư thất bại:', err);
     }
+  },
+
+  /**
+   * Admin: Lấy danh sách toàn bộ thư tri ân (298 nhân sự) & thống kê
+   */
+  async getAdminList() {
+    const json = await authFetch('/gratitude-letters/admin/list');
+    return json?.data || json;
+  },
+
+  /**
+   * Admin: Xem trước thư tri ân của nhân sự cụ thể theo ID
+   */
+  async previewLetter(id) {
+    const json = await authFetch('/gratitude-letters/admin/preview/' + id);
+    return json?.data || json;
+  },
+
+  /**
+   * Admin: Bật / Tắt phát hành thư tri ân tới toàn bộ nhân sự
+   */
+  async setPublished(published) {
+    const json = await authFetch('/gratitude-letters/admin/publish?published=' + published, { method: 'POST' });
+    return json?.data || json;
+  },
+
+  /**
+   * Lấy trạng thái phát hành hiện tại
+   */
+  async getStatus() {
+    try {
+      const json = await authFetch('/gratitude-letters/status');
+      return json?.data ?? false;
+    } catch {
+      return false;
+    }
   }
 };

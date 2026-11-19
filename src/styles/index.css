@@ -2887,7 +2887,7 @@ ul { list-style: none; }
   border-top: 1px dashed var(--clr-line);
 }
 
-/* NÚT THƯ TRI ÂN CTIN TRÊN NAVBAR */
+/* NÚT THƯ TRI ÂN CTIN TRÊN NAVBAR - MẪU 1: TRẮNG NGÀ VIỀN VÀNG HỔ PHÁCH */
 .navbar__letter-btn {
   height: 40px;
   display: inline-flex;
@@ -2899,26 +2899,26 @@ ul { list-style: none; }
   font-size: 0.88rem;
   font-weight: 700;
   white-space: nowrap;
-  color: #FDE047;
-  background: linear-gradient(135deg, #101c3d 0%, #071026 100%);
-  border: 1.5px solid #EAB308;
+  color: #b45309;
+  background: #fffdf0;
+  border: 1.5px solid #f59e0b;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(234, 179, 8, 0.25);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
   transition: all 0.25s var(--ease);
 }
 .navbar__letter-btn:hover {
-  background: linear-gradient(135deg, #162856 0%, #0c1c42 100%);
-  border-color: #FACC15;
-  color: #FEF08A;
-  box-shadow: 0 4px 18px rgba(234, 179, 8, 0.45);
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #78350f;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
   transform: translateY(-1px);
 }
 .navbar__letter-btn svg {
   flex-shrink: 0;
-  color: #FDE047;
+  color: #d97706;
   transition: transform 0.2s ease;
 }
 .navbar__letter-btn:hover svg {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }

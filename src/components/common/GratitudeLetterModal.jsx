@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { gratitudeLetterApi } from '../../services/api';
 import '../../styles/gratitude-letter.css';
 
-export default function GratitudeLetterModal({ isOpen, onClose, currentUser }) {
+export default function GratitudeLetterModal({ isOpen, onClose, currentUser, previewData }) {
   const [isLetterOpened, setIsLetterOpened] = useState(false);
-  const [letterData, setLetterData] = useState(null);
+  const [letterData, setLetterData] = useState(previewData || null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setIsLetterOpened(false);
+      return;
+    }
+
+    if (previewData) {
+      setLetterData(previewData);
       return;
     }
 
@@ -30,7 +35,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser }) {
 
     fetchLetter();
     return () => { isMounted = false; };
-  }, [isOpen]);
+  }, [isOpen, previewData]);
 
   if (!isOpen) return null;
 
@@ -111,23 +116,37 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser }) {
 
           {/* Phần dưới cùng: Con Dấu Sáp Vàng MỞ THƯ & Chú Thích */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10px' }}>
-            <button 
-              onClick={handleOpenLetter}
-              className="ctin-wax-seal-btn"
-              title="Mở thư tri ân"
-            >
-              <div className="ctin-wax-seal-icon">⚜️</div>
-              <span className="ctin-wax-seal-text-main">
-                MỞ THƯ
-              </span>
-              <span className="ctin-wax-seal-text-sub">
-                CTIN 25 NĂM
-              </span>
-            </button>
+            {letterData?.isPublished === false && !previewData && currentUser?.role !== 'admin' ? (
+              <div style={{ padding: '16px 20px', background: 'rgba(8, 16, 42, 0.85)', borderRadius: '16px', border: '1.5px solid #d97706', maxWidth: '380px', textAlign: 'center', margin: '10px auto' }}>
+                <div style={{ fontSize: '24px', marginBottom: '6px' }}>⏳</div>
+                <div style={{ color: '#FDE047', fontWeight: 700, fontSize: '13.5px', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                  Bức Thư Đang Được Niêm Phong
+                </div>
+                <p style={{ color: '#cbd5e1', fontSize: '12px', lineHeight: 1.5, margin: 0 }}>
+                  Thư Tri Ân CTIN 25 Năm sẽ chính thức được mở vào ngày Đại lễ kỷ niệm <strong>20/11/2026</strong>.
+                </p>
+              </div>
+            ) : (
+              <>
+                <button 
+                  onClick={handleOpenLetter}
+                  className="ctin-wax-seal-btn"
+                  title="Mở thư tri ân"
+                >
+                  <div className="ctin-wax-seal-icon">⚜️</div>
+                  <span className="ctin-wax-seal-text-main">
+                    MỞ THƯ
+                  </span>
+                  <span className="ctin-wax-seal-text-sub">
+                    CTIN 25 NĂM
+                  </span>
+                </button>
 
-            <p className="ctin-seal-hint">
-              Bấm vào con dấu sáp vàng để mở bức thư của bạn
-            </p>
+                <p className="ctin-seal-hint">
+                  Bấm vào con dấu sáp vàng để mở bức thư của bạn
+                </p>
+              </>
+            )}
           </div>
 
         </div>

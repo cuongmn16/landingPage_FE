@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { api, auth, getAdminUnitsApi, createUnitApi, updateUnitApi, deleteUnitApi } from '../services/api';
+import { api, auth, getAdminUnitsApi, createUnitApi, updateUnitApi, deleteUnitApi, gratitudeLetterApi } from '../services/api';
+import GratitudeLetterModal from '../components/common/GratitudeLetterModal';
 import { getSubmissionStatus, fmtDate, fmtDateTime } from '../data/appData';
 import { M1_CONFIG } from '../data/mission1Data';
 import { M2_CONFIG } from '../data/mission2Data';
@@ -38,7 +39,7 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const initialView = ['submissions', 'units', 'wishes'].includes(tabParam) ? tabParam : 'pending';
+  const initialView = ['submissions', 'units', 'wishes', 'letters'].includes(tabParam) ? tabParam : 'pending';
 
   const [activeView, setActiveView] = useState(initialView);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -66,6 +67,14 @@ export default function AdminPage() {
   const [wishSearch, setWishSearch] = useState('');
   const [wishUnitFilter, setWishUnitFilter] = useState('all');
   const [wishStatusFilter, setWishStatusFilter] = useState('all');
+
+  // Quản lý & Phát hành Thư Tri Ân CTIN 25 Năm
+  const [lettersData, setLettersData] = useState({ isPublished: false, total: 298, openedCount: 0, letters: [] });
+  const [loadingLetters, setLoadingLetters] = useState(false);
+  const [letterSearch, setLetterSearch] = useState('');
+  const [letterUnitFilter, setLetterUnitFilter] = useState('all');
+  const [previewingLetter, setPreviewingLetter] = useState(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Modal State
   const [selectedSub, setSelectedSub] = useState(null);
@@ -199,6 +208,56 @@ export default function AdminPage() {
     });
   }, [wishes, wishStatusFilter, wishUnitFilter, wishSearch]);
 
+  const loadLetters = async () => {
+    setLoadingLetters(true);
+    try {
+      const data = await gratitudeLetterApi.getAdminList();
+      if (data) {
+        setLettersData(data);
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh sách thư tri ân:', err);
+      showToast('Không thể tải danh sách thư tri ân', 'error');
+    } finally {
+      setLoadingLetters(false);
+    }
+  };
+
+  const handleTogglePublish = async () => {
+    const nextState = !lettersData.isPublished;
+    const confirmMsg = nextState
+      ? 'Bạn có chắc chắn muốn PHÁT HÀNH Thư Tri Ân tới toàn bộ 298 nhân sự? Tất cả cán bộ nhân viên sẽ xem được thư khi đăng nhập.'
+      : 'Bạn có chắc chắn muốn TẠM KHÓA phát hành Thư Tri Ân?';
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsPublishing(true);
+    try {
+      await gratitudeLetterApi.setPublished(nextState);
+      showToast(nextState ? 'Đã phát hành Thư Tri Ân thành công!' : 'Đã tạm khóa phát hành Thư Tri Ân.', 'success');
+      loadLetters();
+    } catch (err) {
+      showToast(err.message || 'Cập nhật trạng thái phát hành thất bại', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const filteredLetters = useMemo(() => {
+    const list = lettersData.letters || [];
+    return list.filter(l => {
+      if (letterUnitFilter !== 'all' && (l.unitName || '').trim() !== letterUnitFilter) return false;
+      if (letterSearch.trim()) {
+        const q = letterSearch.toLowerCase();
+        const matchName = (l.fullName || '').toLowerCase().includes(q);
+        const matchCode = (l.employeeCode || '').toLowerCase().includes(q);
+        const matchEmail = (l.email || '').toLowerCase().includes(q);
+        const matchUnit = (l.unitName || '').toLowerCase().includes(q);
+        return matchName || matchCode || matchEmail || matchUnit;
+      }
+      return true;
+    });
+  }, [lettersData.letters, letterSearch, letterUnitFilter]);
+
   const handleOpenEditUser = (u) => {
     const matchedUnit = units.find(
       unit => unit.code === u.unitCode || unit.name === u.unit || unit.id === u.unitId
@@ -267,6 +326,7 @@ export default function AdminPage() {
       loadSubmissions();
       loadUnits();
       loadWishes();
+      loadLetters();
     }
     checkAdmin();
   }, [navigate]);
@@ -453,6 +513,15 @@ export default function AdminPage() {
             }}
           >
             Bức tường Lời chúc ({wishes.length})
+          </button>
+          <button
+            className={`btn ${activeView === 'letters' ? 'btn--gold' : 'btn--outline'}`}
+            onClick={() => {
+              setActiveView('letters');
+              loadLetters();
+            }}
+          >
+            ✉️ Thư Tri Ân ({lettersData.total || 298})
           </button>
         </div>
 
@@ -1042,6 +1111,186 @@ export default function AdminPage() {
             </div>
           </section>
         )}
+
+        {/* VIEW 5: QUẢN LÝ & PHÁT HÀNH THƯ TRI ÂN CTIN 25 NĂM */}
+        {activeView === 'letters' && (
+          <section id="view-letters" className="admin-view">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+              <div>
+                <h1 className="admin-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>✉️ Quản lý &amp; Phát hành Thư Tri Ân</span>
+                  <span style={{ fontSize: '13px', padding: '3px 10px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1', fontWeight: 600 }}>
+                    CTIN 25 Năm
+                  </span>
+                </h1>
+                <p style={{ margin: '6px 0 0', color: 'var(--clr-ink-3)', fontSize: '13.5px' }}>
+                  Hệ thống 298 bức thư phong bì hoàng gia được gửi riêng tới từng cán bộ nhân viên theo ngày cống hiến.
+                </p>
+              </div>
+
+              {/* KHU VỰC ĐIỀU KHIỂN PHÁT HÀNH TOÀN CÔNG TY */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', padding: '10px 16px', borderRadius: '12px', border: '1.5px solid var(--clr-line)', boxShadow: 'var(--shadow-sm)' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--clr-ink-3)', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Trạng thái phát hành
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: lettersData.isPublished ? '#16a34a' : '#d97706', display: 'inline-block' }}></span>
+                    <strong style={{ fontSize: '14px', color: lettersData.isPublished ? '#16a34a' : '#d97706' }}>
+                      {lettersData.isPublished ? 'ĐÃ PHÁT HÀNH' : 'ĐANG NIÊM PHONG (KHÓA)'}
+                    </strong>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTogglePublish}
+                  disabled={isPublishing}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    border: 'none',
+                    cursor: isPublishing ? 'not-allowed' : 'pointer',
+                    background: lettersData.isPublished ? '#fee2e2' : 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                    color: lettersData.isPublished ? '#dc2626' : '#ffffff',
+                    boxShadow: lettersData.isPublished ? 'none' : '0 2px 8px rgba(217,119,6,0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isPublishing ? 'Đang cập nhật...' : (lettersData.isPublished ? '🔒 Tạm khóa phát hành' : '🚀 Phát hành Thư Tri Ân')}
+                </button>
+              </div>
+            </div>
+
+            {/* THỐNG KÊ LETTER STAT CARDS */}
+            <div className="aw-stats-grid" style={{ marginBottom: '20px' }}>
+              <div className="aw-stat-card aw-stat-card--total">
+                <div className="aw-stat-card__body">
+                  <span className="aw-stat-card__label">Tổng số nhân sự</span>
+                  <div className="aw-stat-card__number">{lettersData.total || 298}</div>
+                  <span className="aw-stat-card__sub">CBNV nhận thư tri ân cá nhân hóa</span>
+                </div>
+              </div>
+
+              <div className="aw-stat-card aw-stat-card--visible">
+                <div className="aw-stat-card__body">
+                  <span className="aw-stat-card__label">Đã mở xem thư</span>
+                  <div className="aw-stat-card__number">{lettersData.openedCount || 0}</div>
+                  <span className="aw-stat-card__sub">
+                    Chiếm {lettersData.total > 0 ? Math.round(((lettersData.openedCount || 0) / lettersData.total) * 100) : 0}% tổng nhân sự
+                  </span>
+                </div>
+              </div>
+
+              <div className="aw-stat-card aw-stat-card--hidden">
+                <div className="aw-stat-card__body">
+                  <span className="aw-stat-card__label">Chưa mở thư</span>
+                  <div className="aw-stat-card__number">{Math.max(0, (lettersData.total || 298) - (lettersData.openedCount || 0))}</div>
+                  <span className="aw-stat-card__sub">Nhân sự chưa đăng nhập bấm mở sáp</span>
+                </div>
+              </div>
+            </div>
+
+            {/* BỘ LỌC TÌM KIẾM */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <div style={{ flex: '1 1 260px' }}>
+                <input
+                  type="text"
+                  placeholder="Tìm theo Tên nhân sự, Mã NV, Email hoặc Đơn vị..."
+                  value={letterSearch}
+                  onChange={(e) => setLetterSearch(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--clr-line)', fontSize: '13.5px' }}
+                />
+              </div>
+
+              <select
+                value={letterUnitFilter}
+                onChange={(e) => setLetterUnitFilter(e.target.value)}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--clr-line)', fontSize: '13.5px', background: '#fff', minWidth: '220px' }}
+              >
+                <option value="all">Tất cả phòng ban / Đơn vị</option>
+                {Array.from(new Set(lettersData.letters?.map(l => l.unitName).filter(Boolean))).map(u => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* BẢNG DANH SÁCH 298 THƯ */}
+            <div className="table-responsive" style={{ background: '#fff', borderRadius: '12px', border: '1px solid var(--clr-line)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead>
+                  <tr style={{ background: 'var(--clr-bg-alt)', borderBottom: '2px solid var(--clr-line)' }}>
+                    <th style={{ padding: '12px 14px', width: '50px' }}>STT</th>
+                    <th style={{ padding: '12px 14px' }}>Mã NV</th>
+                    <th style={{ padding: '12px 14px' }}>Họ và tên</th>
+                    <th style={{ padding: '12px 14px' }}>Danh xưng</th>
+                    <th style={{ padding: '12px 14px' }}>Email</th>
+                    <th style={{ padding: '12px 14px' }}>Đơn vị / Phòng ban</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'right' }}>Ngày cống hiến</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'center' }}>Trạng thái</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'center' }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLetters.map((l, idx) => (
+                    <tr key={l.id || idx} style={{ borderBottom: '1px solid var(--clr-line)' }}>
+                      <td style={{ padding: '10px 14px', color: 'var(--clr-ink-3)', fontWeight: 600 }}>{idx + 1}</td>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--ff-mono)', fontWeight: 700 }}>{l.employeeCode}</td>
+                      <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--clr-ink)' }}>{l.fullName}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', fontWeight: 700, fontSize: '12px' }}>
+                          {l.salutation || 'Anh/Chị'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px', color: 'var(--clr-ink-2)' }}>{l.email || '—'}</td>
+                      <td style={{ padding: '10px 14px' }}>{l.unitName || '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--ff-mono)', fontWeight: 700 }}>
+                        {Number(l.daysOfService || 0).toLocaleString('vi-VN')} ngày
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                        {l.isOpened ? (
+                          <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '12px' }}>✓ Đã mở thư</span>
+                        ) : (
+                          <span style={{ color: 'var(--clr-ink-3)', fontSize: '12px' }}>Chưa mở</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewingLetter(l)}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '6px',
+                            background: '#0e6cb0',
+                            color: '#ffffff',
+                            border: 'none',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          👁️ Xem thư
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredLetters.length === 0 && (
+                    <tr>
+                      <td colSpan={9} style={{ padding: '36px', textAlign: 'center', color: 'var(--clr-ink-3)' }}>
+                        Không tìm thấy nhân sự nào khớp với từ khóa tìm kiếm.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* MODAL XEM BÀI & CHẤM ĐIỂM GOOGLE DRIVE STYLE */}
@@ -1303,6 +1552,16 @@ export default function AdminPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* MODAL PREVIEW THƯ TRI ÂN CHO ADMIN */}
+      {previewingLetter && (
+        <GratitudeLetterModal
+          isOpen={true}
+          onClose={() => setPreviewingLetter(null)}
+          currentUser={previewingLetter}
+          previewData={previewingLetter}
+        />
       )}
 
       {/* TOAST NOTIFICATION */}
