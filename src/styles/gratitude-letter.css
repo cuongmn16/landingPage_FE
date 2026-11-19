@@ -1,0 +1,529 @@
+/* ============================================================
+   THƯ TRI ÂN CTIN 25 NĂM - PURE CSS (NO TAILWIND DEPENDENCY)
+   Theme: Bìa VIP Card (Ảnh 2) & Thư Giấy Lụa Hoàng Gia Ban Đầu
+   ============================================================ */
+
+/* 1. Modal Overlay */
+.ctin-letter-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 8, 28, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* 2. Bìa VIP Card (Chuẩn Ảnh 2) */
+.ctin-vip-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  min-height: 640px;
+  background: radial-gradient(ellipse at 50% 15%, #152042 0%, #0d1633 50%, #070e24 100%);
+  border: 1.5px solid #a58f46;
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(165, 143, 70, 0.2);
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Nút Đóng '✕' góc trên */
+.ctin-modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.ctin-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+.ctin-modal-close-btn-parchment {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(120, 53, 15, 0.12);
+  color: #451a03;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.ctin-modal-close-btn-parchment:hover {
+  background: rgba(120, 53, 15, 0.22);
+  transform: scale(1.08);
+}
+
+/* Logo CTIN Nền Trắng Đặt Giữa */
+.ctin-logo-pill {
+  display: inline-block;
+  padding: 8px 22px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid rgba(245, 185, 40, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-bottom: 16px;
+}
+.ctin-logo-img {
+  height: 36px !important;
+  max-height: 36px !important;
+  width: auto !important;
+  max-width: 180px !important;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Badge Kỷ Niệm 25 Năm */
+.ctin-anniversary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #131d3d;
+  border: 1px solid #8c7438;
+  border-radius: 999px;
+  color: #dfad42;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+/* Tiêu Đề Vàng Kim */
+.ctin-gold-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #F3C44C;
+  background: linear-gradient(180deg, #FFF8DB 0%, #F3C44C 45%, #C88F18 85%, #8B5700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+  margin-bottom: 8px;
+}
+
+/* Slogan Giãn Chữ */
+.ctin-slogan-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  color: #dfad42;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Khung Người Nhận */
+.ctin-recipient-box {
+  width: 100%;
+  background: rgba(8, 16, 42, 0.75);
+  border: 1px solid rgba(165, 143, 70, 0.5);
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+.ctin-recipient-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.ctin-recipient-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+.ctin-recipient-unit {
+  font-size: 13px;
+  color: #fde047;
+  font-weight: 500;
+}
+
+/* Con Dấu Sáp Vàng Mở Thư */
+@keyframes ctinSealGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(245, 185, 40, 0.5), 0 6px 20px rgba(0, 0, 0, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(245, 185, 40, 0.85), 0 10px 25px rgba(0, 0, 0, 0.8);
+    transform: scale(1.04);
+  }
+}
+
+.ctin-wax-seal-btn {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #FDE047 0%, #EAB308 40%, #B45309 75%, #78350F 100%);
+  border: 2.5px solid #FFEA79;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: ctinSealGlow 2.8s infinite ease-in-out;
+  transition: all 0.3s ease;
+  margin: 10px auto 0 auto;
+}
+.ctin-wax-seal-btn:hover {
+  animation: none;
+  transform: scale(1.08);
+  box-shadow: 0 0 55px rgba(245, 185, 40, 0.95);
+}
+.ctin-wax-seal-icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.ctin-wax-seal-text-main {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #451a03;
+  line-height: 1.1;
+}
+.ctin-wax-seal-text-sub {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #78350f;
+  margin-top: 2px;
+}
+.ctin-seal-hint {
+  font-size: 13px;
+  color: #fde68a;
+  font-style: italic;
+  margin-top: 14px;
+  opacity: 0.9;
+}
+
+/* 3. Lá Thư Giấy Da Hoàng Gia (Inner Parchment Letter) */
+.ctin-parchment-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: radial-gradient(circle at 50% 25%, #FFFDF8 0%, #FEF8ED 60%, #F7EBD2 100%);
+  border: 3px solid #DFAD54;
+  border-radius: 24px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85);
+  padding: 36px 32px;
+  color: #1e293b;
+  box-sizing: border-box;
+  animation: ctinFadeIn 0.4s ease-out;
+}
+
+@keyframes ctinFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Header Lá Thư */
+.ctin-letter-header {
+  text-align: center;
+  border-bottom: 2px solid rgba(120, 53, 15, 0.15);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+.ctin-header-logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.ctin-header-badge-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #451a03;
+  letter-spacing: 2px;
+  border-left: 2px solid rgba(120, 53, 15, 0.3);
+  padding-left: 14px;
+}
+.ctin-header-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: #071330;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+.ctin-header-slogan {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  color: #78350f;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Hộp Vinh Danh Cá Nhân Hóa */
+.ctin-honor-box {
+  background: rgba(254, 243, 199, 0.8);
+  border: 2px solid rgba(245, 185, 40, 0.7);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: center;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+.ctin-honor-salutation {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #071330;
+  margin-bottom: 8px;
+}
+.ctin-honor-name {
+  color: #92400e;
+}
+.ctin-honor-days-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ctin-honor-days-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: #451a03;
+}
+.ctin-honor-days-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 900;
+  color: #071330;
+  background: #ffffff;
+  padding: 4px 14px;
+  border-radius: 12px;
+  border: 1px solid #f59e0b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.ctin-honor-years-desc {
+  font-size: 12px;
+  color: #78350f;
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Thân Bức Thư */
+.ctin-letter-body {
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: #1e293b;
+  text-align: justify;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+.ctin-letter-body p {
+  margin-bottom: 14px;
+}
+
+/* Blockquote Điểm Nhấn */
+.ctin-letter-quote {
+  border-left: 4px solid #d97706;
+  padding: 12px 16px;
+  margin: 18px 0;
+  background: rgba(245, 185, 40, 0.12);
+  font-style: italic;
+  color: #071330;
+  font-weight: 600;
+  border-radius: 0 14px 14px 0;
+}
+
+/* Hộp Lời Cảm Ơn Viền Xanh CTIN */
+.ctin-thank-you-box {
+  background: rgba(254, 243, 199, 0.65);
+  border-left: 4px solid #0a4e82;
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin: 20px 0;
+  color: #071330;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.ctin-thank-you-title {
+  font-weight: 700;
+  color: #78350f;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.ctin-thank-you-item {
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+/* Câu Trích Dẫn Trung Tâm */
+.ctin-center-quote {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #78350f;
+  text-align: center;
+  margin: 22px 0;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(120, 53, 15, 0.2);
+  border-bottom: 1px solid rgba(120, 53, 15, 0.2);
+  background: rgba(254, 243, 199, 0.4);
+  border-radius: 12px;
+  line-height: 1.6;
+}
+
+/* Hộp Câu Hỏi Suy Ngẫm 25 Năm Sau */
+.ctin-reflection-box {
+  background: #071330;
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 24px 26px;
+  margin: 24px 0;
+  border: 2px solid rgba(245, 185, 40, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.ctin-reflection-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ctin-reflection-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  color: #fde047;
+  font-size: 18px;
+  font-weight: 700;
+}
+.ctin-reflection-main {
+  font-size: 15px;
+  color: #f1f5f9;
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.ctin-reflection-note {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+/* Footer Lá Thư & Thao Tác */
+.ctin-letter-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(120, 53, 15, 0.15);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ctin-footer-slogan-main {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #071330;
+}
+.ctin-footer-slogan-sub {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.ctin-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ctin-btn-pdf {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #071330;
+  color: #fde047;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(7, 19, 48, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.ctin-btn-pdf:hover {
+  background: #0d2252;
+  transform: translateY(-1px);
+}
+.ctin-btn-fold {
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: transparent;
+  color: #451a03;
+  border: 1px solid rgba(120, 53, 15, 0.4);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ctin-btn-fold:hover {
+  background: rgba(254, 243, 199, 0.8);
+}
