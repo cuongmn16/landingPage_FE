@@ -148,7 +148,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
                   Bức Thư Đang Được Niêm Phong
                 </div>
                 <p style={{ color: '#cbd5e1', fontSize: '12px', lineHeight: 1.5, margin: 0 }}>
-                  Thư Tri Ân CTIN 25 Năm sẽ chính thức được tự động phát hành vào lúc <strong>20:00</strong> (hoặc khi Ban Tổ Chức phát hành chủ động).
+                  Thư Tri Ân CTIN 25 Năm sẽ chính thức được tự động phát hành vào lúc <strong>22:30</strong> (hoặc khi Ban Tổ Chức phát hành chủ động).
                 </p>
               </div>
             ) : (

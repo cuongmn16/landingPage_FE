@@ -246,8 +246,8 @@ export default function AdminPage() {
     let confirmMsg = '';
     if (mode === 'MANUAL_PUBLISHED') {
       confirmMsg = 'Bạn có chắc chắn muốn PHÁT HÀNH CHỦ ĐỘNG ngay lập tức cho toàn bộ 298 nhân sự?';
-    } else if (mode === 'AUTO_20H') {
-      confirmMsg = 'Bạn có muốn chuyển sang chế độ TỰ ĐỘNG PHÁT HÀNH LÚC 20:00 NGÀY 20/11/2026? Hiện tại thư sẽ ẩn với CBNV cho đến đúng 20h ngày 20/11.';
+    } else if (mode === 'AUTO_22H30' || mode === 'AUTO_20H') {
+      confirmMsg = 'Bạn có muốn chuyển sang chế độ TỰ ĐỘNG PHÁT HÀNH LÚC 22:30 NGÀY 20/11/2026? Hiện tại thư sẽ ẩn với CBNV cho đến đúng 22h30 ngày 20/11.';
     } else {
       confirmMsg = 'Bạn có chắc chắn muốn TẠM KHÓA NIÊM PHONG Thư Tri Ân?';
     }
@@ -1187,7 +1187,7 @@ export default function AdminPage() {
                         ? 'ĐÃ PHÁT HÀNH CHỦ ĐỘNG (ĐANG MỞ TOÀN BỘ)'
                         : lettersData.publishMode === 'MANUAL_LOCKED'
                           ? 'ĐANG TẠM KHÓA NIÊM PHONG (ẨN VỚI USER)'
-                          : `TỰ ĐỘNG 20H NGÀY 20/11 (${lettersData.isPublished ? 'ĐÃ ĐẾN GIỜ MỞ' : 'HIỆN ĐANG ẨN VỚI USER'})`}
+                          : `TỰ ĐỘNG 22H30 NGÀY 20/11 (${lettersData.isPublished ? 'ĐÃ ĐẾN GIỜ MỞ' : 'HIỆN ĐANG ẨN VỚI USER'})`}
                     </strong>
                   </div>
                 </div>
@@ -1215,12 +1215,12 @@ export default function AdminPage() {
                     🚀 Phát hành ngay
                   </button>
 
-                  {/* Nút 2: Tự động lúc 20:00 ngày 20/11 */}
+                  {/* Nút 2: Tự động lúc 22:30 ngày 20/11 */}
                   <button
                     type="button"
-                    onClick={() => handleChangePublishMode('AUTO_20H')}
-                    disabled={isPublishing || (lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode)}
-                    title="Hệ thống tự động phát hành đúng 20:00 ngày 20/11/2026"
+                    onClick={() => handleChangePublishMode('AUTO_22H30')}
+                    disabled={isPublishing || (lettersData.publishMode === 'AUTO_22H30' || lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode)}
+                    title="Hệ thống tự động phát hành đúng 22:30 ngày 20/11/2026"
                     style={{
                       padding: '7px 14px',
                       borderRadius: '8px',
@@ -1228,12 +1228,12 @@ export default function AdminPage() {
                       fontSize: '12.5px',
                       border: '1px solid #d97706',
                       cursor: isPublishing ? 'not-allowed' : 'pointer',
-                      background: (lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode) ? '#fef3c7' : '#ffffff',
+                      background: (lettersData.publishMode === 'AUTO_22H30' || lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode) ? '#fef3c7' : '#ffffff',
                       color: '#b45309',
                       transition: 'all 0.2s ease'
                     }}
                   >
-                    ⏰ Tự động 20h ngày 20/11
+                    ⏰ Tự động 22h30 ngày 20/11
                   </button>
 
                   {/* Nút 3: Tạm khóa niêm phong */}
@@ -1358,7 +1358,7 @@ export default function AdminPage() {
                             </span>
                           ) : (
                             <span style={{ padding: '1px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', fontSize: '11px' }}>
-                              Chờ 20h 20/11
+                              Chờ 22h30 20/11
                             </span>
                           )}
                         </div>

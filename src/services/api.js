@@ -940,7 +940,7 @@ export const gratitudeLetterApi = {
     const u = auth.user;
     if (u) {
       const isBtcAdmin = u.role === 'admin' || u.email === 'admin@ctin.vn';
-      const isAfterRelease = new Date() >= new Date('2026-11-20T20:00:00+07:00');
+      const isAfterRelease = new Date() >= new Date('2026-11-20T22:30:00+07:00');
       return {
         id: u.id || 1,
         employeeCode: u.employee_id || (isBtcAdmin ? 'ADMIN001' : 'C30050'),
