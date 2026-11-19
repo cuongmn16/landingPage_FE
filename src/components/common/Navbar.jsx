@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { auth } from '../../services/api';
+import { auth, gratitudeLetterApi } from '../../services/api';
+import GratitudeLetterModal from './GratitudeLetterModal';
 
 export default function Navbar() {
   const location = useLocation();
@@ -8,6 +9,8 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(auth.user);
+  const [showLetterModal, setShowLetterModal] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +28,17 @@ export default function Navbar() {
     checkAuth();
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (currentUser && !hasAutoOpened) {
+      gratitudeLetterApi.getMyLetter().then(letter => {
+        if (letter && !letter.isOpened) {
+          setShowLetterModal(true);
+          setHasAutoOpened(true);
+        }
+      }).catch(() => {});
+    }
+  }, [currentUser, hasAutoOpened]);
+
   const isAdminRoute = location.pathname.startsWith('/admin');
   const missionRouteNum = (location.pathname.match(/^\/mission-([1-4])(\/|$)/) || [])[1];
   const isLeaderboardRoute = location.pathname === '/leaderboard';
@@ -38,7 +52,8 @@ export default function Navbar() {
   };
 
   return (
-    <header className={`navbar ${isScrolled ? 'is-scrolled' : ''}`} id="navbar">
+    <>
+      <header className={`navbar ${isScrolled ? 'is-scrolled' : ''}`} id="navbar">
       <div className="container navbar__inner">
         <Link to={currentUser?.role === 'admin' ? '/admin' : '/'} className="navbar__logo">
           <img src="/assets/ctin-logo.png" alt="CTIN" className="navbar__logo-img" />
@@ -99,6 +114,23 @@ export default function Navbar() {
               )}
               <button
                 type="button"
+                onClick={() => setShowLetterModal(true)}
+                className="btn btn--gold navbar__cta"
+                style={{
+                  background: 'linear-gradient(135deg, #1e293b 0%, #0b132b 100%)',
+                  border: '1.5px solid #d4af37',
+                  color: '#fef08a',
+                  boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Xem Thư Tri Ân CTIN 25 Năm"
+              >
+                <span>✉️</span> Thư Tri Ân
+              </button>
+              <button
+                type="button"
                 onClick={handleLogout}
                 className="navbar__logout-btn"
                 title="Đăng xuất khỏi hệ thống"
@@ -130,5 +162,11 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+    <GratitudeLetterModal
+      isOpen={showLetterModal}
+      onClose={() => setShowLetterModal(false)}
+      currentUser={currentUser}
+    />
+  </>
   );
 }

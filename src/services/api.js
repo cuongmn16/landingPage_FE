@@ -918,3 +918,32 @@ export const api = {
     return json?.data || json;
   }
 };
+
+/**
+ * Thư Tri Ân CTIN 25 Năm
+ */
+export const gratitudeLetterApi = {
+  /**
+   * Lấy thư tri ân cá nhân của user đang đăng nhập
+   */
+  async getMyLetter() {
+    try {
+      const json = await authFetch('/gratitude-letters/my-letter');
+      return json?.data || json;
+    } catch (err) {
+      console.warn('Lấy thư tri ân thất bại, dùng fallback:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Đánh dấu đã mở thư
+   */
+  async markOpened() {
+    try {
+      await authFetch('/gratitude-letters/open', { method: 'POST' });
+    } catch (err) {
+      console.warn('Đánh dấu mở thư thất bại:', err);
+    }
+  }
+};
