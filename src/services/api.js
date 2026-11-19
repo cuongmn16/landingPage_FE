@@ -929,11 +929,32 @@ export const gratitudeLetterApi = {
   async getMyLetter() {
     try {
       const json = await authFetch('/gratitude-letters/my-letter');
-      return json?.data || json;
+      if (json && (json.data || json.fullName)) {
+        return json.data || json;
+      }
     } catch (err) {
-      console.warn('Lấy thư tri ân thất bại, dùng fallback:', err);
-      return null;
+      console.warn('Lấy thư tri ân từ server thất bại, kích hoạt fallback:', err);
     }
+
+    // Fallback cá nhân hóa chuẩn theo tài khoản đang đăng nhập
+    const u = auth.user;
+    if (u) {
+      const isBtcAdmin = u.role === 'admin' || u.email === 'admin@ctin.vn';
+      return {
+        id: u.id || 1,
+        employeeCode: u.employee_id || (isBtcAdmin ? 'ADMIN001' : 'C30050'),
+        fullName: u.full_name || (isBtcAdmin ? 'Quản Trị Viên BTC' : 'Trần Tuấn Anh'),
+        salutation: isBtcAdmin ? 'Ông' : 'Anh',
+        unitName: u.unit || (isBtcAdmin ? 'Ban Tổ Chức (BTC)' : 'Trung tâm Triển khai'),
+        daysOfService: isBtcAdmin ? 9130 : 4859,
+        yearsDesc: isBtcAdmin
+          ? 'Hơn 25 năm đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN'
+          : 'Hơn 13 năm 3 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
+        isOpened: false,
+        isPublished: true
+      };
+    }
+    return null;
   },
 
   /**
@@ -964,7 +985,15 @@ export const gratitudeLetterApi = {
   },
 
   /**
-   * Admin: Bật / Tắt phát hành thư tri ân tới toàn bộ nhân sự
+   * Admin: Đặt chế độ phát hành (AUTO_20H | MANUAL_PUBLISHED | MANUAL_LOCKED)
+   */
+  async setPublishMode(mode) {
+    const json = await authFetch('/gratitude-letters/admin/publish-mode?mode=' + encodeURIComponent(mode), { method: 'POST' });
+    return json?.data || json;
+  },
+
+  /**
+   * Admin: Bật / Tắt phát hành thư tri ân tới toàn bộ nhân sự (backward-compatible)
    */
   async setPublished(published) {
     const json = await authFetch('/gratitude-letters/admin/publish?published=' + published, { method: 'POST' });

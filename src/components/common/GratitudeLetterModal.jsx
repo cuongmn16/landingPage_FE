@@ -42,8 +42,9 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
   // Dữ liệu cá nhân hóa (ưu tiên data từ backend, fallback từ currentUser)
   const fullName = letterData?.fullName || currentUser?.fullName || 'Người CTIN';
   const unitName = letterData?.unitName || currentUser?.unitName || 'Đại gia đình CTIN';
-  const rawSalutation = letterData?.salutation || 'Anh/Chị';
-  const salutation = (rawSalutation === 'Bà' || rawSalutation === 'Chị') ? 'Chị' : (rawSalutation === 'Ông' || rawSalutation === 'Anh') ? 'Anh' : 'Anh/Chị';
+  const rawSalutation = letterData?.salutation || currentUser?.salutation;
+  // Giữ đúng 100% danh xưng: Bà, Ông, Anh, Chị
+  const salutation = rawSalutation && rawSalutation.trim() ? rawSalutation.trim() : 'Anh';
   const salutationUpper = salutation.toUpperCase();
 
   const daysOfService = letterData?.daysOfService ? Number(letterData.daysOfService).toLocaleString('vi-VN') : '3.485';
@@ -123,7 +124,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
                   Bức Thư Đang Được Niêm Phong
                 </div>
                 <p style={{ color: '#cbd5e1', fontSize: '12px', lineHeight: 1.5, margin: 0 }}>
-                  Thư Tri Ân CTIN 25 Năm sẽ chính thức được mở vào ngày Đại lễ kỷ niệm <strong>20/11/2026</strong>.
+                  Thư Tri Ân CTIN 25 Năm sẽ chính thức được tự động phát hành vào lúc <strong>20:00</strong> (hoặc khi Ban Tổ Chức phát hành chủ động).
                 </p>
               </div>
             ) : (

@@ -242,6 +242,29 @@ export default function AdminPage() {
     }
   };
 
+  const handleChangePublishMode = async (mode) => {
+    let confirmMsg = '';
+    if (mode === 'MANUAL_PUBLISHED') {
+      confirmMsg = 'Bạn có chắc chắn muốn PHÁT HÀNH CHỦ ĐỘNG ngay lập tức cho toàn bộ 298 nhân sự?';
+    } else if (mode === 'AUTO_20H') {
+      confirmMsg = 'Bạn có muốn chuyển sang chế độ TỰ ĐỘNG PHÁT HÀNH LÚC 20:00? Hệ thống sẽ tự động mở thư khi đồng hồ điểm từ 20:00 trở đi.';
+    } else {
+      confirmMsg = 'Bạn có chắc chắn muốn TẠM KHÓA NIÊM PHONG Thư Tri Ân?';
+    }
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsPublishing(true);
+    try {
+      await gratitudeLetterApi.setPublishMode(mode);
+      showToast('Đã cập nhật chế độ phát hành thành công!', 'success');
+      loadLetters();
+    } catch (err) {
+      showToast(err.message || 'Cập nhật chế độ phát hành thất bại', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const filteredLetters = useMemo(() => {
     const list = lettersData.letters || [];
     return list.filter(l => {
@@ -1128,39 +1151,95 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              {/* KHU VỰC ĐIỀU KHIỂN PHÁT HÀNH TOÀN CÔNG TY */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', padding: '10px 16px', borderRadius: '12px', border: '1.5px solid var(--clr-line)', boxShadow: 'var(--shadow-sm)' }}>
+              {/* KHU VỰC ĐIỀU KHIỂN PHÁT HÀNH TOÀN CÔNG TY (CHỦ ĐỘNG & TỰ ĐỘNG LÚC 20:00) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#fff', padding: '12px 18px', borderRadius: '12px', border: '1.5px solid var(--clr-line)', boxShadow: 'var(--shadow-sm)', flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ fontSize: '12px', color: 'var(--clr-ink-3)', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Trạng thái phát hành
+                  <div style={{ fontSize: '11.5px', color: 'var(--clr-ink-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Chế độ phát hành
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: lettersData.isPublished ? '#16a34a' : '#d97706', display: 'inline-block' }}></span>
-                    <strong style={{ fontSize: '14px', color: lettersData.isPublished ? '#16a34a' : '#d97706' }}>
-                      {lettersData.isPublished ? 'ĐÃ PHÁT HÀNH' : 'ĐANG NIÊM PHONG (KHÓA)'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                    <span style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: lettersData.isPublished ? '#16a34a' : '#d97706',
+                      display: 'inline-block'
+                    }}></span>
+                    <strong style={{ fontSize: '13.5px', color: lettersData.isPublished ? '#16a34a' : '#d97706' }}>
+                      {lettersData.publishMode === 'MANUAL_PUBLISHED'
+                        ? 'ĐÃ PHÁT HÀNH CHỦ ĐỘNG (ĐANG MỞ)'
+                        : lettersData.publishMode === 'MANUAL_LOCKED'
+                          ? 'ĐANG TẠM KHÓA NIÊM PHONG'
+                          : `TỰ ĐỘNG LÚC 20:00 (${lettersData.isPublished ? 'ĐÃ ĐẾN GIỜ MỞ' : 'CHỜ ĐẾN 20:00'})`}
                     </strong>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleTogglePublish}
-                  disabled={isPublishing}
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: '8px',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    border: 'none',
-                    cursor: isPublishing ? 'not-allowed' : 'pointer',
-                    background: lettersData.isPublished ? '#fee2e2' : 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                    color: lettersData.isPublished ? '#dc2626' : '#ffffff',
-                    boxShadow: lettersData.isPublished ? 'none' : '0 2px 8px rgba(217,119,6,0.3)',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {isPublishing ? 'Đang cập nhật...' : (lettersData.isPublished ? '🔒 Tạm khóa phát hành' : '🚀 Phát hành Thư Tri Ân')}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Nút 1: Phát hành ngay */}
+                  <button
+                    type="button"
+                    onClick={() => handleChangePublishMode('MANUAL_PUBLISHED')}
+                    disabled={isPublishing || (lettersData.publishMode === 'MANUAL_PUBLISHED')}
+                    title="Chủ động mở thư ngay lập tức cho toàn bộ 298 nhân sự"
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      border: 'none',
+                      cursor: isPublishing ? 'not-allowed' : 'pointer',
+                      background: lettersData.publishMode === 'MANUAL_PUBLISHED' ? '#dcfce7' : '#16a34a',
+                      color: lettersData.publishMode === 'MANUAL_PUBLISHED' ? '#15803d' : '#ffffff',
+                      boxShadow: lettersData.publishMode === 'MANUAL_PUBLISHED' ? 'none' : '0 2px 6px rgba(22,163,74,0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    🚀 Phát hành ngay
+                  </button>
+
+                  {/* Nút 2: Tự động lúc 20:00 */}
+                  <button
+                    type="button"
+                    onClick={() => handleChangePublishMode('AUTO_20H')}
+                    disabled={isPublishing || (lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode)}
+                    title="Hệ thống tự động phát hành khi đồng hồ điểm 20:00"
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      border: '1px solid #d97706',
+                      cursor: isPublishing ? 'not-allowed' : 'pointer',
+                      background: (lettersData.publishMode === 'AUTO_20H' || !lettersData.publishMode) ? '#fef3c7' : '#ffffff',
+                      color: '#b45309',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    ⏰ Tự động lúc 20:00
+                  </button>
+
+                  {/* Nút 3: Tạm khóa niêm phong */}
+                  <button
+                    type="button"
+                    onClick={() => handleChangePublishMode('MANUAL_LOCKED')}
+                    disabled={isPublishing || (lettersData.publishMode === 'MANUAL_LOCKED')}
+                    title="Tạm khóa niêm phong không cho nhân sự mở thư"
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      border: '1px solid #dc2626',
+                      cursor: isPublishing ? 'not-allowed' : 'pointer',
+                      background: lettersData.publishMode === 'MANUAL_LOCKED' ? '#fee2e2' : '#ffffff',
+                      color: '#dc2626',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    🔒 Tạm khóa
+                  </button>
+                </div>
               </div>
             </div>
 
