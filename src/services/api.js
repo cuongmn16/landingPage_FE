@@ -949,8 +949,8 @@ export const gratitudeLetterApi = {
         unitName: u.unit || (isBtcAdmin ? 'Ban Tổ Chức (BTC)' : 'Trung tâm Triển khai'),
         daysOfService: isBtcAdmin ? 9130 : 4859,
         yearsDesc: isBtcAdmin
-          ? 'Hơn 25 năm đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN'
-          : 'Hơn 13 năm 3 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
+          ? '25 năm đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN'
+          : '13 năm 3 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
         isOpened: false,
         isPublished: isBtcAdmin || isAfterRelease
       };

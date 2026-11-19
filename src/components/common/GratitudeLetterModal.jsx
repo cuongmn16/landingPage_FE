@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { gratitudeLetterApi } from '../../services/api';
 import '../../styles/gratitude-letter.css';
 
+function formatYearsDesc(desc) {
+  if (!desc) return '';
+  let s = desc.replace(/^Hơn\s+/i, '').trim();
+  s = s.replace(/(\d+)\s*năm\s*12\s*tháng/gi, (_, y) => `${parseInt(y, 10) + 1} năm`);
+  return s;
+}
+
 export default function GratitudeLetterModal({ isOpen, onClose, currentUser, previewData }) {
   const [isLetterOpened, setIsLetterOpened] = useState(false);
   const [letterData, setLetterData] = useState(previewData || null);
@@ -72,7 +79,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
   const salutationUpper = salutation.toUpperCase();
 
   const daysOfService = letterData?.daysOfService ? Number(letterData.daysOfService).toLocaleString('vi-VN') : '3.485';
-  const yearsDesc = letterData?.yearsDesc || 'Hơn 9 năm 6 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN';
+  const yearsDesc = formatYearsDesc(letterData?.yearsDesc) || '9 năm 6 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN';
 
   const handleOpenLetter = () => {
     setIsLetterOpened(true);
