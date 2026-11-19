@@ -36,6 +36,70 @@ const BUILT_IN_ACCOUNTS = {
       unitName: 'Ban Tổ Chức (BTC)',
       status: 'APPROVED'
     }
+  },
+  'lanmh@ctin.vn': {
+    pass: 'Demo@123',
+    token: 'demo-lanmh-token',
+    raw: {
+      employeeId: 30004,
+      employeeCode: 'C30004',
+      fullName: 'Mai Hương Lan',
+      email: 'lanmh@ctin.vn',
+      role: 'ROLE_USER',
+      unitName: 'Văn phòng Hồ Chí Minh',
+      salutation: 'Bà',
+      daysOfService: 9120,
+      yearsDesc: 'Hơn 24 năm 12 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
+      status: 'APPROVED'
+    }
+  },
+  'nangpn@ctin.vn': {
+    pass: 'Demo@123',
+    token: 'demo-nangpn-token',
+    raw: {
+      employeeId: 30007,
+      employeeCode: 'C30007',
+      fullName: 'Phạm Ngọc Năng',
+      email: 'nangpn@ctin.vn',
+      role: 'ROLE_USER',
+      unitName: 'Văn phòng Hồ Chí Minh',
+      salutation: 'Ông',
+      daysOfService: 9273,
+      yearsDesc: 'Hơn 25 năm 4 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
+      status: 'APPROVED'
+    }
+  },
+  'taihd@ctin.vn': {
+    pass: 'Demo@123',
+    token: 'demo-taihd-token',
+    raw: {
+      employeeId: 30026,
+      employeeCode: 'C30026',
+      fullName: 'Huỳnh Đỗ Tài',
+      email: 'taihd@ctin.vn',
+      role: 'ROLE_USER',
+      unitName: 'Trung tâm Triển khai',
+      salutation: 'Anh',
+      daysOfService: 7022,
+      yearsDesc: 'Hơn 19 năm 2 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
+      status: 'APPROVED'
+    }
+  },
+  'anhlp@ctin.vn': {
+    pass: 'Demo@123',
+    token: 'demo-anhlp-token',
+    raw: {
+      employeeId: 30045,
+      employeeCode: 'C30045',
+      fullName: 'Lê Phương Anh',
+      email: 'anhlp@ctin.vn',
+      role: 'ROLE_USER',
+      unitName: 'Văn phòng Hồ Chí Minh',
+      salutation: 'Chị',
+      daysOfService: 6317,
+      yearsDesc: 'Hơn 17 năm 3 tháng đầy nhiệt huyết & gắn bó cùng đại gia đình CTIN',
+      status: 'APPROVED'
+    }
   }
 };
 
@@ -982,6 +1046,14 @@ export const gratitudeLetterApi = {
    */
   async previewLetter(id) {
     const json = await request('/gratitude-letters/admin/preview/' + id);
+    return json?.data || json;
+  },
+
+  /**
+   * Admin: Phát hành hoặc Khóa riêng thư tri ân cho một nhân sự theo ID
+   */
+  async setIndividualPublished(id, published) {
+    const json = await request(`/gratitude-letters/admin/${id}/publish?published=${published}`, { method: 'POST' });
     return json?.data || json;
   },
 

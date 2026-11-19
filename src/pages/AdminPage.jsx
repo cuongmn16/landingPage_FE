@@ -265,6 +265,23 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleIndividualPublish = async (letter, e) => {
+    if (e) e.stopPropagation();
+    const nextState = !letter.isPublished;
+    const confirmMsg = nextState
+      ? `Bạn có chắc chắn muốn PHÁT HÀNH RIÊNG Thư Tri Ân cho nhân sự "${letter.fullName}" (${letter.employeeCode})? Người này sẽ mở được thư ngay lập tức.`
+      : `Bạn có chắc chắn muốn TẠM KHÓA RIÊNG Thư Tri Ân của "${letter.fullName}"?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await gratitudeLetterApi.setIndividualPublished(letter.id, nextState);
+      showToast(nextState ? `Đã phát hành riêng cho ${letter.fullName}!` : `Đã tạm khóa thư của ${letter.fullName}.`, 'success');
+      loadLetters();
+    } catch (err) {
+      showToast(err.message || 'Cập nhật trạng thái thất bại', 'error');
+    }
+  };
+
   const filteredLetters = useMemo(() => {
     const list = lettersData.letters || [];
     return list.filter(l => {
@@ -1329,32 +1346,66 @@ export default function AdminPage() {
                         {Number(l.daysOfService || 0).toLocaleString('vi-VN')} ngày
                       </td>
                       <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                        {l.isOpened ? (
-                          <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '12px' }}>✓ Đã mở thư</span>
-                        ) : (
-                          <span style={{ color: 'var(--clr-ink-3)', fontSize: '12px' }}>Chưa mở</span>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          {l.isOpened ? (
+                            <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '12px' }}>✓ Đã mở thư</span>
+                          ) : (
+                            <span style={{ color: 'var(--clr-ink-3)', fontSize: '12px' }}>Chưa mở</span>
+                          )}
+                          {l.isPublished ? (
+                            <span style={{ padding: '1px 6px', borderRadius: '4px', background: '#dcfce7', color: '#15803d', fontWeight: 600, fontSize: '11px' }}>
+                              ✓ Đã phát hành
+                            </span>
+                          ) : (
+                            <span style={{ padding: '1px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', fontSize: '11px' }}>
+                              Chờ 20h 20/11
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewingLetter(l)}
-                          style={{
-                            padding: '6px 14px',
-                            borderRadius: '6px',
-                            background: '#0e6cb0',
-                            color: '#ffffff',
-                            border: 'none',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          👁️ Xem thư
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewingLetter(l)}
+                            title={`Xem trước bức thư của ${l.fullName}`}
+                            style={{
+                              padding: '5px 10px',
+                              borderRadius: '6px',
+                              background: '#0e6cb0',
+                              color: '#ffffff',
+                              border: 'none',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            👁️ Xem thư
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleToggleIndividualPublish(l, e)}
+                            title={l.isPublished ? 'Tạm khóa phát hành riêng' : 'Phát hành riêng ngay lập tức'}
+                            style={{
+                              padding: '5px 10px',
+                              borderRadius: '6px',
+                              background: l.isPublished ? '#fee2e2' : '#16a34a',
+                              color: l.isPublished ? '#dc2626' : '#ffffff',
+                              border: 'none',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                          >
+                            {l.isPublished ? '🔒 Khóa' : '🚀 Phát hành'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
