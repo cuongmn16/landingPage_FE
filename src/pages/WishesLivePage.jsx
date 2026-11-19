@@ -4,9 +4,9 @@ import { api, auth } from '../services/api';
 import { generateQrMatrix } from '../utils/qrCode';
 import '../styles/wishes.css';
 
-// Luồng thẻ chúc bay lên ở hai bên cánh (trái: 3% - 25%, phải: 63% - 80%),
-// chừa toàn bộ khoảng giữa (26% - 62%) cho Mã QR để điện thoại quét 100% không bao giờ bị che khuất!
-const LANES = [3, 10, 18, 25, 63, 70, 77];
+// Luồng thẻ chúc phóng to bay lên ở hai bên cánh (trái: 2% - 20%, phải: 56% - 66%),
+// chừa toàn bộ khoảng giữa cho Mã QR để khán giả quét mã thuận tiện nhất!
+const LANES = [2, 6, 12, 18, 56, 60, 64];
 
 export default function WishesLivePage() {
   const [totalCount, setTotalCount] = useState(0);
@@ -69,12 +69,12 @@ export default function WishesLivePage() {
     laneCursorRef.current += 1;
 
     const baseLeft = LANES[laneIdx];
-    const jitter = (Math.random() * 5 - 2.5);
-    const leftPercent = Math.min(73, Math.max(3, baseLeft + jitter));
-    const duration = (12.5 + Math.random() * 3.5).toFixed(2);
-    const rotStart = (Math.random() * 5 - 2.5).toFixed(2);
-    const rotEnd = (Math.random() * 5 - 2.5).toFixed(2);
-    const driftX = `${Math.round(Math.random() * 28 - 14)}px`;
+    const jitter = (Math.random() * 4 - 2);
+    const leftPercent = Math.min(65, Math.max(2, baseLeft + jitter));
+    const duration = (14.0 + Math.random() * 4.0).toFixed(2);
+    const rotStart = (Math.random() * 4 - 2).toFixed(2);
+    const rotEnd = (Math.random() * 4 - 2).toFixed(2);
+    const driftX = `${Math.round(Math.random() * 20 - 10)}px`;
     const themeIdx = (Number(wish.id) || cardKeyCounterRef.current) % 4;
 
     const newCard = {
@@ -90,7 +90,7 @@ export default function WishesLivePage() {
 
     setFloatingCards((prev) => {
       const next = [...prev, newCard];
-      return next.length > 28 ? next.slice(next.length - 28) : next;
+      return next.length > 16 ? next.slice(next.length - 16) : next;
     });
   }, []);
 
