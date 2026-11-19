@@ -118,7 +118,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
 
             {/* Pill Badge Kỷ Niệm 25 Năm */}
             <div className="ctin-anniversary-badge">
-              <span>✨ KỶ NIỆM 25 NĂM CTIN (2001 – 2026)</span>
+              <span>✨ KỶ NIỆM 25 NĂM CỔ PHẦN HÓA</span>
             </div>
 
             {/* Tiêu Đề Chính Vàng Kim Sang Trọng */}
@@ -134,7 +134,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
             {/* Khung Thông Tin Người Nhận Với Danh Xưng Động */}
             <div className="ctin-recipient-box">
               <div className="ctin-recipient-label">
-                THƯ TRI ÂN GỬI RIÊNG TỚI {salutationUpper}:
+                GỬI TỚI {salutationUpper}:
               </div>
               <div className="ctin-recipient-name">
                 {fullName}
@@ -146,7 +146,7 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
 
           </div>
 
-          {/* Phần dưới cùng: Con Dấu Sáp Vàng MỞ THƯ & Chú Thích */}
+          {/* Phần dưới cùng: Con Dấu Sáp Vàng MỞ THƯ */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10px' }}>
             {letterData?.isPublished === false && !previewData && currentUser?.role !== 'admin' ? (
               <div style={{ padding: '16px 20px', background: 'rgba(8, 16, 42, 0.85)', borderRadius: '16px', border: '1.5px solid #d97706', maxWidth: '380px', textAlign: 'center', margin: '10px auto' }}>
@@ -159,25 +159,16 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
                 </p>
               </div>
             ) : (
-              <>
-                <button 
-                  onClick={handleOpenLetter}
-                  className="ctin-wax-seal-btn"
-                  title="Mở thư tri ân"
-                >
-                  <div className="ctin-wax-seal-icon">⚜️</div>
-                  <span className="ctin-wax-seal-text-main">
-                    MỞ THƯ
-                  </span>
-                  <span className="ctin-wax-seal-text-sub">
-                    CTIN 25 NĂM
-                  </span>
-                </button>
-
-                <p className="ctin-seal-hint">
-                  Bấm vào con dấu sáp vàng để mở bức thư của bạn
-                </p>
-              </>
+              <button 
+                onClick={handleOpenLetter}
+                className="ctin-wax-seal-btn"
+                title="Xin mời mở thư"
+              >
+                <div className="ctin-wax-seal-icon">⚜️</div>
+                <span className="ctin-wax-seal-text-main" style={{ fontSize: '11px', letterSpacing: '0.06em', textAlign: 'center', lineHeight: 1.25 }}>
+                  XIN MỜI<br />MỞ THƯ
+                </span>
+              </button>
             )}
           </div>
 
