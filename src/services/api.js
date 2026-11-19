@@ -928,7 +928,7 @@ export const gratitudeLetterApi = {
    */
   async getMyLetter() {
     try {
-      const json = await authFetch('/gratitude-letters/my-letter');
+      const json = await request('/gratitude-letters/my-letter');
       if (json && (json.data || json.fullName)) {
         return json.data || json;
       }
@@ -963,7 +963,7 @@ export const gratitudeLetterApi = {
    */
   async markOpened() {
     try {
-      await authFetch('/gratitude-letters/open', { method: 'POST' });
+      await request('/gratitude-letters/open', { method: 'POST' });
     } catch (err) {
       console.warn('Đánh dấu mở thư thất bại:', err);
     }
@@ -973,7 +973,7 @@ export const gratitudeLetterApi = {
    * Admin: Lấy danh sách toàn bộ thư tri ân (298 nhân sự) & thống kê
    */
   async getAdminList() {
-    const json = await authFetch('/gratitude-letters/admin/list');
+    const json = await request('/gratitude-letters/admin/list');
     return json?.data || json;
   },
 
@@ -981,7 +981,7 @@ export const gratitudeLetterApi = {
    * Admin: Xem trước thư tri ân của nhân sự cụ thể theo ID
    */
   async previewLetter(id) {
-    const json = await authFetch('/gratitude-letters/admin/preview/' + id);
+    const json = await request('/gratitude-letters/admin/preview/' + id);
     return json?.data || json;
   },
 
@@ -989,7 +989,7 @@ export const gratitudeLetterApi = {
    * Admin: Đặt chế độ phát hành (AUTO_20H | MANUAL_PUBLISHED | MANUAL_LOCKED)
    */
   async setPublishMode(mode) {
-    const json = await authFetch('/gratitude-letters/admin/publish-mode?mode=' + encodeURIComponent(mode), { method: 'POST' });
+    const json = await request('/gratitude-letters/admin/publish-mode?mode=' + encodeURIComponent(mode), { method: 'POST' });
     return json?.data || json;
   },
 
@@ -997,7 +997,7 @@ export const gratitudeLetterApi = {
    * Admin: Bật / Tắt phát hành thư tri ân tới toàn bộ nhân sự (backward-compatible)
    */
   async setPublished(published) {
-    const json = await authFetch('/gratitude-letters/admin/publish?published=' + published, { method: 'POST' });
+    const json = await request('/gratitude-letters/admin/publish?published=' + published, { method: 'POST' });
     return json?.data || json;
   },
 
@@ -1006,7 +1006,7 @@ export const gratitudeLetterApi = {
    */
   async getStatus() {
     try {
-      const json = await authFetch('/gratitude-letters/status');
+      const json = await request('/gratitude-letters/status');
       return json?.data ?? false;
     } catch {
       return false;
