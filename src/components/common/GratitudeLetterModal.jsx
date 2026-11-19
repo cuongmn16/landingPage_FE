@@ -225,10 +225,10 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
             </p>
           </div>
 
-          {/* Toàn văn lá thư với các khung điểm nhấn ban đầu và danh xưng chuẩn */}
+          {/* Toàn văn lá thư theo bản phê duyệt chính thức (CTIN_A25_Thu_gui_nguoi_CTIN_cua_ngay_mai_final) */}
           <div className="ctin-letter-body">
             <p>
-              Mỗi người đến với CTIN vào một thời điểm khác nhau, mang theo những câu chuyện và khát vọng riêng. Dù hành trình ấy đã trải qua bao lâu, điều đáng quý là từ ngày <strong style={{ color: '#78350f' }}>{salutation}</strong> gia nhập, <strong style={{ color: '#78350f' }}>{salutation}</strong> đã trở thành một phần của câu chuyện CTIN – câu chuyện được viết nên bởi nhiều thế hệ, bằng những nỗ lực, niềm tin và khát vọng không ngừng vươn lên.
+              Mỗi người đến với CTIN vào một thời điểm khác nhau, mang theo những câu chuyện và khát vọng riêng. Dù hành trình ấy đã trải qua bao lâu, điều đáng quý là từ ngày gia nhập, mỗi người đã trở thành một phần của câu chuyện CTIN – câu chuyện được viết nên bởi nhiều thế hệ, bằng những nỗ lực, niềm tin và khát vọng không ngừng vươn lên.
             </p>
             <p>
               25 năm qua, CTIN đã đi qua nhiều chặng đường. Có những thành công đáng tự hào, những giai đoạn đầy thử thách, những quyết định không dễ dàng và cả những bước chuyển mình để thích ứng với một thế giới không ngừng vận động.
@@ -251,35 +251,56 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
               <div className="ctin-thank-you-title">
                 Hôm nay, CTIN muốn gửi đến {salutation} một lời cảm ơn:
               </div>
-              <div className="ctin-thank-you-item">• Cảm ơn vì {salutation} đã lựa chọn đồng hành cùng CTIN.</div>
-              <div className="ctin-thank-you-item">• Cảm ơn vì những điều {salutation} đã và đang đóng góp, dù lớn lao hay giản dị.</div>
+              <div className="ctin-thank-you-item">• Cảm ơn vì đã lựa chọn đồng hành cùng CTIN.</div>
+              <div className="ctin-thank-you-item">• Cảm ơn vì những điều đã và đang đóng góp, dù lớn lao hay giản dị.</div>
               <div className="ctin-thank-you-item">• Và cảm ơn vì đã trở thành một phần của câu chuyện chung mà chúng ta đang cùng nhau viết tiếp.</div>
             </div>
 
             <p>
-              <strong style={{ color: '#071330' }}>{salutation}</strong> thân mến, chúng ta vừa cùng nhau nhìn lại hành trình 25 năm. Nhưng có lẽ điều ý nghĩa nhất của một dịp kỷ niệm không chỉ là nhớ về những gì đã qua, mà còn là nhận ra những gì xứng đáng được mang theo.
+              <strong style={{ color: '#071330' }}>{salutation} thân mến,</strong>
             </p>
             <p>
-              25 năm tới, CTIN sẽ có những con người mới, những công nghệ mới, những cơ hội và thử thách mà hôm nay chúng ta chưa thể hình dung hết. Sẽ có những điều cần tiếp tục được phát triển để CTIN tiến xa hơn. Nhưng cũng sẽ có những giá trị mà chúng ta mong rằng, dù bao nhiêu năm trôi qua, người CTIN vẫn luôn gìn giữ.
+              Đêm nay, chúng ta đã cùng nhau đi qua một hành trình đặc biệt.
             </p>
             <p>
-              Và tương lai ấy sẽ được tạo nên từ những lựa chọn của chúng ta hôm nay. Có thể một ngày nào đó, khi nhìn lại chặng đường này, {salutation} sẽ nhận ra rằng mình đã góp phần tạo nên một điều gì đó đáng tự hào.
+              Một hành trình để nhìn lại những điều đã làm nên CTIN hôm nay, để hiểu rõ hơn chúng ta là ai, điều gì đã giúp chúng ta đi cùng nhau suốt những năm tháng qua, và điều gì cần thay đổi để CTIN có thể tiếp tục tiến về phía trước.
+            </p>
+            <p>
+              Có những giá trị chúng ta muốn gìn giữ. Có những cách nghĩ, cách làm cần được đổi mới. Và có những khát vọng mà chỉ khi cùng nhau, chúng ta mới có thể biến thành hiện thực.
+            </p>
+            <p>
+              Nhưng khi ánh đèn sân khấu khép lại, điều còn đọng lại không chỉ nên là những cảm xúc đẹp của một đêm kỷ niệm.
+            </p>
+            <p>
+              Điều quan trọng hơn là chúng ta sẽ làm gì với những điều đã nhận ra hôm nay.
+            </p>
+            <p>
+              Bởi tương lai CTIN không được tạo nên chỉ từ những định hướng lớn lao, mà còn từ những lựa chọn rất đỗi thường ngày của mỗi người.
             </p>
 
             {/* Câu trích dẫn trung tâm phong cách cổ điển */}
             <div className="ctin-center-quote">
-              "Không nhất thiết phải là một thành tựu lớn. Đôi khi, đó là một công việc bạn đã làm đến cùng. Một đồng nghiệp bạn đã giúp đỡ. Một khách hàng bạn đã giữ trọn niềm tin. Một điều mới bạn đã dũng cảm học hỏi. Hay một giá trị tốt đẹp bạn đã trao lại cho người đến sau."
+              "Đó có thể là một công việc được quyết tâm làm tốt hơn. Một cách làm cũ được mạnh dạn thay đổi. Một đồng nghiệp được chủ động sẻ chia. Một khách hàng được nỗ lực giữ trọn niềm tin. Hay một giá trị tốt đẹp của CTIN được lựa chọn gìn giữ và trao lại cho người đến sau."
             </div>
 
             <p>
-              Và khi nghĩ về những năm tháng phía trước, chúng tôi mong {salutation} sẽ luôn giữ cho mình:
+              Những điều ấy có thể nhỏ bé khi nhìn riêng lẻ. Nhưng khi được thực hiện bởi nhiều người, qua nhiều ngày, chúng sẽ tạo nên sự thay đổi lớn lao.
+            </p>
+            <p>
+              Và đó cũng chính là cách hành trình CTIN được tiếp nối.
+            </p>
+            <p>
+              25 năm đã qua là nền tảng để chúng ta tự hào. Nhưng 25 năm phía trước sẽ được viết nên bằng chính những gì chúng ta lựa chọn và hành động từ hôm nay.
+            </p>
+            <p>
+              Chúng tôi mong rằng, sau đêm nay, mỗi người CTIN sẽ mang theo trong mình:
             </p>
             <ul style={{ paddingLeft: '24px', marginBottom: '14px', color: '#071330', fontWeight: '600' }}>
-              <li style={{ marginBottom: '6px' }}><strong>Tâm khát vọng</strong> – để không ngừng hướng tới những điều tốt đẹp hơn.</li>
-              <li><strong>Chí vươn cao</strong> – để dám bước tiếp, dám học hỏi và cùng nhau chinh phục những chân trời mới.</li>
+              <li style={{ marginBottom: '6px' }}><strong>Tâm khát vọng</strong> – để không ngừng hướng tới những điều tốt đẹp hơn, không bằng lòng với những gì đã có.</li>
+              <li><strong>Chí vươn cao</strong> – để dám thay đổi, dám học hỏi, dám hành động và cùng nhau chinh phục những mục tiêu mới.</li>
             </ul>
             <p>
-              Bởi <em>Beaming Forward</em> không chỉ là hướng về phía trước, mà còn là tiến về phía trước với niềm tin, niềm tự hào và ánh sáng khát vọng từ bên trong mỗi người.
+              Bởi <em>Beaming Forward</em> không chỉ là cùng nhìn về phía trước, mà là cùng tiến lên bằng niềm tin, tinh thần đổi mới và khát vọng được thắp sáng từ bên trong mỗi người.
             </p>
             
             {/* Hộp câu hỏi suy ngẫm cho 25 năm sau */}
@@ -287,20 +308,20 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
               <div className="ctin-reflection-header">
                 <span style={{ fontSize: '20px' }}>⏳</span>
                 <h4 className="ctin-reflection-title">
-                  Dành một chút thời gian cho chính mình...
+                  Trước khi khép lại lá thư này, xin dành một chút thời gian để nghĩ về chính hành trình của mình...
                 </h4>
               </div>
               <p className="ctin-reflection-main">
                 Hãy thử tưởng tượng, 25 năm sau, một thế hệ người CTIN mới đang nhìn lại hành trình mà chúng ta đang viết hôm nay.<br />
-                <strong style={{ color: '#fde047' }}>{salutation} mong họ sẽ nhớ đến điều gì về thế hệ chúng ta? Và {salutation} muốn mình đã góp phần tạo nên điều gì trong câu chuyện ấy?</strong>
+                <strong style={{ color: '#fde047' }}>Thế hệ ấy sẽ nhớ đến điều gì về chúng ta? Và mỗi người trong chúng ta mong mình đã góp phần tạo nên điều gì trong câu chuyện ấy?</strong>
               </p>
               <p className="ctin-reflection-note">
-                {salutation} không cần trả lời ngay. Chỉ mong rằng, khi trở lại với công việc thường ngày, {salutation} sẽ mang theo những câu hỏi ấy như một lời nhắc nhở về những điều mình tin tưởng và muốn tiếp tục vun đắp.
+                Có lẽ không cần trả lời ngay. Chỉ mong rằng, khi trở lại với công việc thường ngày, những câu hỏi ấy sẽ ở lại như một lời nhắc nhở về những điều chúng ta tin tưởng và muốn tiếp tục vun đắp.
               </p>
             </div>
 
             <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 'bold', color: '#071330', fontSize: '18px', textAlign: 'center', marginTop: '24px' }}>
-              Cảm ơn {salutation} vì mỗi ngày đã cùng CTIN.<br />
+              Cảm ơn vì mỗi ngày đã cùng CTIN.<br />
               Và cảm ơn vì những ngày chúng ta sẽ còn cùng nhau viết tiếp.
             </p>
           </div>
