@@ -217,7 +217,7 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error('Lỗi tải danh sách thư tri ân:', err);
-      showToast('Không thể tải danh sách thư tri ân', 'error');
+      showToast(err.message || 'Không thể tải danh sách thư tri ân', 'error');
     } finally {
       setLoadingLetters(false);
     }

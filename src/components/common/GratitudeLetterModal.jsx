@@ -39,6 +39,22 @@ export default function GratitudeLetterModal({ isOpen, onClose, currentUser, pre
 
   if (!isOpen) return null;
 
+  if (loading && !letterData) {
+    return (
+      <div className="ctin-letter-overlay" role="dialog" aria-modal="true">
+        <div className="ctin-vip-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '320px', textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: '36px', marginBottom: '16px', animation: 'spin 2s linear infinite' }}>✉️</div>
+          <div style={{ color: '#FDE047', fontSize: '18px', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>
+            ĐANG TẢI THƯ TRI ÂN...
+          </div>
+          <p style={{ color: '#cbd5e1', fontSize: '13px', margin: 0 }}>
+            Hệ thống đang đồng bộ dữ liệu cống hiến cá nhân hóa của bạn.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Dữ liệu cá nhân hóa (ưu tiên data từ backend, fallback từ currentUser)
   const fullName = letterData?.fullName || currentUser?.fullName || 'Người CTIN';
   const unitName = letterData?.unitName || currentUser?.unitName || 'Đại gia đình CTIN';
